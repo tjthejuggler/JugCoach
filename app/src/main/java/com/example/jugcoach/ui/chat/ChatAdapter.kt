@@ -46,8 +46,8 @@ class ChatAdapter : ListAdapter<ChatMessage, ChatAdapter.MessageViewHolder>(Mess
                         messageCard.apply {
                             setCardBackgroundColor(ContextCompat.getColor(context, R.color.user_message_background))
                             layoutParams = (layoutParams as ViewGroup.MarginLayoutParams).apply {
-                                marginStart = resources.getDimensionPixelSize(R.dimen.message_margin_large)
-                                marginEnd = resources.getDimensionPixelSize(R.dimen.message_margin_small)
+                                marginStart = itemView.context.resources.getDimensionPixelSize(R.dimen.message_margin_large)
+                                marginEnd = itemView.context.resources.getDimensionPixelSize(R.dimen.message_margin_small)
                             }
                         }
                     }
@@ -56,8 +56,8 @@ class ChatAdapter : ListAdapter<ChatMessage, ChatAdapter.MessageViewHolder>(Mess
                         messageCard.apply {
                             setCardBackgroundColor(ContextCompat.getColor(context, R.color.coach_message_background))
                             layoutParams = (layoutParams as ViewGroup.MarginLayoutParams).apply {
-                                marginStart = resources.getDimensionPixelSize(R.dimen.message_margin_small)
-                                marginEnd = resources.getDimensionPixelSize(R.dimen.message_margin_large)
+                                marginStart = itemView.context.resources.getDimensionPixelSize(R.dimen.message_margin_small)
+                                marginEnd = itemView.context.resources.getDimensionPixelSize(R.dimen.message_margin_large)
                             }
                         }
                     }
@@ -65,7 +65,7 @@ class ChatAdapter : ListAdapter<ChatMessage, ChatAdapter.MessageViewHolder>(Mess
 
                 // Handle error state
                 if (message.isError) {
-                    messageCard.strokeWidth = resources.getDimensionPixelSize(R.dimen.error_stroke_width)
+                    messageCard.strokeWidth = itemView.context.resources.getDimensionPixelSize(R.dimen.error_stroke_width)
                     messageCard.strokeColor = ContextCompat.getColor(root.context, R.color.error_stroke)
                 } else {
                     messageCard.strokeWidth = 0

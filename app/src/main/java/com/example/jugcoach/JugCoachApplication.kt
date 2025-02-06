@@ -2,7 +2,8 @@ package com.example.jugcoach
 
 import android.app.Application
 import com.example.jugcoach.data.JugCoachDatabase
-import com.example.jugcoach.data.entity.Settings
+import com.example.jugcoach.data.entity.SettingType
+import com.example.jugcoach.data.entity.SettingCategory
 import com.example.jugcoach.data.importer.PatternImporter
 import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.CoroutineScope
@@ -23,21 +24,20 @@ class JugCoachApplication : Application() {
         applicationScope.launch {
             val database = JugCoachDatabase.getDatabase(this@JugCoachApplication)
             val settingsDao = database.settingsDao()
-            val settings = settingsDao.getSettings()
+            val patternsImported = settingsDao.getSettingValue("patterns_imported") == "true"
 
-            if (settings == null || !settings.patternsImported) {
+            if (!patternsImported) {
                 // Import patterns
                 val patternImporter = PatternImporter(this@JugCoachApplication, database.patternDao())
                 try {
                     val count = patternImporter.importLegacyPatterns()
                     // Update settings to mark patterns as imported
-                    settingsDao.insertSettings(
-                        Settings(
-                            id = 1, // Single settings instance
-                            patternsImported = true,
-                            llmApiKey = null,
-                            lastSync = null
-                        )
+                    settingsDao.setSettingValue(
+                        key = "patterns_imported",
+                        value = "true",
+                        type = SettingType.BOOLEAN,
+                        category = SettingCategory.SYSTEM,
+                        description = "Flag indicating if patterns have been imported"
                     )
                 } catch (e: Exception) {
                     e.printStackTrace()

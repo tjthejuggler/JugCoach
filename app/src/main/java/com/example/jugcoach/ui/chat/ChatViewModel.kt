@@ -5,6 +5,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.jugcoach.data.JugCoachDatabase
 import com.example.jugcoach.data.entity.Note
+import com.example.jugcoach.data.entity.NoteType
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -32,16 +33,17 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
 
     private fun loadHistory() {
         viewModelScope.launch {
-            val notes = noteDao.getAllNotes()
-            val messages = notes.map { note ->
-                ChatMessage(
-                    id = note.id,
-                    text = note.content,
-                    sender = if (note.isFromUser) ChatMessage.Sender.USER else ChatMessage.Sender.COACH,
-                    timestamp = note.timestamp
-                )
+            noteDao.getAllNotes().collect { notes ->
+                val messages = notes.map { note ->
+                    ChatMessage(
+                        id = note.id.toString(), // Keep toString() for ChatMessage
+                        text = note.content,
+                        sender = if (note.type == NoteType.COACHING_NOTE) ChatMessage.Sender.COACH else ChatMessage.Sender.USER,
+                        timestamp = note.createdAt
+                    )
+                }
+                _uiState.value = _uiState.value.copy(messages = messages)
             }
-            _uiState.value = _uiState.value.copy(messages = messages)
         }
     }
 
@@ -59,16 +61,18 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
             // Save user message to database
             noteDao.insertNote(
                 Note(
-                    id = userMessage.id,
+                    id = 0, // Let Room auto-generate
+                    title = "Chat Message",
                     content = userMessage.text,
-                    timestamp = userMessage.timestamp,
-                    isFromUser = true
+                    type = NoteType.CONVERSATION,
+                    tags = listOf("chat", "user"),
+                    metadata = "{\"messageId\": \"${userMessage.id}\"}"
                 )
             )
 
             // Get API key
-            val settings = settingsDao.getSettings()
-            if (settings?.llmApiKey.isNullOrEmpty()) {
+            val apiKey = settingsDao.getSettingValue("llm_api_key")
+            if (apiKey.isNullOrEmpty()) {
                 addMessage(
                     ChatMessage(
                         id = UUID.randomUUID().toString(),
@@ -99,12 +103,14 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
 
                 // Save coach message to database
                 noteDao.insertNote(
-                    Note(
-                        id = coachMessage.id,
-                        content = coachMessage.text,
-                        timestamp = coachMessage.timestamp,
-                        isFromUser = false
-                    )
+                Note(
+                    id = 0, // Let Room auto-generate
+                    title = "Coach Response",
+                    content = coachMessage.text,
+                    type = NoteType.COACHING_NOTE,
+                    tags = listOf("chat", "coach"),
+                    metadata = "{\"messageId\": \"${coachMessage.id}\"}"
+                )
                 )
             } catch (e: Exception) {
                 addMessage(

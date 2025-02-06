@@ -4,7 +4,8 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.jugcoach.data.JugCoachDatabase
-import com.example.jugcoach.data.entity.Settings
+import com.example.jugcoach.data.entity.SettingType
+import com.example.jugcoach.data.entity.SettingCategory
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -31,13 +32,17 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
 
     private fun loadSettings() {
         viewModelScope.launch {
-            val settings = settingsDao.getSettings()
-            val patterns = patternDao.getAllPatterns().value ?: emptyList()
+            val apiKey = settingsDao.getSettingValue("llm_api_key") ?: ""
             
-            _uiState.value = _uiState.value.copy(
-                apiKey = settings?.llmApiKey ?: "",
-                patternCount = patterns.size
-            )
+            // Update API key immediately
+            _uiState.value = _uiState.value.copy(apiKey = apiKey)
+            
+            // Collect pattern count updates
+            patternDao.getAllPatterns().collect { patterns ->
+                _uiState.value = _uiState.value.copy(
+                    patternCount = patterns.size
+                )
+            }
         }
     }
 
@@ -45,13 +50,13 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isSaving = true)
             try {
-                settingsDao.insertSettings(
-                    Settings(
-                        id = 1,
-                        llmApiKey = apiKey,
-                        patternsImported = settingsDao.getSettings()?.patternsImported ?: false,
-                        lastSync = null
-                    )
+                settingsDao.setSettingValue(
+                    key = "llm_api_key",
+                    value = apiKey,
+                    type = SettingType.STRING,
+                    category = SettingCategory.API_KEY,
+                    description = "API key for LLM service",
+                    isEncrypted = true
                 )
                 _uiState.value = _uiState.value.copy(
                     apiKey = apiKey,

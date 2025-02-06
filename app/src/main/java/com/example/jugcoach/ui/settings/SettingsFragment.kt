@@ -7,7 +7,7 @@ import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
-import com.example.jugcoach.BuildConfig
+import android.content.pm.PackageManager
 import com.example.jugcoach.databinding.FragmentSettingsBinding
 import com.google.android.material.snackbar.Snackbar
 import kotlinx.coroutines.flow.collectLatest
@@ -36,7 +36,8 @@ class SettingsFragment : Fragment() {
 
     private fun setupViews() {
         binding.apply {
-            versionText.text = "Version: ${BuildConfig.VERSION_NAME}"
+            val packageInfo = requireContext().packageManager.getPackageInfo(requireContext().packageName, 0)
+            versionText.text = "Version: ${packageInfo.versionName}"
             
             saveButton.setOnClickListener {
                 val apiKey = apiKeyInput.text?.toString() ?: ""
