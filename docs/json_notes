@@ -1,0 +1,84 @@
+1. Document the JSON Schema
+
+Create a concise document (or a summary string) that describes the structure of your JSON file. For example, you might include something like:
+
+    Pattern Object Structure:
+        name: The name of the juggling pattern.
+        difficulty: A numeric or descriptive indicator of how hard the pattern is.
+        siteswap: The juggling siteswap notation.
+        num: The number of objects involved.
+        explanation: A text explanation of the pattern.
+        gifUrl, video, url: Multimedia links demonstrating the pattern.
+        tags: An array of tags (e.g., "ss1", "asymmetric") for categorization.
+        prereqs: An array of pattern IDs or names that should be practiced before this pattern.
+        dependents: An array of pattern IDs or names that build upon this pattern.
+        pre-existing record: An object containing performance records like catches and date.
+
+Include this summary in your system prompt for the LLM so that it knows what the data looks like.
+2. Create Query Functions/Interfaces
+
+Instead of sending the full JSON to the LLM, write functions in your Kotlin project that can fetch and return only the specific data requested. For example:
+
+    Function Example:
+
+fun getPatternByName(name: String): Pattern? {
+    // Query the Room database for a pattern with the matching name.
+    // Return a simplified summary (or full details if needed) of the pattern.
+}
+
+Another Function:
+
+    fun getPatternsByTag(tag: String): List<Pattern> {
+        // Return a list of patterns that have the specified tag.
+    }
+
+Expose these functions as part of your internal “API” layer. When the LLM (through your system prompt and integration code) needs information, it can instruct your code to call the appropriate function and return only the necessary snippet.
+3. Integrate the Query Interface with the LLM
+
+In your system prompt for the LLM coach, include instructions on how it can query the data. For example:
+
+    "When you need to access information about a juggling pattern, use the available query functions. For example:
+
+        getPatternByName("Half Hector's Flow") returns details about that pattern.
+        getPatternsByTag("asymmetric") returns a list of patterns with the tag 'asymmetric'.
+
+    Do not attempt to load or process the entire JSON file at once. Instead, request only the specific information needed for your current decision-making process."
+
+This tells the LLM that it doesn’t need to see the full data dump; it only needs to work with the structure and call the provided functions to retrieve data as necessary.
+4. Provide a Code-Level Summary in the System Prompt
+
+As part of the system prompt for the LLM coach, add a section that outlines the structure of the JSON (as described above) and the available functions. For example:
+
+    "The Juggling Patterns database is structured as follows:
+    Pattern Object:
+
+        name: string
+        difficulty: string/number
+        siteswap: string
+        num: number
+        explanation: string
+        gifUrl, video, url: string (URLs)
+        tags: array of strings
+        prereqs, dependents, related: arrays of pattern identifiers
+        pre-existing record: object with catches and date
+
+    Available Query Functions:
+
+        getPatternByName(name: String): Returns details for the specified pattern.
+        getPatternsByTag(tag: String): Returns a list of patterns matching the tag.
+
+    Usage:
+    When you need specific information, instruct the system to call these functions rather than loading the entire database."**
+
+Summary
+
+    Document the Schema:
+    Provide a high-level description of the JSON layout in your system prompt/documentation.
+
+    Create Query Functions:
+    Write Kotlin functions that can return the needed parts of the data from your Room database, based on user queries or the LLM’s instructions.
+
+    Integrate in the System Prompt:
+    Include clear instructions in the system prompt for the LLM, detailing how it can request specific information via these functions, and remind it not to load the entire JSON at once.
+
+This approach ensures that the LLM remains lightweight in context while still having full access to the data it needs to make informed decisions.

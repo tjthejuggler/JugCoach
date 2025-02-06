@@ -1,0 +1,108 @@
+VI. Detailed To-Do List & Timeline
+A. Phase 1 (MVP) – Estimated Duration: 2-3 months
+
+    Project Setup & Architecture Design
+
+Set up a new Kotlin project in Android Studio.
+Establish the MVVM architecture and project module structure.
+Create the Room database schema for patterns, session logs, and notes.
+
+    Define data models (Pattern, Session, Note, Settings).
+
+Legacy Data Import
+
+Develop a JSON parser for the legacy juggling patterns.
+Map legacy fields to the new data models.
+
+    Create a simple UI to display the imported patterns.
+
+Basic Session Logging
+
+Implement a “Start Session” / “Stop Session” button.
+Log basic session data (start/stop time, selected pattern, catches, duration).
+
+    Create a simple form for self-reported inputs (e.g., mood, fatigue).
+
+Conversational UI & LLM Integration
+
+Build a basic chat screen supporting text input.
+Integrate voice input (using Android’s speech-to-text).
+Set up API key management in settings.
+Implement the LLM API call with a system prompt that includes basic context (e.g., “Your last session stats,” “Available patterns,” etc.).
+
+    Display LLM responses in the chat interface.
+
+Basic Analytics & Visualization
+
+Implement a simple dashboard screen that aggregates session data.
+Create basic charts (e.g., a line graph for catches over time) using an Android charting library.
+
+    Provide a “View Raw Data” screen.
+
+Settings & Data Export
+
+Develop a settings screen for API keys and preferences.
+
+    Implement a manual data export feature (export JSON).
+
+Testing & Feedback Loop
+
+Internal testing for data integrity, UI responsiveness, and LLM interactions.
+
+        Collect initial user feedback to adjust the MVP scope.
+
+B. Phase 2 – Estimated Duration: 3-4 months
+
+    Enhanced Session Logging & Contextual Data
+
+Expand the session log schema to include additional self-reported metrics and contextual data.
+Implement optional prompts for additional metrics (fatigue, environment, etc.).
+
+    Explore basic sensor data capture (if permissions are granted).
+
+Advanced Conversational Features
+
+Enable the coach to modify pattern metadata (tags, difficulty) during conversation.
+Store conversation notes and integrate them with session logs.
+
+    Develop mechanisms to record and differentiate between user- and coach-generated suggestions.
+
+Refined Analytics & Custom Dashboards
+
+Add options for customizable charts and dashboards.
+Implement periodic report generation (e.g., weekly summaries).
+
+    Create interactive chart features (drill-down on specific data points).
+
+Improved LLM Context Management
+
+Build a summarization module to condense historical data before sending context.
+Enhance the system prompt with detailed instructions for data read/write access.
+
+        Test using multiple API keys/models and document performance differences.
+
+C. Phase 3 – Estimated Duration: 4-6 months (Post-MVP)
+
+    Personalization & Coach Personas
+
+Develop options for switching coaching “personalities” and modes.
+Implement internal logging to track which suggestions are most effective.
+
+    Allow dynamic adjustment of the coach’s tone based on long-term performance.
+
+Wearable & Sensor Integration
+
+Implement sensor-based detection for start/stop events on the watch.
+
+    Integrate real-time performance metrics using available wearable sensors.
+
+Offline Mode & Deferred Sync
+
+Develop a local, rule-based coaching fallback for offline usage.
+
+    Create a robust syncing mechanism for when connectivity is restored.
+
+Cloud Backup & Extended Data APIs
+
+Integrate secure cloud backup for all user data.
+Expose RESTful APIs for potential third-party integrations or advanced analysis.
