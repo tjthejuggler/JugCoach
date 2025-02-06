@@ -10,13 +10,19 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
+import com.example.jugcoach.R
 import com.example.jugcoach.data.entity.Pattern
 import com.example.jugcoach.databinding.FragmentGalleryBinding
 import com.example.jugcoach.ui.adapters.PatternAdapter
+import com.google.android.material.chip.Chip
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
 class GalleryFragment : Fragment() {
+    companion object {
+        private const val TAG = "GalleryFragment"
+    }
     private var _binding: FragmentGalleryBinding? = null
     private val binding get() = _binding!!
     private lateinit var viewModel: GalleryViewModel
@@ -50,6 +56,56 @@ class GalleryFragment : Fragment() {
         binding.searchInput.doAfterTextChanged { text ->
             viewModel.updateSearchQuery(text?.toString() ?: "")
         }
+
+        binding.difficultyToggle.apply {
+            check(R.id.difficulty_all)
+            addOnButtonCheckedListener { _, checkedId, isChecked ->
+                if (isChecked) {
+                    val filter = when (checkedId) {
+                        R.id.difficulty_all -> DifficultyFilter.ALL
+                        R.id.difficulty_beginner -> DifficultyFilter.BEGINNER
+                        R.id.difficulty_advanced -> DifficultyFilter.ADVANCED
+                        else -> DifficultyFilter.ALL
+                    }
+                    viewModel.updateDifficultyFilter(filter)
+                }
+            }
+        }
+
+        binding.sortButton.setOnClickListener {
+            showSortDialog()
+        }
+    }
+
+    private fun showSortDialog() {
+        val items = arrayOf(
+            "Name (A-Z)" to SortOrder.NAME_ASC,
+            "Name (Z-A)" to SortOrder.NAME_DESC,
+            "Difficulty (Easy to Hard)" to SortOrder.DIFFICULTY_ASC,
+            "Difficulty (Hard to Easy)" to SortOrder.DIFFICULTY_DESC
+        )
+
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle("Sort By")
+            .setItems(items.map { it.first }.toTypedArray()) { _, which ->
+                viewModel.updateSortOrder(items[which].second)
+            }
+            .show()
+    }
+
+    private fun updateTagChips(tags: Set<String>, selectedTags: Set<String>) {
+        binding.tagGroup.removeAllViews()
+        tags.forEach { tag ->
+            val chip = Chip(context).apply {
+                text = tag
+                isCheckable = true
+                isChecked = tag in selectedTags
+                setOnCheckedChangeListener { _, _ ->
+                    viewModel.toggleTag(tag)
+                }
+            }
+            binding.tagGroup.addView(chip)
+        }
     }
 
     private fun observeUiState() {
@@ -74,6 +130,16 @@ class GalleryFragment : Fragment() {
             if (searchInput.text?.toString() != state.searchQuery) {
                 searchInput.setText(state.searchQuery)
             }
+
+            // Update difficulty toggle
+            when (state.selectedDifficulty) {
+                DifficultyFilter.ALL -> difficultyToggle.check(R.id.difficulty_all)
+                DifficultyFilter.BEGINNER -> difficultyToggle.check(R.id.difficulty_beginner)
+                DifficultyFilter.ADVANCED -> difficultyToggle.check(R.id.difficulty_advanced)
+            }
+
+            // Update tag chips
+            updateTagChips(state.availableTags, state.selectedTags)
         }
     }
 

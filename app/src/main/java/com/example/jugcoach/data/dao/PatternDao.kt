@@ -45,6 +45,9 @@ interface PatternDao {
     @Query("DELETE FROM patterns")
     suspend fun deleteAllPatterns()
 
+    @Query("SELECT * FROM patterns")
+    suspend fun getAllPatternsSync(): List<Pattern>
+
     @Transaction
     @Query("""
         SELECT p.* FROM patterns p

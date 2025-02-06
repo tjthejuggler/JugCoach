@@ -43,6 +43,14 @@ class SettingsFragment : Fragment() {
                 val apiKey = apiKeyInput.text?.toString() ?: ""
                 viewModel.updateApiKey(apiKey)
             }
+
+            importButton.setOnClickListener {
+                viewModel.importPatterns()
+            }
+
+            exportButton.setOnClickListener {
+                viewModel.exportPatterns()
+            }
         }
     }
 
@@ -63,6 +71,12 @@ class SettingsFragment : Fragment() {
 
             patternsCountText.text = "Patterns: ${state.patternCount}"
             saveButton.isEnabled = !state.isSaving
+            importButton.isEnabled = !state.isImporting && !state.isExporting
+            exportButton.isEnabled = !state.isImporting && !state.isExporting
+
+            // Show loading indicators
+            importButton.text = if (state.isImporting) "Importing..." else "Import Patterns"
+            exportButton.text = if (state.isExporting) "Exporting..." else "Export Patterns"
 
             state.message?.let { message ->
                 Snackbar.make(root, message, Snackbar.LENGTH_SHORT).show()

@@ -1,6 +1,7 @@
 package com.example.jugcoach.data.converter
 
 import com.example.jugcoach.data.dto.PatternDTO
+import com.example.jugcoach.data.dto.RecordDTO
 import com.example.jugcoach.data.entity.Pattern
 import com.google.gson.Gson
 import com.google.gson.JsonObject
@@ -50,5 +51,32 @@ object PatternConverter {
 
     fun fromJsonArray(json: String): List<PatternDTO> {
         return gson.fromJson(json, Array<PatternDTO>::class.java).toList()
+    }
+
+    fun toJson(patterns: List<Pattern>): String {
+        val dtos = patterns.map { pattern ->
+            val properties = gson.fromJson(pattern.properties, JsonObject::class.java)
+            PatternDTO(
+                name = pattern.name,
+                difficulty = pattern.difficulty,
+                siteswap = properties.get("siteswap")?.asString,
+                numberOfObjects = properties.get("numberOfObjects")?.asInt,
+                explanation = pattern.description,
+                gifUrl = properties.get("gifUrl")?.asString,
+                video = properties.get("video")?.asString,
+                url = properties.get("url")?.asString,
+                tags = pattern.tags,
+                prerequisites = pattern.prerequisites,
+                dependents = pattern.dependents,
+                record = properties.get("record")?.asJsonObject?.let { recordObj ->
+                    val catches = recordObj.get("catches")?.asInt
+                    val date = recordObj.get("date")?.asString
+                    if (catches != null || date != null) {
+                        RecordDTO(catches, date)
+                    } else null
+                }
+            )
+        }
+        return gson.toJson(dtos)
     }
 }
