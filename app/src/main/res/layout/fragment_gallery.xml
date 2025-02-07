@@ -37,40 +37,19 @@
             android:orientation="horizontal"
             android:layout_marginTop="8dp">
 
-            <com.google.android.material.button.MaterialButtonToggleGroup
-                android:id="@+id/difficulty_toggle"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginEnd="8dp"
-                app:singleSelection="true">
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/difficulty_all"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="All"
-                    style="?attr/materialButtonOutlinedStyle"/>
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/difficulty_beginner"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Beginner"
-                    style="?attr/materialButtonOutlinedStyle"/>
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/difficulty_advanced"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Advanced"
-                    style="?attr/materialButtonOutlinedStyle"/>
-
-            </com.google.android.material.button.MaterialButtonToggleGroup>
-
             <Space
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"/>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/filter_button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Filter"
+                android:layout_marginEnd="8dp"
+                app:icon="@android:drawable/ic_menu_search"
+                style="?attr/materialButtonOutlinedStyle"/>
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/sort_button"

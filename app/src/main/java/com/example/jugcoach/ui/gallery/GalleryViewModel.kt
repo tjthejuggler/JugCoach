@@ -14,36 +14,11 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 
-enum class SortOrder {
-    NAME_ASC, NAME_DESC,
-    DIFFICULTY_ASC, DIFFICULTY_DESC
-}
-
-enum class DifficultyFilter {
-    ALL, BEGINNER, ADVANCED;
-
-    fun matches(difficulty: String?): Boolean = when (this) {
-        ALL -> true
-        BEGINNER -> difficulty?.toIntOrNull()?.let { it in 1..4 } ?: false
-        ADVANCED -> difficulty?.toIntOrNull()?.let { it >= 5 } ?: false
-    }
-}
-
-private data class FilterState(
-    val patterns: List<Pattern>,
-    val query: String,
-    val difficulty: DifficultyFilter,
-    val tags: Set<String>,
-    val order: SortOrder,
-    val allTags: Set<String>
-)
-
 data class GalleryUiState(
     val patterns: List<Pattern> = emptyList(),
     val isLoading: Boolean = true,
     val searchQuery: String = "",
-    val selectedDifficulty: DifficultyFilter = DifficultyFilter.ALL,
-    val selectedTags: Set<String> = emptySet(),
+    val filterOptions: FilterOptions = FilterOptions(),
     val availableTags: Set<String> = emptySet(),
     val sortOrder: SortOrder = SortOrder.NAME_ASC
 )
@@ -51,8 +26,7 @@ data class GalleryUiState(
 class GalleryViewModel(application: Application) : AndroidViewModel(application) {
     private val patternDao = JugCoachDatabase.getDatabase(application).patternDao()
     private val searchQuery = MutableStateFlow("")
-    private val selectedDifficulty = MutableStateFlow(DifficultyFilter.ALL)
-    private val selectedTags = MutableStateFlow<Set<String>>(emptySet())
+    private val filterOptions = MutableStateFlow(FilterOptions())
     private val sortOrder = MutableStateFlow(SortOrder.NAME_ASC)
 
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -80,13 +54,29 @@ class GalleryViewModel(application: Application) : AndroidViewModel(application)
             initialValue = emptySet()
         )
 
-    private fun filterPatterns(
-        patterns: List<Pattern>,
-        difficulty: DifficultyFilter,
-        tags: Set<String>
-    ): List<Pattern> = patterns.filter { pattern ->
-        difficulty.matches(pattern.difficulty) &&
-        (tags.isEmpty() || pattern.tags.any { it in tags })
+    private fun filterPatterns(patterns: List<Pattern>, options: FilterOptions): List<Pattern> = patterns.filter { pattern ->
+        val matchesNumBalls = options.numBalls.isEmpty() || pattern.num in options.numBalls
+        val matchesDifficulty = pattern.difficulty?.toFloatOrNull()?.let { diff ->
+            diff >= options.difficultyRange.first && diff <= options.difficultyRange.second
+        } ?: true
+        val matchesTags = options.tags.isEmpty() || pattern.tags.any { it in options.tags }
+        val matchesCatches = when {
+            options.catchesRange.first != null && options.catchesRange.second != null ->
+                pattern.record?.catches?.let { catches ->
+                    catches >= options.catchesRange.first!! && catches <= options.catchesRange.second!!
+                } ?: false
+            options.catchesRange.first != null ->
+                pattern.record?.catches?.let { catches ->
+                    catches >= options.catchesRange.first!!
+                } ?: false
+            options.catchesRange.second != null ->
+                pattern.record?.catches?.let { catches ->
+                    catches <= options.catchesRange.second!!
+                } ?: false
+            else -> true
+        }
+
+        matchesNumBalls && matchesDifficulty && matchesTags && matchesCatches
     }
 
     private fun sortPatterns(
@@ -107,67 +97,32 @@ class GalleryViewModel(application: Application) : AndroidViewModel(application)
     private val combinedState = combine(
         patterns,
         searchQuery,
-        selectedDifficulty
-    ) { p, q, d -> Triple(p, q, d) }
-
-    private val combinedFilters = combine(
-        selectedTags,
+        filterOptions,
         sortOrder,
         availableTags
-    ) { t, o, a -> Triple(t, o, a) }
-
-    val uiState: StateFlow<GalleryUiState> = combine(
-        combinedState,
-        combinedFilters
-    ) { state, filters ->
-        val patternsList = state.first
-        val query = state.second
-        val difficulty = state.third
-        val tags = filters.first
-        val order = filters.second
-        val allTags = filters.third
-        FilterState(
-            patterns = patternsList,
-            query = query,
-            difficulty = difficulty,
-            tags = tags,
-            order = order,
-            allTags = allTags
-        )
-    }.map { state ->
-        val filteredPatterns = filterPatterns(state.patterns, state.difficulty, state.tags)
-        val sortedPatterns = sortPatterns(filteredPatterns, state.order)
+    ) { p, q, f, o, a -> 
         GalleryUiState(
-            patterns = sortedPatterns,
+            patterns = sortPatterns(filterPatterns(p, f), o),
             isLoading = false,
-            searchQuery = state.query,
-            selectedDifficulty = state.difficulty,
-            selectedTags = state.tags,
-            availableTags = state.allTags,
-            sortOrder = state.order
+            searchQuery = q,
+            filterOptions = f,
+            availableTags = a,
+            sortOrder = o
         )
-    }.stateIn(
+    }
+
+    val uiState: StateFlow<GalleryUiState> = combinedState.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = GalleryUiState()
     )
 
-
     fun updateSearchQuery(query: String) {
         searchQuery.value = query
     }
 
-    fun updateDifficultyFilter(filter: DifficultyFilter) {
-        selectedDifficulty.value = filter
-    }
-
-    fun toggleTag(tag: String) {
-        val current = selectedTags.value
-        selectedTags.value = if (tag in current) {
-            current - tag
-        } else {
-            current + tag
-        }
+    fun updateFilters(options: FilterOptions) {
+        filterOptions.value = options
     }
 
     fun updateSortOrder(order: SortOrder) {

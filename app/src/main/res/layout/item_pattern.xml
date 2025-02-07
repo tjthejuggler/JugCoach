@@ -22,14 +22,37 @@
             app:layout_constraintTop_toTopOf="parent"
             tools:text="Cascade" />
 
-        <TextView
-            android:id="@+id/pattern_difficulty"
+        <LinearLayout
+            android:id="@+id/pattern_info"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textAppearance="?attr/textAppearanceBody2"
+            android:orientation="vertical"
+            android:gravity="end"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            tools:text="Difficulty: 1" />
+            app:layout_constraintTop_toTopOf="parent">
+
+            <TextView
+                android:id="@+id/pattern_difficulty"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textAppearance="?attr/textAppearanceBody2"
+                tools:text="Difficulty: 1" />
+
+            <TextView
+                android:id="@+id/pattern_balls"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textAppearance="?attr/textAppearanceBody2"
+                tools:text="Balls: 3" />
+
+            <TextView
+                android:id="@+id/pattern_record"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textAppearance="?attr/textAppearanceBody2"
+                tools:text="Record: 50 catches" />
+
+        </LinearLayout>
 
         <TextView
             android:id="@+id/pattern_description"
@@ -43,15 +66,6 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/pattern_name"
             tools:text="The basic three ball juggling pattern..." />
-
-        <com.google.android.material.chip.ChipGroup
-            android:id="@+id/pattern_tags"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/pattern_description" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 

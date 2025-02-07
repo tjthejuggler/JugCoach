@@ -1,4 +1,4 @@
-package com.example.jugcoach.ui.adapters
+    package com.example.jugcoach.ui.adapters
 
 import android.view.LayoutInflater
 import android.view.ViewGroup
@@ -35,17 +35,11 @@ class PatternAdapter(
             binding.apply {
                 patternName.text = pattern.name
                 patternDescription.text = pattern.explanation
-                patternDifficulty.text = pattern.difficulty?.let { "Difficulty: $it" } ?: ""
-
-                // Clear existing chips and add new ones
-                patternTags.removeAllViews()
-                pattern.tags.forEach { tag ->
-                    val chip = Chip(root.context).apply {
-                        text = tag
-                        isClickable = false
-                    }
-                    patternTags.addView(chip)
-                }
+                
+                // Show pattern info
+                patternDifficulty.text = pattern.difficulty?.let { "Difficulty: $it" } ?: "Difficulty: -"
+                patternBalls.text = pattern.num?.let { "Balls: $it" } ?: "Balls: -"
+                patternRecord.text = pattern.record?.let { "Record: ${it.catches} catches" } ?: "Record: -"
 
                 root.setOnClickListener { onPatternClick(pattern) }
             }
