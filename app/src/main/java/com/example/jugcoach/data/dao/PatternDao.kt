@@ -12,9 +12,9 @@ interface PatternDao {
     @Query("""
         SELECT * FROM patterns
         WHERE name LIKE '%' || :query || '%'
-        OR description LIKE '%' || :query || '%'
+        OR explanation LIKE '%' || :query || '%'
         OR EXISTS (
-            SELECT 1 FROM json_each(json_array(tags))
+            SELECT 1 FROM json_each(tags)
             WHERE value LIKE '%' || :query || '%'
         )
     """)
@@ -25,7 +25,7 @@ interface PatternDao {
 
     @Query("""
         SELECT p.* FROM patterns p
-        JOIN json_each(json_array(p.tags)) t
+        JOIN json_each(p.tags) t
         WHERE t.value = :tag
     """)
     fun getPatternsByTag(tag: String): Flow<List<Pattern>>
@@ -60,8 +60,8 @@ interface PatternDao {
 
     @Query("""
         SELECT * FROM patterns
-        WHERE difficulty <= (
-            SELECT MAX(difficulty) FROM patterns
+        WHERE CAST(difficulty AS INTEGER) <= (
+            SELECT MAX(CAST(difficulty AS INTEGER)) FROM patterns
             WHERE id IN (
                 SELECT patternId FROM sessions
                 WHERE catches >= 10
@@ -73,7 +73,7 @@ interface PatternDao {
             SELECT patternId FROM sessions
             GROUP BY patternId
         )
-        ORDER BY difficulty ASC
+        ORDER BY CAST(difficulty AS INTEGER) ASC
         LIMIT 1
     """)
     fun suggestNextPattern(): Flow<Pattern?>

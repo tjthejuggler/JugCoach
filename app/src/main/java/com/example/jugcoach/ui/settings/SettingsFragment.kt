@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
@@ -17,6 +18,10 @@ class SettingsFragment : Fragment() {
     private var _binding: FragmentSettingsBinding? = null
     private val binding get() = _binding!!
     private lateinit var viewModel: SettingsViewModel
+    
+    private val getContent = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        uri?.let { viewModel.importPatternsFromUri(it) }
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -45,7 +50,7 @@ class SettingsFragment : Fragment() {
             }
 
             importButton.setOnClickListener {
-                viewModel.importPatterns()
+                getContent.launch("application/json")
             }
 
             exportButton.setOnClickListener {

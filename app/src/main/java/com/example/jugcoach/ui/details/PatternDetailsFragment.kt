@@ -128,7 +128,7 @@ class PatternDetailsFragment : Fragment() {
     private fun showPattern(pattern: Pattern) {
         binding.apply {
             patternName.text = pattern.name
-            patternDescription.text = pattern.description
+            patternDescription.text = pattern.explanation
             
             // Set difficulty chip
             pattern.difficulty?.let { difficulty ->

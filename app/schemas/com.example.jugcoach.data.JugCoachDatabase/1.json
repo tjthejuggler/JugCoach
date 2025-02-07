@@ -2,11 +2,11 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "b4a9dda0d292fde830c6d1343cb93c5e",
+    "identityHash": "261e5e65c4572a926f2298481b33751d",
     "entities": [
       {
         "tableName": "patterns",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `description` TEXT, `difficulty` INTEGER, `tags` TEXT NOT NULL, `prerequisites` TEXT NOT NULL, `dependents` TEXT NOT NULL, `properties` TEXT NOT NULL, PRIMARY KEY(`id`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `difficulty` TEXT, `siteswap` TEXT, `num` TEXT, `explanation` TEXT, `gifUrl` TEXT, `video` TEXT, `url` TEXT, `tags` TEXT NOT NULL, `prerequisites` TEXT NOT NULL, `dependents` TEXT NOT NULL, `related` TEXT NOT NULL, `record_catches` INTEGER, `record_date` INTEGER, PRIMARY KEY(`id`))",
         "fields": [
           {
             "fieldPath": "id",
@@ -21,15 +21,45 @@
             "notNull": true
           },
           {
-            "fieldPath": "description",
-            "columnName": "description",
+            "fieldPath": "difficulty",
+            "columnName": "difficulty",
             "affinity": "TEXT",
             "notNull": false
           },
           {
-            "fieldPath": "difficulty",
-            "columnName": "difficulty",
-            "affinity": "INTEGER",
+            "fieldPath": "siteswap",
+            "columnName": "siteswap",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "num",
+            "columnName": "num",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "explanation",
+            "columnName": "explanation",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "gifUrl",
+            "columnName": "gifUrl",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "video",
+            "columnName": "video",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "url",
+            "columnName": "url",
+            "affinity": "TEXT",
             "notNull": false
           },
           {
@@ -51,10 +81,22 @@
             "notNull": true
           },
           {
-            "fieldPath": "properties",
-            "columnName": "properties",
+            "fieldPath": "related",
+            "columnName": "related",
             "affinity": "TEXT",
             "notNull": true
+          },
+          {
+            "fieldPath": "record.catches",
+            "columnName": "record_catches",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "record.date",
+            "columnName": "record_date",
+            "affinity": "INTEGER",
+            "notNull": false
           }
         ],
         "primaryKey": {
@@ -338,7 +380,7 @@
     "views": [],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'b4a9dda0d292fde830c6d1343cb93c5e')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '261e5e65c4572a926f2298481b33751d')"
     ]
   }
 }

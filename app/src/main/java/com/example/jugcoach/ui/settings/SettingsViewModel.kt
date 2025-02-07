@@ -1,6 +1,7 @@
 package com.example.jugcoach.ui.settings
 
 import android.app.Application
+import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.jugcoach.data.JugCoachDatabase
@@ -82,11 +83,11 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         _uiState.value = _uiState.value.copy(message = null)
     }
 
-    fun importPatterns() {
+    fun importPatternsFromUri(uri: Uri) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isImporting = true)
             try {
-                val count = patternImporter.importLegacyPatterns()
+                val count = patternImporter.importFromUri(uri)
                 _uiState.value = _uiState.value.copy(
                     message = "Successfully imported $count patterns",
                     isImporting = false

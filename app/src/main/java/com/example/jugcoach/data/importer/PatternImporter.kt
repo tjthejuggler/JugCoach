@@ -1,6 +1,7 @@
 package com.example.jugcoach.data.importer
 
 import android.content.Context
+import android.net.Uri
 import com.example.jugcoach.data.converter.PatternConverter
 import com.example.jugcoach.data.dao.PatternDao
 import com.example.jugcoach.data.dto.PatternDTO
@@ -26,6 +27,38 @@ class PatternImporter(
      * Imports patterns from the legacy JSON file in assets
      * @return Number of patterns imported
      */
+    suspend fun importFromUri(uri: Uri): Int = withContext(Dispatchers.IO) {
+        var patternsImported = 0
+
+        try {
+            context.contentResolver.openInputStream(uri)?.use { inputStream ->
+                val reader = BufferedReader(InputStreamReader(inputStream))
+                val content = reader.readText()
+                try {
+                    // Try to parse as tricks wrapper first
+                    val patterns = PatternConverter.fromJsonTricksWrapper(content)
+                    
+                    // Insert patterns in batches
+                    patterns.chunked(BATCH_SIZE).forEach { batch ->
+                        patternDao.insertPatterns(batch.map(PatternConverter::toEntity))
+                        patternsImported += batch.size
+                    }
+                } catch (e: Exception) {
+                    // If that fails, try parsing as array
+                    val patterns = PatternConverter.fromJsonArray(content)
+                    patterns.chunked(BATCH_SIZE).forEach { batch ->
+                        patternDao.insertPatterns(batch.map(PatternConverter::toEntity))
+                        patternsImported += batch.size
+                    }
+                }
+            } ?: throw ImportException("Failed to open input stream")
+        } catch (e: Exception) {
+            throw ImportException("Failed to import patterns: ${e.message}", e)
+        }
+
+        patternsImported
+    }
+
     suspend fun importLegacyPatterns(): Int = withContext(Dispatchers.IO) {
         var patternsImported = 0
 

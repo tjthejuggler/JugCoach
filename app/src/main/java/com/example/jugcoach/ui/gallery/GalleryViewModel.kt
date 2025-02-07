@@ -22,10 +22,10 @@ enum class SortOrder {
 enum class DifficultyFilter {
     ALL, BEGINNER, ADVANCED;
 
-    fun matches(difficulty: Int?): Boolean = when (this) {
+    fun matches(difficulty: String?): Boolean = when (this) {
         ALL -> true
-        BEGINNER -> difficulty != null && difficulty <= 3
-        ADVANCED -> difficulty != null && difficulty > 3
+        BEGINNER -> difficulty?.toIntOrNull()?.let { it in 1..4 } ?: false
+        ADVANCED -> difficulty?.toIntOrNull()?.let { it >= 5 } ?: false
     }
 }
 
@@ -95,8 +95,13 @@ class GalleryViewModel(application: Application) : AndroidViewModel(application)
     ): List<Pattern> = when (order) {
         SortOrder.NAME_ASC -> patterns.sortedBy { it.name }
         SortOrder.NAME_DESC -> patterns.sortedByDescending { it.name }
-        SortOrder.DIFFICULTY_ASC -> patterns.sortedBy { it.difficulty }
-        SortOrder.DIFFICULTY_DESC -> patterns.sortedByDescending { it.difficulty }
+        SortOrder.DIFFICULTY_ASC -> patterns.sortedWith(compareBy(
+            { it.difficulty?.toIntOrNull() ?: Int.MAX_VALUE },
+            { it.name }
+        ))
+        SortOrder.DIFFICULTY_DESC -> patterns.sortedWith(compareByDescending<Pattern> { 
+            it.difficulty?.toIntOrNull() ?: Int.MIN_VALUE 
+        }.thenBy { it.name })
     }
 
     private val combinedState = combine(

@@ -34,7 +34,7 @@ class PatternAdapter(
         fun bind(pattern: Pattern) {
             binding.apply {
                 patternName.text = pattern.name
-                patternDescription.text = pattern.description
+                patternDescription.text = pattern.explanation
                 patternDifficulty.text = pattern.difficulty?.let { "Difficulty: $it" } ?: ""
 
                 // Clear existing chips and add new ones

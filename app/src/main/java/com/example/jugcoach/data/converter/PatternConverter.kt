@@ -2,51 +2,55 @@ package com.example.jugcoach.data.converter
 
 import com.example.jugcoach.data.dto.PatternDTO
 import com.example.jugcoach.data.dto.RecordDTO
+import com.example.jugcoach.data.dto.TricksWrapper
 import com.example.jugcoach.data.entity.Pattern
+import com.example.jugcoach.data.entity.Record
 import com.google.gson.Gson
-import com.google.gson.JsonObject
 import java.util.UUID
 
 /**
- * Converts legacy pattern data to Room entity format
+ * Converts pattern data between DTO and Room entity formats
  */
 object PatternConverter {
     private val gson = Gson()
 
     fun toEntity(dto: PatternDTO): Pattern {
-        // Create dynamic properties object
-        val properties = JsonObject().apply {
-            // Add siteswap if present
-            dto.siteswap?.let { addProperty("siteswap", it) }
-            // Add number of objects if present
-            dto.numberOfObjects?.let { addProperty("numberOfObjects", it) }
-            // Add multimedia links if present
-            dto.gifUrl?.let { addProperty("gifUrl", it) }
-            dto.video?.let { addProperty("video", it) }
-            dto.url?.let { addProperty("url", it) }
-            // Add record if present
-            dto.record?.let {
-                val recordObj = JsonObject()
-                it.catches?.let { catches -> recordObj.addProperty("catches", catches) }
-                it.date?.let { date -> recordObj.addProperty("date", date) }
-                add("record", recordObj)
-            }
-        }
-
         return Pattern(
-            id = UUID.randomUUID().toString(), // Generate unique ID for new patterns
+            id = UUID.randomUUID().toString(),
             name = dto.name,
-            description = dto.explanation,
             difficulty = dto.difficulty,
+            siteswap = dto.siteswap,
+            num = dto.numberOfObjects?.toString(),
+            explanation = dto.explanation,
+            gifUrl = dto.gifUrl,
+            video = dto.video,
+            url = dto.url,
             tags = dto.tags ?: emptyList(),
             prerequisites = dto.prerequisites ?: emptyList(),
             dependents = dto.dependents ?: emptyList(),
-            properties = gson.toJson(properties)
+            related = emptyList(), // Not present in DTO yet
+            record = dto.record?.let { recordDto ->
+                Record(
+                    catches = recordDto.catches ?: 0,
+                    date = recordDto.date?.let { 
+                        try {
+                            it.toLong()
+                        } catch (e: NumberFormatException) {
+                            System.currentTimeMillis()
+                        }
+                    } ?: System.currentTimeMillis()
+                )
+            }
         )
     }
 
     fun fromJson(json: String): PatternDTO {
         return gson.fromJson(json, PatternDTO::class.java)
+    }
+
+    fun fromJsonTricksWrapper(json: String): List<PatternDTO> {
+        val wrapper = gson.fromJson(json, TricksWrapper::class.java)
+        return wrapper.tricks.values.toList()
     }
 
     fun fromJsonArray(json: String): List<PatternDTO> {
@@ -55,25 +59,23 @@ object PatternConverter {
 
     fun toJson(patterns: List<Pattern>): String {
         val dtos = patterns.map { pattern ->
-            val properties = gson.fromJson(pattern.properties, JsonObject::class.java)
             PatternDTO(
                 name = pattern.name,
                 difficulty = pattern.difficulty,
-                siteswap = properties.get("siteswap")?.asString,
-                numberOfObjects = properties.get("numberOfObjects")?.asInt,
-                explanation = pattern.description,
-                gifUrl = properties.get("gifUrl")?.asString,
-                video = properties.get("video")?.asString,
-                url = properties.get("url")?.asString,
+                siteswap = pattern.siteswap,
+                numberOfObjects = pattern.num?.toIntOrNull(),
+                explanation = pattern.explanation,
+                gifUrl = pattern.gifUrl,
+                video = pattern.video,
+                url = pattern.url,
                 tags = pattern.tags,
                 prerequisites = pattern.prerequisites,
                 dependents = pattern.dependents,
-                record = properties.get("record")?.asJsonObject?.let { recordObj ->
-                    val catches = recordObj.get("catches")?.asInt
-                    val date = recordObj.get("date")?.asString
-                    if (catches != null || date != null) {
-                        RecordDTO(catches, date)
-                    } else null
+                record = pattern.record?.let { record ->
+                    RecordDTO(
+                        catches = record.catches,
+                        date = record.date.toString()
+                    )
                 }
             )
         }
