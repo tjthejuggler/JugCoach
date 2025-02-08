@@ -39,7 +39,7 @@ class PatternAdapter(
                 // Show pattern info
                 patternDifficulty.text = pattern.difficulty?.let { "Difficulty: $it" } ?: "Difficulty: -"
                 patternBalls.text = pattern.num?.let { "Balls: $it" } ?: "Balls: -"
-                patternRecord.text = pattern.record?.let { "Record: ${it.catches} catches" } ?: "Record: -"
+                patternRecord.text = pattern.record?.let { "Record: ${it.catches}c" } ?: "Record: -"
 
                 root.setOnClickListener { onPatternClick(pattern) }
             }

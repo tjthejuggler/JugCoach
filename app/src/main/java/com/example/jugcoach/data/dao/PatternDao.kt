@@ -13,10 +13,7 @@ interface PatternDao {
         SELECT * FROM patterns
         WHERE name LIKE '%' || :query || '%'
         OR explanation LIKE '%' || :query || '%'
-        OR EXISTS (
-            SELECT 1 FROM json_each(tags)
-            WHERE value LIKE '%' || :query || '%'
-        )
+        OR tags LIKE '%' || :query || '%'
     """)
     fun searchPatterns(query: String): Flow<List<Pattern>>
 
@@ -24,9 +21,8 @@ interface PatternDao {
     suspend fun getPatternById(id: String): Pattern?
 
     @Query("""
-        SELECT p.* FROM patterns p
-        JOIN json_each(p.tags) t
-        WHERE t.value = :tag
+        SELECT * FROM patterns
+        WHERE tags LIKE '%"' || :tag || '"%'
     """)
     fun getPatternsByTag(tag: String): Flow<List<Pattern>>
 

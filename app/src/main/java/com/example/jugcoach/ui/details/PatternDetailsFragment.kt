@@ -1,5 +1,7 @@
 package com.example.jugcoach.ui.details
 
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -34,6 +36,10 @@ class PatternDetailsFragment : Fragment() {
     }
     
     private val dependentsAdapter = PatternAdapter { pattern ->
+        navigateToPattern(pattern.id)
+    }
+    
+    private val relatedAdapter = PatternAdapter { pattern ->
         navigateToPattern(pattern.id)
     }
 
@@ -79,6 +85,7 @@ class PatternDetailsFragment : Fragment() {
     private fun setupRecyclerViews() {
         binding.prerequisitesList.adapter = prerequisitesAdapter
         binding.dependentsList.adapter = dependentsAdapter
+        binding.relatedList.adapter = relatedAdapter
     }
 
     private fun setupFab() {
@@ -117,6 +124,12 @@ class PatternDetailsFragment : Fragment() {
                         binding.dependentsLabel.isVisible = patterns.isNotEmpty()
                     }
                 }
+                launch {
+                    viewModel.related.collect { patterns ->
+                        relatedAdapter.submitList(patterns)
+                        binding.relatedLabel.isVisible = patterns.isNotEmpty()
+                    }
+                }
             }
         }
     }
@@ -136,6 +149,44 @@ class PatternDetailsFragment : Fragment() {
                 difficultyChip.isVisible = true
             } ?: run {
                 difficultyChip.isVisible = false
+            }
+
+            // Set number of balls chip
+            pattern.num?.let { num ->
+                numChip.text = getString(R.string.balls_format, num)
+                numChip.isVisible = true
+            } ?: run {
+                numChip.isVisible = false
+            }
+
+            // Set siteswap chip
+            pattern.siteswap?.let { siteswap ->
+                siteswapChip.text = siteswap
+                siteswapChip.isVisible = true
+            } ?: run {
+                siteswapChip.isVisible = false
+            }
+
+            // Set video button
+            pattern.video?.let { videoUrl ->
+                videoButton.isVisible = true
+                videoButton.setOnClickListener {
+                    // Open video URL in browser
+                    startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(videoUrl)))
+                }
+            } ?: run {
+                videoButton.isVisible = false
+            }
+
+            // Set URL button
+            pattern.url?.let { url ->
+                urlButton.isVisible = true
+                urlButton.setOnClickListener {
+                    // Open URL in browser
+                    startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+                }
+            } ?: run {
+                urlButton.isVisible = false
             }
 
             // Create tag chips

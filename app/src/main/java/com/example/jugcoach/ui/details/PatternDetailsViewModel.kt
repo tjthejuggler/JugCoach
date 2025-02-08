@@ -29,6 +29,9 @@ class PatternDetailsViewModel @Inject constructor(
     private val _dependents = MutableStateFlow<List<Pattern>>(emptyList())
     val dependents = _dependents.asStateFlow()
 
+    private val _related = MutableStateFlow<List<Pattern>>(emptyList())
+    val related = _related.asStateFlow()
+
     init {
         loadPattern()
     }
@@ -61,6 +64,12 @@ class PatternDetailsViewModel @Inject constructor(
             patternDao.getPatternById(id)
         }
         _dependents.value = dependents
+
+        // Load related patterns
+        val related = pattern.related.mapNotNull { id ->
+            patternDao.getPatternById(id)
+        }
+        _related.value = related
     }
 
     fun updatePattern(updatedPattern: Pattern) {

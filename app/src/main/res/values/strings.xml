@@ -14,7 +14,7 @@
     <string name="menu_chat">Chat with Coach</string>
     
     <!-- Pattern Details -->
-    <string name="difficulty_format">Difficulty: %d</string>
+    <string name="difficulty_format">Difficulty: %s</string>
     <string name="delete_pattern_title">Delete Pattern</string>
     <string name="delete_pattern_message">Are you sure you want to delete this pattern? This action cannot be undone.</string>
     <string name="delete">Delete</string>
@@ -25,4 +25,12 @@
     <string name="pattern_difficulty">Difficulty</string>
     <string name="pattern_tags">Tags (comma separated)</string>
     <string name="save">Save</string>
+
+    <!-- Pattern Details Additional -->
+    <string name="balls_format">%s balls</string>
+    <string name="watch_video">Watch Video</string>
+    <string name="learn_more">Learn More</string>
+    <string name="prerequisites">Prerequisites</string>
+    <string name="dependent_patterns">Dependent Patterns</string>
+    <string name="related_patterns">Related Patterns</string>
 </resources>
