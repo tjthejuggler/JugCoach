@@ -33,4 +33,7 @@
     <string name="prerequisites">Prerequisites</string>
     <string name="dependent_patterns">Dependent Patterns</string>
     <string name="related_patterns">Related Patterns</string>
+    <string name="personal_record">Personal Record</string>
+    <string name="catches_format">%d catches</string>
+    <string name="pattern_animation">Pattern animation</string>
 </resources>

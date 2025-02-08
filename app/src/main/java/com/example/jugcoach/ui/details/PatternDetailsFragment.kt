@@ -2,10 +2,14 @@ package com.example.jugcoach.ui.details
 
 import android.content.Intent
 import android.net.Uri
+import android.text.format.DateFormat
+import com.bumptech.glide.Glide
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.animation.RotateAnimation
+import android.view.animation.Animation
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
@@ -58,6 +62,7 @@ class PatternDetailsFragment : Fragment() {
         setupToolbar()
         setupRecyclerViews()
         setupFab()
+        setupCollapsibleSections()
         observeUiState()
         observeRelatedPatterns()
     }
@@ -88,6 +93,38 @@ class PatternDetailsFragment : Fragment() {
         binding.relatedList.adapter = relatedAdapter
     }
 
+    private fun setupCollapsibleSections() {
+        binding.apply {
+            prerequisitesHeader.setOnClickListener {
+                toggleSection(prerequisitesList, prerequisitesExpandIcon)
+            }
+            dependentsHeader.setOnClickListener {
+                toggleSection(dependentsList, dependentsExpandIcon)
+            }
+            relatedHeader.setOnClickListener {
+                toggleSection(relatedList, relatedExpandIcon)
+            }
+        }
+    }
+
+    private fun toggleSection(recyclerView: View, icon: View) {
+        val wasExpanded = recyclerView.isVisible
+        recyclerView.isVisible = !wasExpanded
+
+        val fromDegrees = if (wasExpanded) 180f else 0f
+        val toDegrees = if (wasExpanded) 0f else 180f
+
+        val rotate = RotateAnimation(
+            fromDegrees, toDegrees,
+            Animation.RELATIVE_TO_SELF, 0.5f,
+            Animation.RELATIVE_TO_SELF, 0.5f
+        ).apply {
+            duration = 300
+            fillAfter = true
+        }
+        icon.startAnimation(rotate)
+    }
+
     private fun setupFab() {
         binding.editFab.setOnClickListener {
             // TODO: Implement edit dialog
@@ -114,20 +151,32 @@ class PatternDetailsFragment : Fragment() {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch {
                     viewModel.prerequisites.collect { patterns ->
+                        android.util.Log.d("PatternDetails", "Collecting prerequisites: ${patterns.size} items")
                         prerequisitesAdapter.submitList(patterns)
-                        binding.prerequisitesLabel.isVisible = patterns.isNotEmpty()
+                        binding.apply {
+                            prerequisitesCard.isVisible = patterns.isNotEmpty()
+                            android.util.Log.d("PatternDetails", "Prerequisites visibility: ${prerequisitesCard.isVisible}")
+                        }
                     }
                 }
                 launch {
                     viewModel.dependents.collect { patterns ->
+                        android.util.Log.d("PatternDetails", "Collecting dependents: ${patterns.size} items")
                         dependentsAdapter.submitList(patterns)
-                        binding.dependentsLabel.isVisible = patterns.isNotEmpty()
+                        binding.apply {
+                            dependentsCard.isVisible = patterns.isNotEmpty()
+                            android.util.Log.d("PatternDetails", "Dependents visibility: ${dependentsCard.isVisible}")
+                        }
                     }
                 }
                 launch {
                     viewModel.related.collect { patterns ->
+                        android.util.Log.d("PatternDetails", "Collecting related: ${patterns.size} items")
                         relatedAdapter.submitList(patterns)
-                        binding.relatedLabel.isVisible = patterns.isNotEmpty()
+                        binding.apply {
+                            relatedCard.isVisible = patterns.isNotEmpty()
+                            android.util.Log.d("PatternDetails", "Related visibility: ${relatedCard.isVisible}")
+                        }
                     }
                 }
             }
@@ -142,6 +191,17 @@ class PatternDetailsFragment : Fragment() {
         binding.apply {
             patternName.text = pattern.name
             patternDescription.text = pattern.explanation
+
+            // Load animation GIF
+            pattern.gifUrl?.let { url ->
+                patternAnimation.isVisible = true
+                Glide.with(this@PatternDetailsFragment)
+                    .asGif()
+                    .load(url)
+                    .into(patternAnimation)
+            } ?: run {
+                patternAnimation.isVisible = false
+            }
             
             // Set difficulty chip
             pattern.difficulty?.let { difficulty ->
@@ -188,6 +248,19 @@ class PatternDetailsFragment : Fragment() {
             } ?: run {
                 urlButton.isVisible = false
             }
+
+            // Show personal record
+            pattern.record?.let { record ->
+                recordCard.isVisible = true
+                recordCatches.text = getString(R.string.catches_format, record.catches)
+                recordDate.text = DateFormat.getDateFormat(requireContext())
+                    .format(record.date)
+            } ?: run {
+                recordCard.isVisible = false
+            }
+
+            // Show buttons container only if video or url exists
+            buttonsContainer.isVisible = pattern.video != null || pattern.url != null
 
             // Create tag chips
             tagsGroup.removeAllViews()

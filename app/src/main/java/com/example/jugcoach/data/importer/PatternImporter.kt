@@ -60,6 +60,8 @@ class PatternImporter(
     }
 
     suspend fun importLegacyPatterns(): Int = withContext(Dispatchers.IO) {
+        // Clear existing patterns before import
+        patternDao.deleteAllPatterns()
         var patternsImported = 0
 
         try {

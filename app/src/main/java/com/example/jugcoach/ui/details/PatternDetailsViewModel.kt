@@ -53,23 +53,37 @@ class PatternDetailsViewModel @Inject constructor(
     }
 
     private suspend fun loadRelatedPatterns(pattern: Pattern) {
+        android.util.Log.d("PatternDetails", "Loading related patterns for ${pattern.name}")
+        android.util.Log.d("PatternDetails", "Prerequisites IDs: ${pattern.prerequisites}")
+        android.util.Log.d("PatternDetails", "Dependents IDs: ${pattern.dependents}")
+        android.util.Log.d("PatternDetails", "Related IDs: ${pattern.related}")
+
         // Load prerequisites
         val prerequisites = pattern.prerequisites.mapNotNull { id ->
-            patternDao.getPatternById(id)
+            patternDao.getPatternById(id)?.also {
+                android.util.Log.d("PatternDetails", "Found prerequisite: ${it.name}")
+            }
         }
         _prerequisites.value = prerequisites
+        android.util.Log.d("PatternDetails", "Loaded ${prerequisites.size} prerequisites")
 
         // Load dependent patterns
         val dependents = pattern.dependents.mapNotNull { id ->
-            patternDao.getPatternById(id)
+            patternDao.getPatternById(id)?.also {
+                android.util.Log.d("PatternDetails", "Found dependent: ${it.name}")
+            }
         }
         _dependents.value = dependents
+        android.util.Log.d("PatternDetails", "Loaded ${dependents.size} dependents")
 
         // Load related patterns
         val related = pattern.related.mapNotNull { id ->
-            patternDao.getPatternById(id)
+            patternDao.getPatternById(id)?.also {
+                android.util.Log.d("PatternDetails", "Found related: ${it.name}")
+            }
         }
         _related.value = related
+        android.util.Log.d("PatternDetails", "Loaded ${related.size} related patterns")
     }
 
     fun updatePattern(updatedPattern: Pattern) {

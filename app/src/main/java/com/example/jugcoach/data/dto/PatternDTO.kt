@@ -20,6 +20,7 @@ data class PatternDTO(
     @SerializedName("prereqs")
     val prerequisites: List<String>?,
     val dependents: List<String>?,
+    val related: List<String>?,
     @SerializedName("pre-existing record")
     val record: RecordDTO?
 )

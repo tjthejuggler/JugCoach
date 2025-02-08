@@ -13,10 +13,15 @@ import java.util.UUID
  */
 object PatternConverter {
     private val gson = Gson()
+    private val nameToIdMap = mutableMapOf<String, String>()
 
     fun toEntity(dto: PatternDTO): Pattern {
+        // Generate or retrieve ID for this pattern
+        val id = nameToIdMap.getOrPut(dto.name) { 
+            UUID.randomUUID().toString()
+        }
         return Pattern(
-            id = UUID.randomUUID().toString(),
+            id = id,
             name = dto.name,
             difficulty = dto.difficulty,
             siteswap = dto.siteswap,
@@ -26,9 +31,15 @@ object PatternConverter {
             video = dto.video,
             url = dto.url,
             tags = dto.tags ?: emptyList(),
-            prerequisites = dto.prerequisites ?: emptyList(),
-            dependents = dto.dependents ?: emptyList(),
-            related = emptyList(), // Not present in DTO yet
+            prerequisites = (dto.prerequisites ?: emptyList()).mapNotNull { name ->
+                nameToIdMap[name]
+            },
+            dependents = (dto.dependents ?: emptyList()).mapNotNull { name ->
+                nameToIdMap[name]
+            },
+            related = (dto.related ?: emptyList()).mapNotNull { name ->
+                nameToIdMap[name]
+            },
             record = dto.record?.let { recordDto ->
                 Record(
                     catches = recordDto.catches ?: 0,
@@ -49,12 +60,28 @@ object PatternConverter {
     }
 
     fun fromJsonTricksWrapper(json: String): List<PatternDTO> {
+        nameToIdMap.clear() // Clear the map before processing new data
         val wrapper = gson.fromJson(json, TricksWrapper::class.java)
-        return wrapper.tricks.values.toList()
+        val patterns = wrapper.tricks.values.toList()
+        
+        // First pass: create IDs for all patterns
+        patterns.forEach { dto ->
+            nameToIdMap[dto.name] = UUID.randomUUID().toString()
+        }
+        
+        return patterns
     }
 
     fun fromJsonArray(json: String): List<PatternDTO> {
-        return gson.fromJson(json, Array<PatternDTO>::class.java).toList()
+        nameToIdMap.clear() // Clear the map before processing new data
+        val patterns = gson.fromJson(json, Array<PatternDTO>::class.java).toList()
+        
+        // First pass: create IDs for all patterns
+        patterns.forEach { dto ->
+            nameToIdMap[dto.name] = UUID.randomUUID().toString()
+        }
+        
+        return patterns
     }
 
     fun toJson(patterns: List<Pattern>): String {
@@ -71,6 +98,7 @@ object PatternConverter {
                 tags = pattern.tags,
                 prerequisites = pattern.prerequisites,
                 dependents = pattern.dependents,
+                related = pattern.related,
                 record = pattern.record?.let { record ->
                     RecordDTO(
                         catches = record.catches,
