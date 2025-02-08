@@ -63,6 +63,9 @@ dependencies {
 
     // Glide for image loading
     implementation(libs.glide)
+    kapt(libs.glide.compiler)
+    // Glide annotations processor
+    annotationProcessor(libs.glide.compiler)
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
