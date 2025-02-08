@@ -10,7 +10,14 @@
         android:layout_height="wrap_content"
         android:orientation="vertical">
 
-        <!-- Number of Objects -->
+        <!-- Filters Section -->
+        <LinearLayout
+            android:id="@+id/filters_section"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <!-- Number of Objects -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -202,12 +209,82 @@
 
         </LinearLayout>
 
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="?android:attr/listDivider"
+                android:layout_marginTop="16dp"
+                android:layout_marginBottom="16dp"/>
+
+        </LinearLayout>
+
+        <!-- Sort Order Section -->
+        <TextView
+            android:id="@+id/sort_section_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Sort By"
+            android:textAppearance="?attr/textAppearanceSubtitle1"
+            android:layout_marginBottom="8dp"
+            android:visibility="gone"/>
+
+        <RadioGroup
+            android:id="@+id/sort_order_group"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <RadioButton
+                android:id="@+id/sort_relevance"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/sort_by_relevance"/>
+
+            <RadioButton
+                android:id="@+id/sort_name_asc"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/sort_by_name_asc"/>
+
+            <RadioButton
+                android:id="@+id/sort_name_desc"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/sort_by_name_desc"/>
+
+            <RadioButton
+                android:id="@+id/sort_difficulty_asc"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/sort_by_difficulty_asc"/>
+
+            <RadioButton
+                android:id="@+id/sort_difficulty_desc"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/sort_by_difficulty_desc"/>
+
+            <RadioButton
+                android:id="@+id/sort_catches_asc"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/sort_by_catches_asc"/>
+
+            <RadioButton
+                android:id="@+id/sort_catches_desc"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/sort_by_catches_desc"/>
+
+        </RadioGroup>
+
         <!-- Apply Button -->
         <com.google.android.material.button.MaterialButton
             android:id="@+id/apply_filters"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Apply Filters"
+            android:text="@string/apply"
             android:layout_marginTop="24dp"/>
 
     </LinearLayout>

@@ -10,10 +10,28 @@ interface PatternDao {
     fun getAllPatterns(): Flow<List<Pattern>>
 
     @Query("""
-        SELECT * FROM patterns
-        WHERE name LIKE '%' || :query || '%'
-        OR explanation LIKE '%' || :query || '%'
-        OR tags LIKE '%' || :query || '%'
+        SELECT *, 
+        CASE 
+            WHEN name = :query THEN 100
+            WHEN name LIKE :query || '%' THEN 90
+            WHEN name LIKE '%' || :query || '%' THEN 80
+            WHEN LOWER(name) LIKE '%' || LOWER(:query) || '%' THEN 70
+            WHEN explanation LIKE '%' || :query || '%' THEN 60
+            WHEN LOWER(explanation) LIKE '%' || LOWER(:query) || '%' THEN 50
+            WHEN tags LIKE '%' || :query || '%' THEN 40
+            WHEN LOWER(tags) LIKE '%' || LOWER(:query) || '%' THEN 30
+            ELSE 0
+        END as relevance
+        FROM patterns
+        WHERE 
+            name LIKE '%' || :query || '%'
+            OR name LIKE '%' || REPLACE(:query, ' ', '%') || '%'
+            OR LOWER(name) LIKE '%' || LOWER(:query) || '%'
+            OR explanation LIKE '%' || :query || '%'
+            OR LOWER(explanation) LIKE '%' || LOWER(:query) || '%'
+            OR tags LIKE '%' || :query || '%'
+            OR LOWER(tags) LIKE '%' || LOWER(:query) || '%'
+        ORDER BY relevance DESC
     """)
     fun searchPatterns(query: String): Flow<List<Pattern>>
 

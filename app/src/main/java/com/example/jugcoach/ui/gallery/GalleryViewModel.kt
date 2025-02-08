@@ -83,6 +83,7 @@ class GalleryViewModel(application: Application) : AndroidViewModel(application)
         patterns: List<Pattern>,
         order: SortOrder
     ): List<Pattern> = when (order) {
+        SortOrder.SEARCH_RELEVANCE -> patterns // Already sorted by relevance from the DAO
         SortOrder.NAME_ASC -> patterns.sortedBy { it.name }
         SortOrder.NAME_DESC -> patterns.sortedByDescending { it.name }
         SortOrder.DIFFICULTY_ASC -> patterns.sortedWith(compareBy(
@@ -91,6 +92,12 @@ class GalleryViewModel(application: Application) : AndroidViewModel(application)
         ))
         SortOrder.DIFFICULTY_DESC -> patterns.sortedWith(compareByDescending<Pattern> { 
             it.difficulty?.toIntOrNull() ?: Int.MIN_VALUE 
+        }.thenBy { it.name })
+        SortOrder.CATCHES_ASC -> patterns.sortedWith(compareBy<Pattern> { 
+            it.record?.catches ?: 0 
+        }.thenBy { it.name })
+        SortOrder.CATCHES_DESC -> patterns.sortedWith(compareByDescending<Pattern> { 
+            it.record?.catches ?: 0 
         }.thenBy { it.name })
     }
 
@@ -119,6 +126,10 @@ class GalleryViewModel(application: Application) : AndroidViewModel(application)
 
     fun updateSearchQuery(query: String) {
         searchQuery.value = query
+        // Switch to search relevance sort order when searching
+        if (query.isNotEmpty()) {
+            sortOrder.value = SortOrder.SEARCH_RELEVANCE
+        }
     }
 
     fun updateFilters(options: FilterOptions) {

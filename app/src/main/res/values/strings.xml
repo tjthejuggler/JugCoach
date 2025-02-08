@@ -36,4 +36,16 @@
     <string name="personal_record">Personal Record</string>
     <string name="catches_format">%d catches</string>
     <string name="pattern_animation">Pattern animation</string>
+
+    <!-- Sort Options -->
+    <string name="sort_by_name_asc">Name (A to Z)</string>
+    <string name="sort_by_name_desc">Name (Z to A)</string>
+    <string name="sort_by_difficulty_asc">Difficulty (Easy to Hard)</string>
+    <string name="sort_by_difficulty_desc">Difficulty (Hard to Easy)</string>
+    <string name="sort_by_catches_asc">Catches (Low to High)</string>
+    <string name="sort_by_catches_desc">Catches (High to Low)</string>
+    <string name="sort_by_relevance">Search Relevance</string>
+    <string name="apply">Apply</string>
+    <string name="apply_filters">Apply Filters</string>
+    <string name="apply_sort">Apply Sort</string>
 </resources>

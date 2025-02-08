@@ -59,44 +59,35 @@ class GalleryFragment : Fragment() {
     private fun setupSearch() {
         binding.searchInput.doAfterTextChanged { text ->
             viewModel.updateSearchQuery(text?.toString() ?: "")
+            // Scroll to top when searching
+            binding.patternsList.scrollToPosition(0)
         }
 
         binding.filterButton.setOnClickListener {
-            showFilterBottomSheet()
+            showFilterBottomSheet(false)
         }
 
         binding.sortButton.setOnClickListener {
-            showSortDialog()
+            showFilterBottomSheet(true)
         }
     }
 
-    private fun showFilterBottomSheet() {
+    private fun showFilterBottomSheet(showSortTab: Boolean) {
         filterBottomSheet = FilterBottomSheetFragment().apply {
             setFilterListener(object : FilterBottomSheetFragment.FilterListener {
-                override fun onFiltersApplied(filters: FilterOptions) {
+                override fun onFiltersApplied(filters: FilterOptions, sortOrder: SortOrder) {
                     viewModel.updateFilters(filters)
+                    viewModel.updateSortOrder(sortOrder)
                 }
             })
+            arguments = Bundle().apply {
+                putBoolean("show_sort_tab", showSortTab)
+                putString("current_sort_order", viewModel.uiState.value.sortOrder.name)
+            }
         }
         filterBottomSheet.show(childFragmentManager, FilterBottomSheetFragment.TAG)
         // Set available tags after showing the fragment to ensure view is created
         filterBottomSheet.setAvailableTags(viewModel.uiState.value.availableTags)
-    }
-
-    private fun showSortDialog() {
-        val items = arrayOf(
-            "Name (A-Z)" to SortOrder.NAME_ASC,
-            "Name (Z-A)" to SortOrder.NAME_DESC,
-            "Difficulty (Easy to Hard)" to SortOrder.DIFFICULTY_ASC,
-            "Difficulty (Hard to Easy)" to SortOrder.DIFFICULTY_DESC
-        )
-
-        MaterialAlertDialogBuilder(requireContext())
-            .setTitle("Sort By")
-            .setItems(items.map { it.first }.toTypedArray()) { _, which ->
-                viewModel.updateSortOrder(items[which].second)
-            }
-            .show()
     }
 
     private fun observeUiState() {
