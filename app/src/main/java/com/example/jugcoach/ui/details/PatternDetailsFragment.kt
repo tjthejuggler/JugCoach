@@ -61,7 +61,6 @@ class PatternDetailsFragment : Fragment() {
         
         setupToolbar()
         setupRecyclerViews()
-        setupFab()
         setupCollapsibleSections()
         observeUiState()
         observeRelatedPatterns()
@@ -123,12 +122,6 @@ class PatternDetailsFragment : Fragment() {
             fillAfter = true
         }
         icon.startAnimation(rotate)
-    }
-
-    private fun setupFab() {
-        binding.editFab.setOnClickListener {
-            // TODO: Implement edit dialog
-        }
     }
 
     private fun observeUiState() {
