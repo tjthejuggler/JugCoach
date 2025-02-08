@@ -22,6 +22,7 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import com.example.jugcoach.R
 import com.example.jugcoach.data.entity.Pattern
+import com.example.jugcoach.data.entity.Run
 import com.example.jugcoach.databinding.FragmentPatternDetailsBinding
 import com.example.jugcoach.ui.adapters.PatternAdapter
 import com.google.android.material.chip.Chip
@@ -50,6 +51,8 @@ class PatternDetailsFragment : Fragment() {
         navigateToPattern(pattern.id)
     }
 
+    private val runHistoryAdapter = RunHistoryAdapter()
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -65,6 +68,7 @@ class PatternDetailsFragment : Fragment() {
         setupToolbar()
         setupRecyclerViews()
         setupCollapsibleSections()
+        setupRunInput()
         observeUiState()
         observeRelatedPatterns()
     }
@@ -93,6 +97,7 @@ class PatternDetailsFragment : Fragment() {
         binding.prerequisitesList.adapter = prerequisitesAdapter
         binding.dependentsList.adapter = dependentsAdapter
         binding.relatedList.adapter = relatedAdapter
+        binding.runHistoryList.adapter = runHistoryAdapter
     }
 
     private fun setupCollapsibleSections() {
@@ -105,6 +110,39 @@ class PatternDetailsFragment : Fragment() {
             }
             relatedHeader.setOnClickListener {
                 toggleSection(relatedList, relatedExpandIcon)
+            }
+            historyHeader.setOnClickListener {
+                toggleSection(runHistoryList, historyExpandIcon)
+            }
+        }
+    }
+
+    private fun setupRunInput() {
+        binding.apply {
+            // Only allow one input type at a time
+            catchesInput.setOnFocusChangeListener { _, hasFocus ->
+                if (hasFocus) timeInput.text?.clear()
+            }
+            timeInput.setOnFocusChangeListener { _, hasFocus ->
+                if (hasFocus) catchesInput.text?.clear()
+            }
+
+            submitRunButton.setOnClickListener {
+                val catches = catchesInput.text?.toString()?.toIntOrNull()
+                val time = timeInput.text?.toString()?.toLongOrNull()
+                val isCleanEnd = cleanEndCheckbox.isChecked
+
+                if (catches == null && time == null) {
+                    Snackbar.make(root, "Please enter either catches or time", Snackbar.LENGTH_SHORT).show()
+                    return@setOnClickListener
+                }
+
+                viewModel.addRun(catches, time, isCleanEnd)
+                
+                // Clear inputs after submission
+                catchesInput.text?.clear()
+                timeInput.text?.clear()
+                cleanEndCheckbox.isChecked = false
             }
         }
     }
@@ -133,7 +171,7 @@ class PatternDetailsFragment : Fragment() {
                 viewModel.uiState.collect { state ->
                     when (state) {
                         is PatternDetailsUiState.Loading -> showLoading()
-                        is PatternDetailsUiState.Success -> showPattern(state.pattern)
+                        is PatternDetailsUiState.Success -> showPattern(state.pattern, state.runHistory)
                         is PatternDetailsUiState.Error -> showError(state.message)
                         is PatternDetailsUiState.Deleted -> handlePatternDeleted()
                     }
@@ -183,7 +221,7 @@ class PatternDetailsFragment : Fragment() {
         // TODO: Implement loading state
     }
 
-    private fun showPattern(pattern: Pattern) {
+    private fun showPattern(pattern: Pattern, runHistory: List<Run>) {
         binding.apply {
             patternName.text = pattern.name
             patternDescription.text = pattern.explanation
@@ -263,6 +301,9 @@ class PatternDetailsFragment : Fragment() {
 
             // Show buttons container only if video or url exists
             buttonsContainer.isVisible = pattern.video != null || pattern.url != null
+
+            // Update run history
+            runHistoryAdapter.submitList(runHistory)
 
             // Create tag chips
             tagsGroup.removeAllViews()

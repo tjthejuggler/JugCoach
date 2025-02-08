@@ -5,6 +5,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.jugcoach.data.dao.PatternDao
 import com.example.jugcoach.data.entity.Pattern
+import com.example.jugcoach.data.entity.Run
+import com.example.jugcoach.data.entity.RunHistory
+import com.example.jugcoach.data.entity.Record
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -41,7 +44,10 @@ class PatternDetailsViewModel @Inject constructor(
             try {
                 val pattern = patternDao.getPatternById(patternId)
                 if (pattern != null) {
-                    _uiState.value = PatternDetailsUiState.Success(pattern)
+                    _uiState.value = PatternDetailsUiState.Success(
+                        pattern = pattern,
+                        runHistory = pattern.runHistory.runs
+                    )
                     loadRelatedPatterns(pattern)
                 } else {
                     _uiState.value = PatternDetailsUiState.Error("Pattern not found")
@@ -109,11 +115,57 @@ class PatternDetailsViewModel @Inject constructor(
             }
         }
     }
+
+    fun addRun(catches: Int?, duration: Long?, isCleanEnd: Boolean) {
+        viewModelScope.launch {
+            try {
+                val currentPattern = (uiState.value as? PatternDetailsUiState.Success)?.pattern
+                    ?: return@launch
+
+                val newRun = Run(
+                    catches = catches,
+                    duration = duration,
+                    isCleanEnd = isCleanEnd,
+                    date = System.currentTimeMillis()
+                )
+
+                val updatedHistory = currentPattern.runHistory.runs + newRun
+                val updatedPattern = currentPattern.copy(
+                    runHistory = RunHistory(updatedHistory)
+                )
+
+                // Update record if this run has more catches than current record
+                val finalPattern = if (catches != null) {
+                    val shouldUpdateRecord = currentPattern.record == null || catches > currentPattern.record.catches
+                    if (shouldUpdateRecord) {
+                        updatedPattern.copy(
+                            record = Record(
+                                catches = catches,
+                                date = System.currentTimeMillis()
+                            )
+                        )
+                    } else {
+                        updatedPattern
+                    }
+                } else {
+                    updatedPattern
+                }
+
+                patternDao.updatePattern(finalPattern)
+                loadPattern() // Reload to refresh the UI
+            } catch (e: Exception) {
+                _uiState.value = PatternDetailsUiState.Error(e.message ?: "Failed to add run")
+            }
+        }
+    }
 }
 
 sealed class PatternDetailsUiState {
     data object Loading : PatternDetailsUiState()
-    data class Success(val pattern: Pattern) : PatternDetailsUiState()
+    data class Success(
+        val pattern: Pattern,
+        val runHistory: List<Run> = emptyList()
+    ) : PatternDetailsUiState()
     data class Error(val message: String) : PatternDetailsUiState()
     data object Deleted : PatternDetailsUiState()
 }

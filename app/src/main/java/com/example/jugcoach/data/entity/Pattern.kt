@@ -6,6 +6,7 @@ import androidx.room.PrimaryKey
 import androidx.room.TypeConverters
 import com.example.jugcoach.data.converter.ListConverter
 import com.example.jugcoach.data.converter.DateConverter
+import com.example.jugcoach.data.converter.RunListConverter
 
 @Entity(tableName = "patterns")
 @TypeConverters(ListConverter::class, DateConverter::class)
@@ -25,10 +26,24 @@ data class Pattern(
     val dependents: List<String> = emptyList(),
     val related: List<String> = emptyList(),
     @Embedded(prefix = "record_")
-    val record: Record? = null
+    val record: Record? = null,
+    @Embedded(prefix = "history_")
+    val runHistory: RunHistory = RunHistory()
 )
 
 data class Record(
     val catches: Int,
     val date: Long // timestamp
+)
+
+data class Run(
+    val catches: Int? = null,
+    val duration: Long? = null, // duration in seconds if time-based
+    val isCleanEnd: Boolean,
+    val date: Long // timestamp
+)
+
+@TypeConverters(RunListConverter::class)
+data class RunHistory(
+    val runs: List<Run> = emptyList()
 )
