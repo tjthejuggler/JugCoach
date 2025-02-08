@@ -14,11 +14,11 @@ class FilterBottomSheetFragment : BottomSheetDialogFragment() {
     private val binding get() = _binding!!
 
     private var filterListener: FilterListener? = null
+    private var isInitialSetup = true
 
     interface FilterListener {
         fun onFiltersApplied(filters: FilterOptions, sortOrder: SortOrder)
     }
-
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -34,36 +34,20 @@ class FilterBottomSheetFragment : BottomSheetDialogFragment() {
         setupNumBallsChips()
         setupDifficultySlider()
         setupPracticedPeriodToggle()
-        setupSortOrderGroup()
-        setupApplyButton()
         
         // Show either filters or sort options based on argument
         val showSortTab = arguments?.getBoolean("show_sort_tab", false) ?: false
-        val currentSortOrder = arguments?.getString("current_sort_order")?.let {
-            try { SortOrder.valueOf(it) } catch (e: IllegalArgumentException) { null }
-        }
 
         // Show/hide sections based on selected tab
         binding.apply {
             filtersSection.visibility = if (!showSortTab) View.VISIBLE else View.GONE
             sortSectionTitle.visibility = if (showSortTab) View.VISIBLE else View.GONE
             sortOrderGroup.visibility = if (showSortTab) View.VISIBLE else View.GONE
-            applyFilters.text = getString(if (showSortTab) R.string.apply_sort else R.string.apply_filters)
+            applyFilters.visibility = if (!showSortTab) View.VISIBLE else View.GONE
         }
 
-        // Set current sort order
-        if (showSortTab && currentSortOrder != null) {
-            val buttonId = when (currentSortOrder) {
-                SortOrder.SEARCH_RELEVANCE -> R.id.sort_relevance
-                SortOrder.NAME_ASC -> R.id.sort_name_asc
-                SortOrder.NAME_DESC -> R.id.sort_name_desc
-                SortOrder.DIFFICULTY_ASC -> R.id.sort_difficulty_asc
-                SortOrder.DIFFICULTY_DESC -> R.id.sort_difficulty_desc
-                SortOrder.CATCHES_ASC -> R.id.sort_catches_asc
-                SortOrder.CATCHES_DESC -> R.id.sort_catches_desc
-            }
-            binding.sortOrderGroup.check(buttonId)
-        }
+        setupSortOrderGroup()
+        setupApplyButton()
         
         // Apply any pending tags
         pendingTags?.let { tags ->
@@ -73,16 +57,43 @@ class FilterBottomSheetFragment : BottomSheetDialogFragment() {
     }
 
     private fun setupSortOrderGroup() {
-        // Map radio button IDs to SortOrder values
-        val sortOrderMap = mapOf(
-            R.id.sort_relevance to SortOrder.SEARCH_RELEVANCE,
-            R.id.sort_name_asc to SortOrder.NAME_ASC,
-            R.id.sort_name_desc to SortOrder.NAME_DESC,
-            R.id.sort_difficulty_asc to SortOrder.DIFFICULTY_ASC,
-            R.id.sort_difficulty_desc to SortOrder.DIFFICULTY_DESC,
-            R.id.sort_catches_asc to SortOrder.CATCHES_ASC,
-            R.id.sort_catches_desc to SortOrder.CATCHES_DESC
-        )
+        // Set initial selection without triggering listener
+        arguments?.getString("current_sort_order")?.let {
+            try {
+                val currentSortOrder = SortOrder.valueOf(it)
+                val buttonId = when (currentSortOrder) {
+                    SortOrder.SEARCH_RELEVANCE -> R.id.sort_relevance
+                    SortOrder.NAME_ASC -> R.id.sort_name_asc
+                    SortOrder.NAME_DESC -> R.id.sort_name_desc
+                    SortOrder.DIFFICULTY_ASC -> R.id.sort_difficulty_asc
+                    SortOrder.DIFFICULTY_DESC -> R.id.sort_difficulty_desc
+                    SortOrder.CATCHES_ASC -> R.id.sort_catches_asc
+                    SortOrder.CATCHES_DESC -> R.id.sort_catches_desc
+                }
+                binding.sortOrderGroup.check(buttonId)
+            } catch (e: IllegalArgumentException) { }
+        }
+
+        // Set up the listener for user interactions
+        binding.sortOrderGroup.setOnCheckedChangeListener { _, checkedId ->
+            if (!isInitialSetup) {
+                val sortOrder = when (checkedId) {
+                    R.id.sort_relevance -> SortOrder.SEARCH_RELEVANCE
+                    R.id.sort_name_asc -> SortOrder.NAME_ASC
+                    R.id.sort_name_desc -> SortOrder.NAME_DESC
+                    R.id.sort_difficulty_asc -> SortOrder.DIFFICULTY_ASC
+                    R.id.sort_difficulty_desc -> SortOrder.DIFFICULTY_DESC
+                    R.id.sort_catches_asc -> SortOrder.CATCHES_ASC
+                    R.id.sort_catches_desc -> SortOrder.CATCHES_DESC
+                    else -> return@setOnCheckedChangeListener
+                }
+                filterListener?.onFiltersApplied(FilterOptions(), sortOrder)
+                dismiss()
+            }
+        }
+
+        // Mark initial setup as complete
+        isInitialSetup = false
     }
 
     private fun setupNumBallsChips() {
@@ -172,7 +183,6 @@ class FilterBottomSheetFragment : BottomSheetDialogFragment() {
             binding.selectedTagsGroup.addView(chip)
         }
     }
-
 
     override fun onDestroyView() {
         super.onDestroyView()

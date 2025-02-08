@@ -51,7 +51,10 @@ class GalleryFragment : Fragment() {
         patternAdapter = PatternAdapter { pattern ->
             onPatternSelected(pattern)
         }
-        binding.patternsList.adapter = patternAdapter
+        binding.patternsList.apply {
+            adapter = patternAdapter
+            setItemAnimator(null) // Disable animations to prevent position tracking
+        }
     }
 
     private lateinit var filterBottomSheet: FilterBottomSheetFragment
@@ -59,8 +62,6 @@ class GalleryFragment : Fragment() {
     private fun setupSearch() {
         binding.searchInput.doAfterTextChanged { text ->
             viewModel.updateSearchQuery(text?.toString() ?: "")
-            // Scroll to top when searching
-            binding.patternsList.scrollToPosition(0)
         }
 
         binding.filterButton.setOnClickListener {
@@ -104,8 +105,13 @@ class GalleryFragment : Fragment() {
             emptyView.isVisible = !state.isLoading && state.patterns.isEmpty()
             patternsList.isVisible = !state.isLoading && state.patterns.isNotEmpty()
             
+            // Update list and scroll to bottom after update
             if (!state.isLoading && state.patterns.isNotEmpty()) {
-                patternAdapter.submitList(state.patterns)
+                patternAdapter.submitList(state.patterns) {
+                    // Always scroll to top after list updates to show the most relevant item
+                    patternsList.scrollToPosition(0)
+                    viewModel.scrollHandled()
+                }
             }
 
             // Update search if needed

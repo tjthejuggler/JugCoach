@@ -6,13 +6,11 @@ import androidx.lifecycle.viewModelScope
 import com.example.jugcoach.data.JugCoachDatabase
 import com.example.jugcoach.data.entity.Pattern
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
 
 data class GalleryUiState(
     val patterns: List<Pattern> = emptyList(),
@@ -20,39 +18,48 @@ data class GalleryUiState(
     val searchQuery: String = "",
     val filterOptions: FilterOptions = FilterOptions(),
     val availableTags: Set<String> = emptySet(),
-    val sortOrder: SortOrder = SortOrder.NAME_ASC
+    val sortOrder: SortOrder = SortOrder.NAME_ASC,
+    val shouldScrollToTop: Boolean = false
 )
 
 class GalleryViewModel(application: Application) : AndroidViewModel(application) {
     private val patternDao = JugCoachDatabase.getDatabase(application).patternDao()
-    private val searchQuery = MutableStateFlow("")
-    private val filterOptions = MutableStateFlow(FilterOptions())
-    private val sortOrder = MutableStateFlow(SortOrder.NAME_ASC)
+    private val _uiState = MutableStateFlow(GalleryUiState())
+    val uiState: StateFlow<GalleryUiState> = _uiState
+    private var patternsJob: Job? = null
 
-    @OptIn(ExperimentalCoroutinesApi::class)
-    private val patterns: StateFlow<List<Pattern>> = searchQuery
-        .flatMapLatest { query ->
+    init {
+        loadPatterns()
+    }
+
+    private fun loadPatterns() {
+        patternsJob?.cancel()
+        patternsJob = viewModelScope.launch {
+            val query = _uiState.value.searchQuery
             if (query.isEmpty()) {
-                patternDao.getAllPatterns()
+                patternDao.getAllPatterns().collectLatest { patterns ->
+                    updatePatterns(patterns)
+                }
             } else {
-                patternDao.searchPatterns(query)
+                patternDao.searchPatterns(query).collectLatest { patterns ->
+                    updatePatterns(patterns)
+                }
             }
         }
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = emptyList()
-        )
+    }
 
-    private val availableTags: StateFlow<Set<String>> = patterns
-        .map { patternList ->
-            patternList.flatMap { it.tags }.toSet()
-        }
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = emptySet()
+    private fun updatePatterns(patterns: List<Pattern>) {
+        val tags = patterns.flatMap { it.tags }.toSet()
+        val filteredAndSortedPatterns = sortPatterns(
+            filterPatterns(patterns, _uiState.value.filterOptions),
+            _uiState.value.sortOrder
         )
+        _uiState.value = _uiState.value.copy(
+            patterns = filteredAndSortedPatterns,
+            isLoading = false,
+            availableTags = tags
+        )
+    }
 
     private fun filterPatterns(patterns: List<Pattern>, options: FilterOptions): List<Pattern> = patterns.filter { pattern ->
         val matchesNumBalls = options.numBalls.isEmpty() || pattern.num in options.numBalls
@@ -101,42 +108,37 @@ class GalleryViewModel(application: Application) : AndroidViewModel(application)
         }.thenBy { it.name })
     }
 
-    private val combinedState = combine(
-        patterns,
-        searchQuery,
-        filterOptions,
-        sortOrder,
-        availableTags
-    ) { p, q, f, o, a -> 
-        GalleryUiState(
-            patterns = sortPatterns(filterPatterns(p, f), o),
-            isLoading = false,
-            searchQuery = q,
-            filterOptions = f,
-            availableTags = a,
-            sortOrder = o
-        )
-    }
-
-    val uiState: StateFlow<GalleryUiState> = combinedState.stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5000),
-        initialValue = GalleryUiState()
-    )
-
     fun updateSearchQuery(query: String) {
-        searchQuery.value = query
-        // Switch to search relevance sort order when searching
-        if (query.isNotEmpty()) {
-            sortOrder.value = SortOrder.SEARCH_RELEVANCE
-        }
+        _uiState.value = _uiState.value.copy(
+            searchQuery = query,
+            sortOrder = if (query.isNotEmpty()) SortOrder.SEARCH_RELEVANCE else _uiState.value.sortOrder,
+            shouldScrollToTop = true
+        )
+        loadPatterns()
     }
 
     fun updateFilters(options: FilterOptions) {
-        filterOptions.value = options
+        _uiState.value = _uiState.value.copy(
+            filterOptions = options,
+            shouldScrollToTop = true
+        )
+        loadPatterns()
     }
 
     fun updateSortOrder(order: SortOrder) {
-        sortOrder.value = order
+        _uiState.value = _uiState.value.copy(
+            sortOrder = order,
+            shouldScrollToTop = true
+        )
+        loadPatterns()
+    }
+
+    fun scrollHandled() {
+        _uiState.value = _uiState.value.copy(shouldScrollToTop = false)
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        patternsJob?.cancel()
     }
 }
