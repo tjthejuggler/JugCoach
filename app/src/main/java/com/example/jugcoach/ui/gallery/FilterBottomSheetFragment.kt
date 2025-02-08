@@ -35,6 +35,12 @@ class FilterBottomSheetFragment : BottomSheetDialogFragment() {
         setupDifficultySlider()
         setupPracticedPeriodToggle()
         setupApplyButton()
+        
+        // Apply any pending tags
+        pendingTags?.let { tags ->
+            setAvailableTags(tags)
+            pendingTags = null
+        }
     }
 
     private fun setupNumBallsChips() {
@@ -94,7 +100,14 @@ class FilterBottomSheetFragment : BottomSheetDialogFragment() {
         filterListener = listener
     }
 
+    private var pendingTags: Set<String>? = null
+
     fun setAvailableTags(tags: Set<String>) {
+        if (view == null) {
+            // Store tags to be applied once view is created
+            pendingTags = tags
+            return
+        }
         binding.selectedTagsGroup.removeAllViews()
         tags.forEach { tag ->
             val chip = Chip(context).apply {
@@ -104,6 +117,7 @@ class FilterBottomSheetFragment : BottomSheetDialogFragment() {
             binding.selectedTagsGroup.addView(chip)
         }
     }
+
 
     override fun onDestroyView() {
         super.onDestroyView()

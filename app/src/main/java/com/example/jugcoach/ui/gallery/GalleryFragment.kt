@@ -77,9 +77,10 @@ class GalleryFragment : Fragment() {
                     viewModel.updateFilters(filters)
                 }
             })
-            setAvailableTags(viewModel.uiState.value.availableTags)
         }
         filterBottomSheet.show(childFragmentManager, FilterBottomSheetFragment.TAG)
+        // Set available tags after showing the fragment to ensure view is created
+        filterBottomSheet.setAvailableTags(viewModel.uiState.value.availableTags)
     }
 
     private fun showSortDialog() {
