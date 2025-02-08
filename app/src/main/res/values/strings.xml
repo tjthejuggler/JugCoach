@@ -49,6 +49,15 @@
     <string name="catches_format">%d catches</string>
     <string name="pattern_animation">Pattern animation</string>
 
+    <!-- Run Management -->
+    <string name="add_run">Add Run</string>
+    <string name="add_new_run">Add New Run</string>
+    <string name="run_history">Run History</string>
+    <string name="number_of_catches">Number of catches</string>
+    <string name="time_in_seconds">Time in seconds</string>
+    <string name="clean_end">Clean End</string>
+    <string name="or">OR</string>
+
     <!-- Sort Options -->
     <string name="sort_by_name_asc">Name (A to Z)</string>
     <string name="sort_by_name_desc">Name (Z to A)</string>

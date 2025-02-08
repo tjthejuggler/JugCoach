@@ -24,6 +24,7 @@ import com.example.jugcoach.R
 import com.example.jugcoach.data.entity.Pattern
 import com.example.jugcoach.data.entity.Run
 import com.example.jugcoach.databinding.FragmentPatternDetailsBinding
+import com.example.jugcoach.databinding.DialogAddRunBinding
 import com.example.jugcoach.ui.adapters.PatternAdapter
 import com.google.android.material.chip.Chip
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -68,7 +69,6 @@ class PatternDetailsFragment : Fragment() {
         setupToolbar()
         setupRecyclerViews()
         setupCollapsibleSections()
-        setupRunInput()
         observeUiState()
         observeRelatedPatterns()
     }
@@ -80,6 +80,10 @@ class PatternDetailsFragment : Fragment() {
         
         binding.toolbar.setOnMenuItemClickListener { menuItem ->
             when (menuItem.itemId) {
+                R.id.action_add_run -> {
+                    showAddRunDialog()
+                    true
+                }
                 R.id.action_edit -> {
                     // TODO: Implement edit dialog
                     true
@@ -93,6 +97,36 @@ class PatternDetailsFragment : Fragment() {
         }
     }
 
+    private fun showAddRunDialog() {
+        val dialogBinding = DialogAddRunBinding.inflate(LayoutInflater.from(context))
+        
+        // Only allow one input type at a time
+        dialogBinding.catchesInput.setOnFocusChangeListener { _, hasFocus ->
+            if (hasFocus) dialogBinding.timeInput.text?.clear()
+        }
+        dialogBinding.timeInput.setOnFocusChangeListener { _, hasFocus ->
+            if (hasFocus) dialogBinding.catchesInput.text?.clear()
+        }
+
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle(R.string.add_new_run)
+            .setView(dialogBinding.root)
+            .setPositiveButton(R.string.add_run) { _, _ ->
+                val catches = dialogBinding.catchesInput.text?.toString()?.toIntOrNull()
+                val time = dialogBinding.timeInput.text?.toString()?.toLongOrNull()
+                val isCleanEnd = dialogBinding.cleanEndCheckbox.isChecked
+
+                if (catches == null && time == null) {
+                    Snackbar.make(binding.root, getString(R.string.number_of_catches), Snackbar.LENGTH_SHORT).show()
+                    return@setPositiveButton
+                }
+
+                viewModel.addRun(catches, time, isCleanEnd)
+            }
+            .setNegativeButton(R.string.cancel, null)
+            .show()
+    }
+
     private fun setupRecyclerViews() {
         binding.prerequisitesList.adapter = prerequisitesAdapter
         binding.dependentsList.adapter = dependentsAdapter
@@ -102,6 +136,19 @@ class PatternDetailsFragment : Fragment() {
 
     private fun setupCollapsibleSections() {
         binding.apply {
+            // Initialize all sections as collapsed
+            prerequisitesList.isVisible = false
+            prerequisitesExpandIcon.rotation = 0f
+            
+            dependentsList.isVisible = false
+            dependentsExpandIcon.rotation = 0f
+            
+            relatedList.isVisible = false
+            relatedExpandIcon.rotation = 0f
+            
+            runHistoryList.isVisible = false
+            historyExpandIcon.rotation = 0f
+
             prerequisitesHeader.setOnClickListener {
                 toggleSection(prerequisitesList, prerequisitesExpandIcon)
             }
@@ -117,52 +164,15 @@ class PatternDetailsFragment : Fragment() {
         }
     }
 
-    private fun setupRunInput() {
-        binding.apply {
-            // Only allow one input type at a time
-            catchesInput.setOnFocusChangeListener { _, hasFocus ->
-                if (hasFocus) timeInput.text?.clear()
-            }
-            timeInput.setOnFocusChangeListener { _, hasFocus ->
-                if (hasFocus) catchesInput.text?.clear()
-            }
-
-            submitRunButton.setOnClickListener {
-                val catches = catchesInput.text?.toString()?.toIntOrNull()
-                val time = timeInput.text?.toString()?.toLongOrNull()
-                val isCleanEnd = cleanEndCheckbox.isChecked
-
-                if (catches == null && time == null) {
-                    Snackbar.make(root, "Please enter either catches or time", Snackbar.LENGTH_SHORT).show()
-                    return@setOnClickListener
-                }
-
-                viewModel.addRun(catches, time, isCleanEnd)
-                
-                // Clear inputs after submission
-                catchesInput.text?.clear()
-                timeInput.text?.clear()
-                cleanEndCheckbox.isChecked = false
-            }
-        }
-    }
-
     private fun toggleSection(recyclerView: View, icon: View) {
         val wasExpanded = recyclerView.isVisible
         recyclerView.isVisible = !wasExpanded
 
-        val fromDegrees = if (wasExpanded) 180f else 0f
-        val toDegrees = if (wasExpanded) 0f else 180f
-
-        val rotate = RotateAnimation(
-            fromDegrees, toDegrees,
-            Animation.RELATIVE_TO_SELF, 0.5f,
-            Animation.RELATIVE_TO_SELF, 0.5f
-        ).apply {
-            duration = 300
-            fillAfter = true
-        }
-        icon.startAnimation(rotate)
+        // Update icon rotation
+        icon.animate()
+            .rotation(if (wasExpanded) 0f else 180f)
+            .setDuration(300)
+            .start()
     }
 
     private fun observeUiState() {
@@ -186,8 +196,8 @@ class PatternDetailsFragment : Fragment() {
                 launch {
                     viewModel.prerequisites.collect { patterns ->
                         android.util.Log.d("PatternDetails", "Collecting prerequisites: ${patterns.size} items")
-                        prerequisitesAdapter.submitList(patterns)
                         binding.apply {
+                            prerequisitesAdapter.submitList(patterns)
                             prerequisitesCard.isVisible = patterns.isNotEmpty()
                             android.util.Log.d("PatternDetails", "Prerequisites visibility: ${prerequisitesCard.isVisible}")
                         }
@@ -196,8 +206,8 @@ class PatternDetailsFragment : Fragment() {
                 launch {
                     viewModel.dependents.collect { patterns ->
                         android.util.Log.d("PatternDetails", "Collecting dependents: ${patterns.size} items")
-                        dependentsAdapter.submitList(patterns)
                         binding.apply {
+                            dependentsAdapter.submitList(patterns)
                             dependentsCard.isVisible = patterns.isNotEmpty()
                             android.util.Log.d("PatternDetails", "Dependents visibility: ${dependentsCard.isVisible}")
                         }
@@ -206,8 +216,8 @@ class PatternDetailsFragment : Fragment() {
                 launch {
                     viewModel.related.collect { patterns ->
                         android.util.Log.d("PatternDetails", "Collecting related: ${patterns.size} items")
-                        relatedAdapter.submitList(patterns)
                         binding.apply {
+                            relatedAdapter.submitList(patterns)
                             relatedCard.isVisible = patterns.isNotEmpty()
                             android.util.Log.d("PatternDetails", "Related visibility: ${relatedCard.isVisible}")
                         }
@@ -304,6 +314,7 @@ class PatternDetailsFragment : Fragment() {
 
             // Update run history
             runHistoryAdapter.submitList(runHistory)
+            runHistoryCard.isVisible = runHistory.isNotEmpty()
 
             // Create tag chips
             tagsGroup.removeAllViews()

@@ -3,6 +3,12 @@
     xmlns:app="http://schemas.android.com/apk/res-auto">
     
     <item
+        android:id="@+id/action_add_run"
+        android:icon="@android:drawable/ic_menu_add"
+        android:title="Add Run"
+        app:showAsAction="ifRoom" />
+
+    <item
         android:id="@+id/action_edit"
         android:icon="@android:drawable/ic_menu_edit"
         android:title="Edit Pattern"
