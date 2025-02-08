@@ -6,7 +6,8 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.ViewModelProvider
+import androidx.fragment.app.viewModels
+import dagger.hilt.android.AndroidEntryPoint
 import androidx.lifecycle.lifecycleScope
 import android.content.pm.PackageManager
 import com.example.jugcoach.databinding.FragmentSettingsBinding
@@ -14,10 +15,12 @@ import com.google.android.material.snackbar.Snackbar
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
+@AndroidEntryPoint
 class SettingsFragment : Fragment() {
     private var _binding: FragmentSettingsBinding? = null
     private val binding get() = _binding!!
-    private lateinit var viewModel: SettingsViewModel
+    private val viewModel: SettingsViewModel by viewModels()
+    private lateinit var apiKeyAdapter: ApiKeyAdapter
     
     private val getContent = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         uri?.let { viewModel.importPatternsFromUri(it) }
@@ -28,7 +31,6 @@ class SettingsFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        viewModel = ViewModelProvider(this).get(SettingsViewModel::class.java)
         _binding = FragmentSettingsBinding.inflate(inflater, container, false)
         return binding.root
     }
@@ -43,19 +45,21 @@ class SettingsFragment : Fragment() {
         binding.apply {
             val packageInfo = requireContext().packageManager.getPackageInfo(requireContext().packageName, 0)
             versionText.text = "Version: ${packageInfo.versionName}"
-            
-            saveButton.setOnClickListener {
-                val apiKey = apiKeyInput.text?.toString() ?: ""
-                viewModel.updateApiKey(apiKey)
+
+            apiKeyAdapter = ApiKeyAdapter(
+                onSave = viewModel::saveApiKey,
+                onDelete = viewModel::deleteApiKey
+            )
+            apiKeysList.adapter = apiKeyAdapter
+
+            addApiKeyButton.setOnClickListener {
+                viewModel.addApiKey()
             }
 
             importButton.setOnClickListener {
                 getContent.launch("application/json")
             }
 
-            exportButton.setOnClickListener {
-                viewModel.exportPatterns()
-            }
         }
     }
 
@@ -69,19 +73,13 @@ class SettingsFragment : Fragment() {
 
     private fun updateUi(state: SettingsUiState) {
         binding.apply {
-            // Only update if text is different to avoid cursor position reset
-            if (apiKeyInput.text?.toString() != state.apiKey) {
-                apiKeyInput.setText(state.apiKey)
-            }
-
+            apiKeyAdapter.submitList(state.apiKeys)
             patternsCountText.text = "Patterns: ${state.patternCount}"
-            saveButton.isEnabled = !state.isSaving
-            importButton.isEnabled = !state.isImporting && !state.isExporting
-            exportButton.isEnabled = !state.isImporting && !state.isExporting
+            addApiKeyButton.isEnabled = !state.isSaving
+            importButton.isEnabled = !state.isImporting
 
             // Show loading indicators
             importButton.text = if (state.isImporting) "Importing..." else "Import Patterns"
-            exportButton.text = if (state.isExporting) "Exporting..." else "Export Patterns"
 
             state.message?.let { message ->
                 Snackbar.make(root, message, Snackbar.LENGTH_SHORT).show()

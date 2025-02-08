@@ -24,6 +24,23 @@ class JugCoachApplication : Application() {
         applicationScope.launch {
             val database = JugCoachDatabase.getDatabase(this@JugCoachApplication)
             val settingsDao = database.settingsDao()
+            val coachDao = database.coachDao()
+            
+            // Create head coach if not exists
+            coachDao.createHeadCoach()
+
+            // Set up default API key if not exists
+            if (settingsDao.getSettingValue("llm_api_key") == null) {
+                settingsDao.setSettingValue(
+                    key = "llm_api_key",
+                    value = "",
+                    type = SettingType.STRING,
+                    category = SettingCategory.API_KEY,
+                    description = "Default LLM API Key",
+                    isEncrypted = true
+                )
+            }
+
             val patternsImported = settingsDao.getSettingValue("patterns_imported") == "true"
 
             if (!patternsImported) {

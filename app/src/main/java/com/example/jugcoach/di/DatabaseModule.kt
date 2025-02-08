@@ -2,10 +2,8 @@ package com.example.jugcoach.di
 
 import android.content.Context
 import com.example.jugcoach.data.JugCoachDatabase
-import com.example.jugcoach.data.dao.NoteDao
-import com.example.jugcoach.data.dao.PatternDao
-import com.example.jugcoach.data.dao.SessionDao
-import com.example.jugcoach.data.dao.SettingsDao
+import com.example.jugcoach.data.dao.*
+import com.example.jugcoach.data.importer.PatternImporter
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -41,5 +39,18 @@ object DatabaseModule {
     @Provides
     fun provideSettingsDao(database: JugCoachDatabase): SettingsDao {
         return database.settingsDao()
+    }
+
+    @Provides
+    fun provideCoachDao(database: JugCoachDatabase): CoachDao {
+        return database.coachDao()
+    }
+
+    @Provides
+    fun providePatternImporter(
+        @ApplicationContext context: Context,
+        patternDao: PatternDao
+    ): PatternImporter {
+        return PatternImporter(context, patternDao)
     }
 }

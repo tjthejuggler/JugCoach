@@ -1,128 +1,121 @@
 package com.example.jugcoach.ui.settings
 
-import android.app.Application
 import android.net.Uri
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.jugcoach.data.JugCoachDatabase
-import com.example.jugcoach.data.entity.SettingType
+import com.example.jugcoach.data.dao.PatternDao
+import com.example.jugcoach.data.dao.SettingsDao
 import com.example.jugcoach.data.entity.SettingCategory
+import com.example.jugcoach.data.entity.SettingType
+import com.example.jugcoach.data.entity.Settings
 import com.example.jugcoach.data.importer.PatternImporter
-import com.example.jugcoach.data.converter.PatternConverter
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-import java.io.File
+import javax.inject.Inject
 
 data class SettingsUiState(
-    val apiKey: String = "",
+    val apiKeys: List<ApiKeyItem> = emptyList(),
     val patternCount: Int = 0,
     val isSaving: Boolean = false,
     val isImporting: Boolean = false,
-    val isExporting: Boolean = false,
     val message: String? = null
 )
 
-class SettingsViewModel(application: Application) : AndroidViewModel(application) {
-    private val database = JugCoachDatabase.getDatabase(application)
-    private val settingsDao = database.settingsDao()
-    private val patternDao = database.patternDao()
-    private val patternImporter = PatternImporter(application, patternDao)
+@HiltViewModel
+class SettingsViewModel @Inject constructor(
+    private val settingsDao: SettingsDao,
+    private val patternDao: PatternDao,
+    private val patternImporter: PatternImporter
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SettingsUiState())
     val uiState: StateFlow<SettingsUiState> = _uiState.asStateFlow()
 
     init {
-        loadSettings()
+        loadData()
     }
 
-    private fun loadSettings() {
+    private fun loadData() {
         viewModelScope.launch {
-            val apiKey = settingsDao.getSettingValue("llm_api_key") ?: ""
-            
-            // Update API key immediately
-            _uiState.value = _uiState.value.copy(apiKey = apiKey)
-            
-            // Collect pattern count updates
-            patternDao.getAllPatterns().collect { patterns ->
-                _uiState.value = _uiState.value.copy(
-                    patternCount = patterns.size
-                )
+            // Load pattern count
+            patternDao.getCount().collectLatest { count ->
+                _uiState.update { it.copy(patternCount = count) }
+            }
+        }
+
+        viewModelScope.launch {
+            // Load API keys
+            settingsDao.getSettingsByCategory(SettingCategory.API_KEY).collectLatest { settings ->
+                val apiKeys = settings.map { setting ->
+                    ApiKeyItem(
+                        name = setting.key,
+                        value = setting.value
+                    )
+                }
+                _uiState.update { it.copy(apiKeys = apiKeys) }
             }
         }
     }
 
-    fun updateApiKey(apiKey: String) {
+    fun addApiKey() {
+        val currentKeys = _uiState.value.apiKeys
+        val newKeyName = "llm_api_key_${currentKeys.size + 1}"
+        val newKey = ApiKeyItem(name = newKeyName, value = "")
+        _uiState.update { it.copy(apiKeys = currentKeys + newKey) }
+    }
+
+    fun saveApiKey(name: String, value: String) {
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isSaving = true)
+            _uiState.update { it.copy(isSaving = true) }
             try {
                 settingsDao.setSettingValue(
-                    key = "llm_api_key",
-                    value = apiKey,
+                    key = name,
+                    value = value,
                     type = SettingType.STRING,
                     category = SettingCategory.API_KEY,
-                    description = "API key for LLM service",
+                    description = "LLM API Key",
                     isEncrypted = true
                 )
-                _uiState.value = _uiState.value.copy(
-                    apiKey = apiKey,
-                    message = "API key saved successfully",
-                    isSaving = false
-                )
+                showMessage("API key saved successfully")
             } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(
-                    message = "Failed to save API key: ${e.message}",
-                    isSaving = false
-                )
+                showMessage("Failed to save API key: ${e.message}")
+            } finally {
+                _uiState.update { it.copy(isSaving = false) }
             }
         }
     }
 
-    fun clearMessage() {
-        _uiState.value = _uiState.value.copy(message = null)
+    fun deleteApiKey(name: String) {
+        viewModelScope.launch {
+            try {
+                settingsDao.deleteSettingByKey(name)
+                showMessage("API key deleted successfully")
+            } catch (e: Exception) {
+                showMessage("Failed to delete API key: ${e.message}")
+            }
+        }
     }
 
     fun importPatternsFromUri(uri: Uri) {
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isImporting = true)
+            _uiState.update { it.copy(isImporting = true) }
             try {
-                val count = patternImporter.importFromUri(uri)
-                _uiState.value = _uiState.value.copy(
-                    message = "Successfully imported $count patterns",
-                    isImporting = false
-                )
+                patternImporter.importFromUri(uri)
+                showMessage("Patterns imported successfully")
             } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(
-                    message = "Failed to import patterns: ${e.message}",
-                    isImporting = false
-                )
+                showMessage("Failed to import patterns: ${e.message}")
+            } finally {
+                _uiState.update { it.copy(isImporting = false) }
             }
         }
     }
 
-    fun exportPatterns() {
-        viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isExporting = true)
-            try {
-                val patterns = patternDao.getAllPatternsSync()
-                val json = PatternConverter.toJson(patterns)
-                
-                // Save to Downloads directory
-                val downloadsDir = getApplication<Application>().getExternalFilesDir(null)
-                val exportFile = File(downloadsDir, "juggling_patterns_${System.currentTimeMillis()}.json")
-                exportFile.writeText(json)
+    private fun showMessage(message: String) {
+        _uiState.update { it.copy(message = message) }
+    }
 
-                _uiState.value = _uiState.value.copy(
-                    message = "Patterns exported to ${exportFile.absolutePath}",
-                    isExporting = false
-                )
-            } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(
-                    message = "Failed to export patterns: ${e.message}",
-                    isExporting = false
-                )
-            }
-        }
+    fun clearMessage() {
+        _uiState.update { it.copy(message = null) }
     }
 }

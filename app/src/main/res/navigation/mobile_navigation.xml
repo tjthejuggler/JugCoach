@@ -38,7 +38,17 @@
         android:id="@+id/nav_chat"
         android:name="com.example.jugcoach.ui.chat.ChatFragment"
         android:label="@string/menu_chat"
-        tools:layout="@layout/fragment_chat" />
+        tools:layout="@layout/fragment_chat">
+        <action
+            android:id="@+id/action_nav_chat_to_createCoachFragment"
+            app:destination="@id/createCoachFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/createCoachFragment"
+        android:name="com.example.jugcoach.ui.coach.CreateCoachFragment"
+        android:label="@string/create_coach"
+        tools:layout="@layout/fragment_create_coach" />
 
     <fragment
         android:id="@+id/nav_settings"

@@ -9,6 +9,9 @@ interface PatternDao {
     @Query("SELECT * FROM patterns")
     fun getAllPatterns(): Flow<List<Pattern>>
 
+    @Query("SELECT COUNT(*) FROM patterns")
+    fun getCount(): Flow<Int>
+
     @Query("""
         SELECT *, 
         CASE 

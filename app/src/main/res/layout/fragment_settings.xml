@@ -29,29 +29,20 @@
                     android:textAppearance="?attr/textAppearanceHeadline6"
                     android:layout_marginBottom="16dp"/>
 
-                <com.google.android.material.textfield.TextInputLayout
-                    android:id="@+id/apiKeyLayout"
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/apiKeysList"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:hint="API Key"
-                    app:endIconMode="password_toggle"
-                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
-
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/apiKeyInput"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:inputType="textPassword"/>
-
-                </com.google.android.material.textfield.TextInputLayout>
+                    app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"/>
 
                 <com.google.android.material.button.MaterialButton
-                    android:id="@+id/saveButton"
-                    android:layout_width="wrap_content"
+                    android:id="@+id/addApiKeyButton"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="16dp"
-                    android:text="Save"
-                    android:layout_gravity="end"/>
+                    android:layout_marginTop="8dp"
+                    android:text="Add API Key"
+                    app:icon="@android:drawable/ic_menu_add"/>
 
             </LinearLayout>
 
@@ -116,20 +107,11 @@
                     android:layout_height="wrap_content"
                     android:orientation="horizontal">
 
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/exportButton"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:layout_marginEnd="8dp"
-                        android:text="Export Patterns"/>
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/importButton"
-                        android:layout_width="0dp"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:layout_marginStart="8dp"
                         android:text="Import Patterns"/>
 
                 </LinearLayout>

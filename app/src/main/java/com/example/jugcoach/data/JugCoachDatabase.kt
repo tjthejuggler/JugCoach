@@ -7,23 +7,18 @@ import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import com.example.jugcoach.data.converter.DateConverter
 import com.example.jugcoach.data.converter.ListConverter
-import com.example.jugcoach.data.dao.NoteDao
-import com.example.jugcoach.data.dao.PatternDao
-import com.example.jugcoach.data.dao.SessionDao
-import com.example.jugcoach.data.dao.SettingsDao
-import com.example.jugcoach.data.entity.Note
-import com.example.jugcoach.data.entity.Pattern
-import com.example.jugcoach.data.entity.Session
-import com.example.jugcoach.data.entity.Settings
+import com.example.jugcoach.data.dao.*
+import com.example.jugcoach.data.entity.*
 
 @Database(
     entities = [
         Pattern::class,
         Session::class,
         Note::class,
-        Settings::class
+        Settings::class,
+        Coach::class
     ],
-    version = 1,
+    version = 2,
     exportSchema = true
 )
 @TypeConverters(DateConverter::class, ListConverter::class)
@@ -32,6 +27,7 @@ abstract class JugCoachDatabase : RoomDatabase() {
     abstract fun sessionDao(): SessionDao
     abstract fun noteDao(): NoteDao
     abstract fun settingsDao(): SettingsDao
+    abstract fun coachDao(): CoachDao
 
     companion object {
         @Volatile
@@ -44,7 +40,7 @@ abstract class JugCoachDatabase : RoomDatabase() {
                     JugCoachDatabase::class.java,
                     "jugcoach_database"
                 )
-                    .fallbackToDestructiveMigration() // For development only, remove in production
+                    .fallbackToDestructiveMigration()
                     .build()
                 INSTANCE = instance
                 instance
