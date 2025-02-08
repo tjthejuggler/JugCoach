@@ -20,6 +20,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
+import androidx.navigation.fragment.navArgs
 import com.example.jugcoach.R
 import com.example.jugcoach.data.entity.Pattern
 import com.example.jugcoach.data.entity.Run
@@ -38,6 +39,7 @@ class PatternDetailsFragment : Fragment() {
     private var _binding: FragmentPatternDetailsBinding? = null
     private val binding get() = _binding!!
 
+    private val args: PatternDetailsFragmentArgs by navArgs()
     private val viewModel: PatternDetailsViewModel by viewModels()
     
     private val prerequisitesAdapter = PatternAdapter { pattern ->
@@ -53,6 +55,12 @@ class PatternDetailsFragment : Fragment() {
     }
 
     private val runHistoryAdapter = RunHistoryAdapter()
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        android.util.Log.d("PatternDetails", "Fragment created with pattern ID: ${args.patternId}")
+        viewModel.setPatternId(args.patternId)
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -85,11 +93,9 @@ class PatternDetailsFragment : Fragment() {
                     true
                 }
                 R.id.action_edit -> {
-                    // TODO: Implement edit dialog
-                    true
-                }
-                R.id.action_delete -> {
-                    showDeleteConfirmation()
+                    val action = PatternDetailsFragmentDirections
+                        .actionPatternDetailsFragmentToEditPatternFragment(viewModel.getCurrentPatternId())
+                    findNavController().navigate(action)
                     true
                 }
                 else -> false
@@ -178,12 +184,25 @@ class PatternDetailsFragment : Fragment() {
     private fun observeUiState() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                android.util.Log.d("PatternDetails", "Starting to observe UI state")
                 viewModel.uiState.collect { state ->
+                    android.util.Log.d("PatternDetails", "Received UI state update: $state")
                     when (state) {
-                        is PatternDetailsUiState.Loading -> showLoading()
-                        is PatternDetailsUiState.Success -> showPattern(state.pattern, state.runHistory)
-                        is PatternDetailsUiState.Error -> showError(state.message)
-                        is PatternDetailsUiState.Deleted -> handlePatternDeleted()
+                        is PatternDetailsUiState.Loading -> {
+                            android.util.Log.d("PatternDetails", "Showing loading state")
+                            showLoading()
+                        }
+                        is PatternDetailsUiState.Success -> {
+                            android.util.Log.d("PatternDetails", "Showing pattern: ${state.pattern.name}")
+                            android.util.Log.d("PatternDetails", "Pattern details: id=${state.pattern.id}, " +
+                                "difficulty=${state.pattern.difficulty}, " +
+                                "explanation=${state.pattern.explanation?.take(50)}...")
+                            showPattern(state.pattern, state.runHistory)
+                        }
+                        is PatternDetailsUiState.Error -> {
+                            android.util.Log.e("PatternDetails", "Error showing pattern: ${state.message}")
+                            showError(state.message)
+                        }
                     }
                 }
             }
@@ -330,21 +349,6 @@ class PatternDetailsFragment : Fragment() {
 
     private fun showError(message: String) {
         Snackbar.make(binding.root, message, Snackbar.LENGTH_LONG).show()
-    }
-
-    private fun handlePatternDeleted() {
-        findNavController().navigateUp()
-    }
-
-    private fun showDeleteConfirmation() {
-        MaterialAlertDialogBuilder(requireContext())
-            .setTitle(R.string.delete_pattern_title)
-            .setMessage(R.string.delete_pattern_message)
-            .setPositiveButton(R.string.delete) { _, _ ->
-                viewModel.deletePattern()
-            }
-            .setNegativeButton(R.string.cancel, null)
-            .show()
     }
 
     private fun navigateToPattern(patternId: String) {

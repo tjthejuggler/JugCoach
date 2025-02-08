@@ -32,6 +32,19 @@
         <action
             android:id="@+id/action_patternDetailsFragment_self"
             app:destination="@id/patternDetailsFragment" />
+        <action
+            android:id="@+id/action_patternDetailsFragment_to_editPatternFragment"
+            app:destination="@id/editPatternFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/editPatternFragment"
+        android:name="com.example.jugcoach.ui.details.EditPatternFragment"
+        android:label="Edit Pattern"
+        tools:layout="@layout/fragment_edit_pattern">
+        <argument
+            android:name="patternId"
+            app:argType="string" />
     </fragment>
 
     <fragment

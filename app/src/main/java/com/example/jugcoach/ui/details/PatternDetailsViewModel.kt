@@ -1,5 +1,7 @@
 package com.example.jugcoach.ui.details
 
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -21,7 +23,13 @@ class PatternDetailsViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
-    private val patternId: String = checkNotNull(savedStateHandle["patternId"])
+    private val savedStateHandle: SavedStateHandle
+
+    init {
+        this.savedStateHandle = savedStateHandle
+    }
+
+    fun getCurrentPatternId(): String = savedStateHandle.get<String>("pattern_id") ?: ""
 
     private val _uiState = MutableStateFlow<PatternDetailsUiState>(PatternDetailsUiState.Loading)
     val uiState: StateFlow<PatternDetailsUiState> = _uiState.asStateFlow()
@@ -35,24 +43,50 @@ class PatternDetailsViewModel @Inject constructor(
     private val _related = MutableStateFlow<List<Pattern>>(emptyList())
     val related = _related.asStateFlow()
 
-    init {
+    private val _availablePatterns = MutableStateFlow<List<Pattern>>(emptyList())
+    val availablePatterns = _availablePatterns.asStateFlow()
+
+    private val _pattern = MutableLiveData<Pattern>()
+    val pattern: LiveData<Pattern> = _pattern
+
+    fun setPatternId(id: String) {
+        android.util.Log.d("PatternDetails", "Setting pattern ID: $id")
+        savedStateHandle["pattern_id"] = id
         loadPattern()
+        loadAvailablePatterns()
     }
 
     private fun loadPattern() {
         viewModelScope.launch {
             try {
-                val pattern = patternDao.getPatternById(patternId)
+                val currentId = getCurrentPatternId()
+                android.util.Log.d("PatternDetails", "Starting to load pattern with ID: $currentId")
+                _uiState.value = PatternDetailsUiState.Loading
+                
+                android.util.Log.d("PatternDetails", "Querying database for pattern ID: $currentId")
+                val pattern = patternDao.getPatternById(currentId)
+                
                 if (pattern != null) {
+                    android.util.Log.d("PatternDetails", "Pattern loaded successfully: ${pattern.name}")
+                    android.util.Log.d("PatternDetails", "Pattern details: " +
+                        "id=${pattern.id}, " +
+                        "name=${pattern.name}, " +
+                        "difficulty=${pattern.difficulty}, " +
+                        "explanation=${pattern.explanation?.take(50)}...")
+                    
+                    _pattern.value = pattern
                     _uiState.value = PatternDetailsUiState.Success(
                         pattern = pattern,
                         runHistory = pattern.runHistory.runs
                     )
                     loadRelatedPatterns(pattern)
                 } else {
+                    android.util.Log.e("PatternDetails", "Pattern not found in database for ID: $currentId")
                     _uiState.value = PatternDetailsUiState.Error("Pattern not found")
                 }
             } catch (e: Exception) {
+                android.util.Log.e("PatternDetails", "Error loading pattern: ${e.message}", e)
+                android.util.Log.e("PatternDetails", "Stack trace: ${e.stackTrace.joinToString("\n")}")
                 _uiState.value = PatternDetailsUiState.Error(e.message ?: "Unknown error")
             }
         }
@@ -103,15 +137,105 @@ class PatternDetailsViewModel @Inject constructor(
         }
     }
 
-    fun deletePattern() {
+    private fun loadAvailablePatterns() {
+        viewModelScope.launch {
+            try {
+                patternDao.getAllPatterns().collect { patterns ->
+                    val currentId = getCurrentPatternId()
+                    _availablePatterns.value = patterns.filter { pattern -> pattern.id != currentId }
+                }
+            } catch (e: Exception) {
+                // Handle error if needed
+            }
+        }
+    }
+
+    fun addPrerequisite(prerequisiteId: String) {
         viewModelScope.launch {
             try {
                 val currentPattern = (uiState.value as? PatternDetailsUiState.Success)?.pattern
                     ?: return@launch
-                patternDao.deletePattern(currentPattern)
-                _uiState.value = PatternDetailsUiState.Deleted
+                val updatedPrerequisites = currentPattern.prerequisites + prerequisiteId
+                val updatedPattern = currentPattern.copy(prerequisites = updatedPrerequisites)
+                patternDao.updatePattern(updatedPattern)
+                loadPattern()
             } catch (e: Exception) {
-                _uiState.value = PatternDetailsUiState.Error(e.message ?: "Failed to delete pattern")
+                _uiState.value = PatternDetailsUiState.Error(e.message ?: "Failed to add prerequisite")
+            }
+        }
+    }
+
+    fun removePrerequisite(prerequisiteId: String) {
+        viewModelScope.launch {
+            try {
+                val currentPattern = (uiState.value as? PatternDetailsUiState.Success)?.pattern
+                    ?: return@launch
+                val updatedPrerequisites = currentPattern.prerequisites - prerequisiteId
+                val updatedPattern = currentPattern.copy(prerequisites = updatedPrerequisites)
+                patternDao.updatePattern(updatedPattern)
+                loadPattern()
+            } catch (e: Exception) {
+                _uiState.value = PatternDetailsUiState.Error(e.message ?: "Failed to remove prerequisite")
+            }
+        }
+    }
+
+    fun addDependent(dependentId: String) {
+        viewModelScope.launch {
+            try {
+                val currentPattern = (uiState.value as? PatternDetailsUiState.Success)?.pattern
+                    ?: return@launch
+                val updatedDependents = currentPattern.dependents + dependentId
+                val updatedPattern = currentPattern.copy(dependents = updatedDependents)
+                patternDao.updatePattern(updatedPattern)
+                loadPattern()
+            } catch (e: Exception) {
+                _uiState.value = PatternDetailsUiState.Error(e.message ?: "Failed to add dependent")
+            }
+        }
+    }
+
+    fun removeDependent(dependentId: String) {
+        viewModelScope.launch {
+            try {
+                val currentPattern = (uiState.value as? PatternDetailsUiState.Success)?.pattern
+                    ?: return@launch
+                val updatedDependents = currentPattern.dependents - dependentId
+                val updatedPattern = currentPattern.copy(dependents = updatedDependents)
+                patternDao.updatePattern(updatedPattern)
+                loadPattern()
+            } catch (e: Exception) {
+                _uiState.value = PatternDetailsUiState.Error(e.message ?: "Failed to remove dependent")
+            }
+        }
+    }
+
+    fun addRelated(relatedId: String) {
+        viewModelScope.launch {
+            try {
+                val currentPattern = (uiState.value as? PatternDetailsUiState.Success)?.pattern
+                    ?: return@launch
+                val updatedRelated = currentPattern.related + relatedId
+                val updatedPattern = currentPattern.copy(related = updatedRelated)
+                patternDao.updatePattern(updatedPattern)
+                loadPattern()
+            } catch (e: Exception) {
+                _uiState.value = PatternDetailsUiState.Error(e.message ?: "Failed to add related pattern")
+            }
+        }
+    }
+
+    fun removeRelated(relatedId: String) {
+        viewModelScope.launch {
+            try {
+                val currentPattern = (uiState.value as? PatternDetailsUiState.Success)?.pattern
+                    ?: return@launch
+                val updatedRelated = currentPattern.related - relatedId
+                val updatedPattern = currentPattern.copy(related = updatedRelated)
+                patternDao.updatePattern(updatedPattern)
+                loadPattern()
+            } catch (e: Exception) {
+                _uiState.value = PatternDetailsUiState.Error(e.message ?: "Failed to remove related pattern")
             }
         }
     }
@@ -167,5 +291,4 @@ sealed class PatternDetailsUiState {
         val runHistory: List<Run> = emptyList()
     ) : PatternDetailsUiState()
     data class Error(val message: String) : PatternDetailsUiState()
-    data object Deleted : PatternDetailsUiState()
 }

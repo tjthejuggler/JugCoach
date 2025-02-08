@@ -69,4 +69,32 @@
     <string name="apply">Apply</string>
     <string name="apply_filters">Apply Filters</string>
     <string name="apply_sort">Apply Sort</string>
+
+    <!-- Edit Pattern -->
+    <string name="edit_pattern_title">Edit Pattern</string>
+    <string name="number_of_balls">Number of Balls</string>
+    <string name="siteswap">Siteswap</string>
+    <string name="gif_url">GIF URL</string>
+    <string name="video_url">Video URL</string>
+    <string name="external_url">External URL</string>
+    <string name="add_tag">Add Tag</string>
+    <string name="add_prerequisite">Add Prerequisite</string>
+    <string name="add_dependent">Add Dependent</string>
+    <string name="add_related">Add Related Pattern</string>
+    <string name="search_patterns">Search Patterns</string>
+    <string name="select_pattern">Select Pattern</string>
+    <string name="record_catches">Catches</string>
+    <string name="record_date">Date</string>
+    <string name="edit_run">Edit Run</string>
+    <string name="delete_run">Delete Run</string>
+
+    <!-- Error Messages -->
+    <string name="error">Error</string>
+    <string name="ok">OK</string>
+    <string name="required_field">This field is required</string>
+    <string name="invalid_number">Please enter a valid number</string>
+    <string name="difficulty_range_error">Difficulty must be between 1 and 10</string>
+    <string name="invalid_number_of_balls">Number of balls must be greater than 0</string>
+    <string name="error_loading_patterns">Failed to load patterns</string>
+    <string name="error_saving_pattern">Failed to save pattern</string>
 </resources>

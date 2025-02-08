@@ -13,10 +13,4 @@
         android:icon="@android:drawable/ic_menu_edit"
         android:title="Edit Pattern"
         app:showAsAction="ifRoom" />
-
-    <item
-        android:id="@+id/action_delete"
-        android:icon="@android:drawable/ic_menu_delete"
-        android:title="Delete Pattern"
-        app:showAsAction="never" />
 </menu>
