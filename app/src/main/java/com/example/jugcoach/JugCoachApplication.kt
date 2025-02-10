@@ -30,7 +30,10 @@ class JugCoachApplication : Application() {
             coachDao.createHeadCoach()
 
             // Set up default API key if not exists
-            if (settingsDao.getSettingValue("llm_api_key") == null) {
+            android.util.Log.d("JugCoachApplication", "Checking for default API key")
+            val defaultApiKey = settingsDao.getSettingValue("llm_api_key")
+            if (defaultApiKey == null) {
+                android.util.Log.d("JugCoachApplication", "Creating default API key setting")
                 settingsDao.setSettingValue(
                     key = "llm_api_key",
                     value = "",
@@ -39,6 +42,9 @@ class JugCoachApplication : Application() {
                     description = "Default LLM API Key",
                     isEncrypted = true
                 )
+                android.util.Log.d("JugCoachApplication", "Default API key setting created")
+            } else {
+                android.util.Log.d("JugCoachApplication", "Default API key already exists")
             }
 
             val patternsImported = settingsDao.getSettingValue("patterns_imported") == "true"

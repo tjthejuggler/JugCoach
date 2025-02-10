@@ -26,17 +26,68 @@ object NetworkModule {
             .addInterceptor(loggingInterceptor)
             .addInterceptor { chain ->
                 val request = chain.request()
-                val builder = request.newBuilder()
-                    .addHeader("Content-Type", "application/json")
-                    .addHeader("Accept", "application/json")
-                    .addHeader("anthropic-version", "2024-01-01")
+                android.util.Log.d("NetworkModule", "Processing request: ${request.url}")
 
-                // If x-api-key is already in the request, use that, otherwise try to get it from headers
-                if (!request.headers["x-api-key"].isNullOrEmpty()) {
-                    builder.addHeader("x-api-key", request.headers["x-api-key"]!!)
+                // Get API key from request header
+                val apiKey = request.header("x-api-key")
+                android.util.Log.d("NetworkModule", "Raw API key present: ${!apiKey.isNullOrEmpty()}")
+                android.util.Log.d("NetworkModule", "Request URL: ${request.url}")
+                android.util.Log.d("NetworkModule", "Original headers: ${request.headers}")
+                android.util.Log.d("NetworkModule", "Request method: ${request.method}")
+                android.util.Log.d("NetworkModule", "Request body size: ${request.body?.contentLength() ?: 0}")
+
+                // Build new request with required headers
+                val newRequest = request.newBuilder().apply {
+                    header("Content-Type", "application/json")
+                    header("Accept", "application/json")
+                    header("anthropic-version", "2023-06-01")
+
+                    // Only set API key if it's present
+                    if (!apiKey.isNullOrEmpty()) {
+                        // Anthropic API expects raw API key
+                        android.util.Log.d("NetworkModule", "Using API key: ${apiKey.take(10)}...${apiKey.takeLast(4)}")
+                        android.util.Log.d("NetworkModule", "API key format: ${if (apiKey.startsWith("sk-")) "Valid" else "Invalid"}")
+                        header("x-api-key", apiKey)
+                    } else {
+                        android.util.Log.e("NetworkModule", "No API key found in request")
+                    }
+                }.build()
+
+                // Log complete request details
+                android.util.Log.d("NetworkModule", "=== Sending Request ===")
+                android.util.Log.d("NetworkModule", "URL: ${newRequest.url}")
+                android.util.Log.d("NetworkModule", "Method: ${newRequest.method}")
+                android.util.Log.d("NetworkModule", "Headers:")
+                for (i in 0 until newRequest.headers.size) {
+                    val name = newRequest.headers.name(i)
+                    val value = newRequest.headers.value(i)
+                    android.util.Log.d("NetworkModule", "  $name: $value")
                 }
+                newRequest.body?.let { body ->
+                    val bodyString = okio.Buffer().also { body.writeTo(it) }.readUtf8()
+                    android.util.Log.d("NetworkModule", "Body: $bodyString")
+                }
+                android.util.Log.d("NetworkModule", "===================")
 
-                chain.proceed(builder.build())
+                try {
+                    val response = chain.proceed(newRequest)
+                    android.util.Log.d("NetworkModule", "Response code: ${response.code}")
+                    android.util.Log.d("NetworkModule", "Response message: ${response.message}")
+                    android.util.Log.d("NetworkModule", "Response headers: ${response.headers}")
+                    
+                    if (!response.isSuccessful) {
+                        // Create a copy of the response body before consuming it
+                        val responseBody = response.peekBody(Long.MAX_VALUE)
+                        android.util.Log.e("NetworkModule", "Error response: ${responseBody.string()}")
+                    }
+                    
+                    response
+                } catch (e: Exception) {
+                    android.util.Log.e("NetworkModule", "Network error", e)
+                    android.util.Log.e("NetworkModule", "Error message: ${e.message}")
+                    android.util.Log.e("NetworkModule", "Error cause: ${e.cause}")
+                    throw e
+                }
             }
             .connectTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
             .readTimeout(30, java.util.concurrent.TimeUnit.SECONDS)

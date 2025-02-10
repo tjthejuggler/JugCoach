@@ -3,7 +3,7 @@ package com.example.jugcoach.data.api
 import com.google.gson.annotations.SerializedName
 
 data class AnthropicRequest(
-    val model: String = "claude-3-opus-20240229",
+    val model: String = "claude-3-5-sonnet-20241022",
     val messages: List<Message>,
     @SerializedName("max_tokens")
     val maxTokens: Int = 4096,

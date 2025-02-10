@@ -15,6 +15,7 @@ import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.example.jugcoach.R
 import com.example.jugcoach.data.entity.Coach
 import com.example.jugcoach.databinding.FragmentChatBinding
@@ -30,6 +31,7 @@ class ChatFragment : Fragment() {
     private val binding get() = _binding!!
     private val viewModel: ChatViewModel by viewModels()
     private lateinit var chatAdapter: ChatAdapter
+    private lateinit var layoutManager: LinearLayoutManager
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -43,6 +45,7 @@ class ChatFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        android.util.Log.d("ChatFragment", "Setting up fragment")
         setupRecyclerView()
         setupMessageInput()
         setupCoachSpinner()
@@ -53,23 +56,41 @@ class ChatFragment : Fragment() {
     private fun observeApiKeys() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewModel.availableApiKeys.collect { apiKeys ->
-                // Just collect to keep the flow active
                 android.util.Log.d("ChatFragment", "Available API keys: $apiKeys")
             }
         }
     }
 
     private fun setupRecyclerView() {
+        android.util.Log.d("ChatFragment", "Setting up RecyclerView")
         chatAdapter = ChatAdapter()
-        binding.messagesList.apply {
-            adapter = chatAdapter
-            layoutManager = LinearLayoutManager(context).apply {
-                stackFromEnd = true
-            }
+        layoutManager = LinearLayoutManager(requireContext()).apply {
+            stackFromEnd = true
+            reverseLayout = false
         }
+
+        binding.messagesList.apply {
+            setHasFixedSize(true)
+            itemAnimator = null // Disable animations to prevent flickering
+            layoutManager = this@ChatFragment.layoutManager
+            adapter = chatAdapter
+
+            // Add scroll listener for debugging
+            addOnScrollListener(object : RecyclerView.OnScrollListener() {
+                override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                    (layoutManager as? LinearLayoutManager)?.let { manager ->
+                        val firstVisible = manager.findFirstVisibleItemPosition()
+                        val lastVisible = manager.findLastVisibleItemPosition()
+                        android.util.Log.d("ChatFragment", "Scroll - First: $firstVisible, Last: $lastVisible")
+                    }
+                }
+            })
+        }
+        android.util.Log.d("ChatFragment", "RecyclerView setup complete")
     }
 
     private fun setupMessageInput() {
+        android.util.Log.d("ChatFragment", "Setting up message input")
         binding.apply {
             messageInput.doAfterTextChanged { text ->
                 sendButton.isEnabled = !text.isNullOrBlank()
@@ -78,6 +99,7 @@ class ChatFragment : Fragment() {
             sendButton.setOnClickListener {
                 val message = messageInput.text?.toString()?.trim()
                 if (!message.isNullOrEmpty()) {
+                    android.util.Log.d("ChatFragment", "Sending message: $message")
                     viewModel.sendMessage(message)
                     messageInput.text?.clear()
                 }
@@ -86,10 +108,12 @@ class ChatFragment : Fragment() {
     }
 
     private fun setupCoachSpinner() {
+        android.util.Log.d("ChatFragment", "Setting up coach spinner")
         binding.coachSpinner.onItemSelectedListener = object : android.widget.AdapterView.OnItemSelectedListener {
             override fun onItemSelected(parent: android.widget.AdapterView<*>?, view: View?, position: Int, id: Long) {
                 val coaches = viewModel.uiState.value.availableCoaches
                 if (position < coaches.size) {
+                    android.util.Log.d("ChatFragment", "Selected coach: ${coaches[position].name}")
                     viewModel.selectCoach(coaches[position])
                 }
             }
@@ -98,6 +122,7 @@ class ChatFragment : Fragment() {
     }
 
     private fun observeUiState() {
+        android.util.Log.d("ChatFragment", "Starting UI state observation")
         viewLifecycleOwner.lifecycleScope.launch {
             viewModel.uiState.collectLatest { state ->
                 updateUi(state)
@@ -106,12 +131,29 @@ class ChatFragment : Fragment() {
     }
 
     private fun updateUi(state: ChatUiState) {
+        android.util.Log.d("ChatFragment", "Updating UI with state: loading=${state.isLoading}, messages=${state.messages.size}")
         binding.apply {
             loadingIndicator.isVisible = state.isLoading
-            chatAdapter.submitList(state.messages) {
+            
+            // Log each message for debugging
+            state.messages.forEachIndexed { index, msg ->
+                android.util.Log.d("ChatFragment", "Message $index - ${msg.sender}: ${msg.text}")
+            }
+            
+            // Create a new list to force DiffUtil to run
+            val newList = state.messages.toList()
+            android.util.Log.d("ChatFragment", "Submitting new list with ${newList.size} messages")
+            chatAdapter.submitList(newList) {
                 // Scroll to bottom when new messages arrive
-                if (state.messages.isNotEmpty()) {
-                    messagesList.smoothScrollToPosition(state.messages.size - 1)
+                if (newList.isNotEmpty()) {
+                    android.util.Log.d("ChatFragment", "Scrolling to position: ${newList.size - 1}")
+                    messagesList.post {
+                        try {
+                            messagesList.smoothScrollToPosition(newList.size - 1)
+                        } catch (e: Exception) {
+                            android.util.Log.e("ChatFragment", "Error scrolling", e)
+                        }
+                    }
                 }
             }
 
@@ -132,6 +174,7 @@ class ChatFragment : Fragment() {
             }
 
             state.error?.let { error ->
+                android.util.Log.e("ChatFragment", "Showing error: $error")
                 Snackbar.make(root, error, Snackbar.LENGTH_LONG).show()
             }
         }

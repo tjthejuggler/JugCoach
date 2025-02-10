@@ -2,6 +2,7 @@ package com.example.jugcoach.ui.settings
 
 import android.view.LayoutInflater
 import android.view.ViewGroup
+import androidx.core.widget.doAfterTextChanged
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
@@ -23,6 +24,7 @@ class ApiKeyAdapter(
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+        android.util.Log.d("ApiKeyAdapter", "Binding item at position $position")
         holder.bind(getItem(position))
     }
 
@@ -30,22 +32,48 @@ class ApiKeyAdapter(
         private val binding: ItemApiKeyBinding
     ) : RecyclerView.ViewHolder(binding.root) {
 
+        init {
+            binding.apiKeyInput.doAfterTextChanged { text ->
+                validateApiKey(text?.toString())
+            }
+        }
+
+        private fun validateApiKey(key: String?) {
+            android.util.Log.d("ApiKeyAdapter", "Validating API key: ${key?.take(4)}...")
+            binding.apiKeyLayout.error = when {
+                key.isNullOrBlank() -> "API key is required"
+                !key.startsWith("sk-") -> "API key must start with 'sk-'"
+                key.length < 34 -> "API key is too short"
+                else -> null
+            }
+            binding.saveButton.isEnabled = binding.apiKeyLayout.error == null && !key.isNullOrBlank()
+        }
+
         fun bind(item: ApiKeyItem) {
+            android.util.Log.d("ApiKeyAdapter", "Binding API key item: ${item.name}")
             binding.apply {
                 keyNameInput.setText(item.name)
                 apiKeyInput.setText(item.value)
 
+                // Validate initial value
+                validateApiKey(item.value)
+
                 saveButton.setOnClickListener {
                     val name = keyNameInput.text.toString()
                     val key = apiKeyInput.text.toString()
-                    if (name.isNotBlank() && key.isNotBlank()) {
+                    if (name.isNotBlank() && key.isNotBlank() && binding.apiKeyLayout.error == null) {
+                        android.util.Log.d("ApiKeyAdapter", "Saving API key: $name")
                         onSave(name, key)
                     }
                 }
 
                 deleteButton.setOnClickListener {
+                    android.util.Log.d("ApiKeyAdapter", "Deleting API key: ${item.name}")
                     onDelete(item.name)
                 }
+
+                // Disable save button if key is empty
+                saveButton.isEnabled = item.value.isNotBlank() && binding.apiKeyLayout.error == null
             }
         }
     }

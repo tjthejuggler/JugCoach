@@ -16,6 +16,7 @@ import java.time.format.FormatStyle
 class ChatAdapter : ListAdapter<ChatMessage, ChatAdapter.MessageViewHolder>(MessageDiffCallback()) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MessageViewHolder {
+        android.util.Log.d("ChatAdapter", "Creating new ViewHolder")
         val binding = ItemChatMessageBinding.inflate(
             LayoutInflater.from(parent.context),
             parent,
@@ -25,7 +26,17 @@ class ChatAdapter : ListAdapter<ChatMessage, ChatAdapter.MessageViewHolder>(Mess
     }
 
     override fun onBindViewHolder(holder: MessageViewHolder, position: Int) {
-        holder.bind(getItem(position))
+        val message = getItem(position)
+        android.util.Log.d("ChatAdapter", "Binding message at position $position: ${message.sender} - ${message.text}")
+        holder.bind(message)
+    }
+
+    override fun submitList(list: List<ChatMessage>?) {
+        android.util.Log.d("ChatAdapter", "Submitting new list with ${list?.size ?: 0} messages")
+        list?.forEachIndexed { index, msg ->
+            android.util.Log.d("ChatAdapter", "Message $index: ${msg.sender} - ${msg.text}")
+        }
+        super.submitList(list?.toList())
     }
 
     class MessageViewHolder(
@@ -78,11 +89,15 @@ class ChatAdapter : ListAdapter<ChatMessage, ChatAdapter.MessageViewHolder>(Mess
 
     private class MessageDiffCallback : DiffUtil.ItemCallback<ChatMessage>() {
         override fun areItemsTheSame(oldItem: ChatMessage, newItem: ChatMessage): Boolean {
-            return oldItem.id == newItem.id
+            val result = oldItem.id == newItem.id
+            android.util.Log.d("ChatAdapter", "Comparing items: ${oldItem.id} == ${newItem.id} = $result")
+            return result
         }
 
         override fun areContentsTheSame(oldItem: ChatMessage, newItem: ChatMessage): Boolean {
-            return oldItem == newItem
+            val result = oldItem == newItem
+            android.util.Log.d("ChatAdapter", "Comparing contents: $oldItem == $newItem = $result")
+            return result
         }
     }
 }

@@ -32,7 +32,7 @@ interface CoachDao {
         if (!hasHeadCoach()) {
             val headCoach = Coach(
                 name = "Head Coach",
-                apiKeyName = "llm_api_key", // Default API key
+                apiKeyName = "", // No default API key - user will select one
                 description = "Your primary juggling coach",
                 isHeadCoach = true,
                 systemPrompt = """

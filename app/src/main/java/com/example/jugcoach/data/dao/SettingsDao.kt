@@ -18,7 +18,15 @@ interface SettingsDao {
     suspend fun getSetting(key: String): Settings?
 
     @Query("SELECT value FROM settings WHERE key = :key")
-    suspend fun getSettingValue(key: String): String?
+    suspend fun getSettingValue(key: String): String? {
+        android.util.Log.d("SettingsDao", "Retrieving setting value for key: $key")
+        val value = getSettingRaw(key)
+        android.util.Log.d("SettingsDao", "Raw value length: ${value?.length ?: 0}")
+        return value
+    }
+
+    @Query("SELECT value FROM settings WHERE key = :key")
+    suspend fun getSettingRaw(key: String): String?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertSetting(setting: Settings)
@@ -41,6 +49,8 @@ interface SettingsDao {
         description: String? = null,
         isEncrypted: Boolean = false
     ) {
+        android.util.Log.d("SettingsDao", "Setting value for key: $key")
+        android.util.Log.d("SettingsDao", "Value length: ${value.length}")
         val setting = Settings(
             key = key,
             value = value,
@@ -56,7 +66,6 @@ interface SettingsDao {
         SELECT EXISTS(
             SELECT 1 FROM settings 
             WHERE category = 'API_KEY' 
-            AND key = 'llm_api_key' 
             AND value IS NOT NULL 
             AND value != ''
         )
