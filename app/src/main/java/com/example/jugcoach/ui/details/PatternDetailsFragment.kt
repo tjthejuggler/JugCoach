@@ -79,6 +79,13 @@ class PatternDetailsFragment : Fragment() {
         setupCollapsibleSections()
         observeUiState()
         observeRelatedPatterns()
+
+        // Reload data when fragment becomes visible
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.RESUMED) {
+                viewModel.loadPattern()
+            }
+        }
     }
 
     private fun setupToolbar() {

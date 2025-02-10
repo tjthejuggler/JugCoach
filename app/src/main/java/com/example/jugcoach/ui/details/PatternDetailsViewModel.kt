@@ -59,7 +59,7 @@ class PatternDetailsViewModel @Inject constructor(
         loadPattern()
     }
 
-    private fun loadPattern() {
+    fun loadPattern() {
         viewModelScope.launch {
             try {
                 val currentId = getCurrentPatternId()
