@@ -10,4 +10,5 @@
     <dimen name="message_margin_small">16dp</dimen>
     <dimen name="message_margin_large">64dp</dimen>
     <dimen name="error_stroke_width">2dp</dimen>
+    <dimen name="message_stroke_width">1dp</dimen>
 </resources>

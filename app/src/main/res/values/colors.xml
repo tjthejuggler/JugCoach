@@ -9,7 +9,8 @@
     <color name="white">#FFFFFFFF</color>
 
     <!-- Chat Colors -->
-    <color name="user_message_background">#E3F2FD</color>
-    <color name="coach_message_background">#F5F5F5</color>
+    <color name="user_message_background">#2196F3</color>
+    <color name="coach_message_background">#424242</color>
     <color name="error_stroke">#B00020</color>
+    <color name="message_border">#80FFFFFF</color>
 </resources>

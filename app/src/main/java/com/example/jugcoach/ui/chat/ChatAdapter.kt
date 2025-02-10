@@ -1,8 +1,8 @@
 package com.example.jugcoach.ui.chat
 
 import android.view.LayoutInflater
-import android.view.View
 import android.view.ViewGroup
+import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
@@ -58,9 +58,12 @@ class ChatAdapter : ListAdapter<ChatMessage, ChatAdapter.MessageViewHolder>(Mess
                         senderText.text = "You"
                         messageCard.apply {
                             setCardBackgroundColor(ContextCompat.getColor(context, R.color.user_message_background))
-                            layoutParams = (layoutParams as ViewGroup.MarginLayoutParams).apply {
+                            strokeWidth = itemView.context.resources.getDimensionPixelSize(R.dimen.message_stroke_width)
+                            strokeColor = ContextCompat.getColor(context, R.color.message_border)
+                            (layoutParams as ConstraintLayout.LayoutParams).apply {
                                 marginStart = itemView.context.resources.getDimensionPixelSize(R.dimen.message_margin_large)
                                 marginEnd = itemView.context.resources.getDimensionPixelSize(R.dimen.message_margin_small)
+                                horizontalBias = 1.0f
                             }
                         }
                     }
@@ -68,9 +71,12 @@ class ChatAdapter : ListAdapter<ChatMessage, ChatAdapter.MessageViewHolder>(Mess
                         senderText.text = "Coach"
                         messageCard.apply {
                             setCardBackgroundColor(ContextCompat.getColor(context, R.color.coach_message_background))
-                            layoutParams = (layoutParams as ViewGroup.MarginLayoutParams).apply {
+                            strokeWidth = itemView.context.resources.getDimensionPixelSize(R.dimen.message_stroke_width)
+                            strokeColor = ContextCompat.getColor(context, R.color.message_border)
+                            (layoutParams as ConstraintLayout.LayoutParams).apply {
                                 marginStart = itemView.context.resources.getDimensionPixelSize(R.dimen.message_margin_small)
                                 marginEnd = itemView.context.resources.getDimensionPixelSize(R.dimen.message_margin_large)
+                                horizontalBias = 0.0f
                             }
                         }
                     }
