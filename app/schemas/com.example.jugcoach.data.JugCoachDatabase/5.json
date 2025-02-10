@@ -1,8 +1,8 @@
 {
   "formatVersion": 1,
   "database": {
-    "version": 4,
-    "identityHash": "b30f5025d19e756395e82818678e5588",
+    "version": 5,
+    "identityHash": "742309e2ad78563548d50e619f2830bf",
     "entities": [
       {
         "tableName": "patterns",
@@ -464,7 +464,7 @@
       },
       {
         "tableName": "coaches",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `apiKeyName` TEXT NOT NULL, `llmModel` TEXT NOT NULL, `description` TEXT, `specialties` TEXT, `isHeadCoach` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `apiKeyName` TEXT NOT NULL, `description` TEXT, `specialties` TEXT, `isHeadCoach` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL)",
         "fields": [
           {
             "fieldPath": "id",
@@ -481,12 +481,6 @@
           {
             "fieldPath": "apiKeyName",
             "columnName": "apiKeyName",
-            "affinity": "TEXT",
-            "notNull": true
-          },
-          {
-            "fieldPath": "llmModel",
-            "columnName": "llmModel",
             "affinity": "TEXT",
             "notNull": true
           },
@@ -538,7 +532,7 @@
     "views": [],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'b30f5025d19e756395e82818678e5588')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '742309e2ad78563548d50e619f2830bf')"
     ]
   }
 }

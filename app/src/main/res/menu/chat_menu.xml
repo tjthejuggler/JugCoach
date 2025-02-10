@@ -6,4 +6,9 @@
         android:icon="@android:drawable/ic_menu_add"
         android:title="@string/create_coach"
         app:showAsAction="always" />
+    <item
+        android:id="@+id/action_change_api_key"
+        android:icon="@android:drawable/ic_menu_manage"
+        android:title="@string/change_api_key"
+        app:showAsAction="ifRoom" />
 </menu>

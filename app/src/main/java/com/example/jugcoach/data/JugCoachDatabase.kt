@@ -19,7 +19,7 @@ import com.example.jugcoach.data.entity.*
         Settings::class,
         Coach::class
     ],
-    version = 4,
+    version = 6,
     exportSchema = true
 )
 @TypeConverters(DateConverter::class, ListConverter::class, RunListConverter::class)
@@ -63,6 +63,39 @@ abstract class JugCoachDatabase : RoomDatabase() {
             }
         }
 
+        private val MIGRATION_4_5 = object : androidx.room.migration.Migration(4, 5) {
+            override fun migrate(db: androidx.sqlite.db.SupportSQLiteDatabase) {
+                // Create temporary table
+                db.execSQL("""
+                    CREATE TABLE coaches_temp (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        name TEXT NOT NULL,
+                        apiKeyName TEXT NOT NULL,
+                        description TEXT,
+                        specialties TEXT,
+                        isHeadCoach INTEGER NOT NULL,
+                        createdAt INTEGER NOT NULL
+                    )
+                """)
+
+                // Copy data from old table to new table
+                db.execSQL("""
+                    INSERT INTO coaches_temp (id, name, apiKeyName, description, specialties, isHeadCoach, createdAt)
+                    SELECT id, name, apiKeyName, description, specialties, isHeadCoach, createdAt
+                    FROM coaches
+                """)
+
+                // Drop old table
+                db.execSQL("DROP TABLE coaches")
+
+                // Rename temp table to original name
+                db.execSQL("ALTER TABLE coaches_temp RENAME TO coaches")
+
+                // Recreate index
+                db.execSQL("CREATE UNIQUE INDEX index_coaches_name ON coaches(name)")
+            }
+        }
+
         fun getDatabase(context: Context): JugCoachDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -71,10 +104,17 @@ abstract class JugCoachDatabase : RoomDatabase() {
                     "jugcoach_database"
                 )
                     .fallbackToDestructiveMigration()
-                    .addMigrations(MIGRATION_2_3, MIGRATION_3_4)
+                    .addMigrations(MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
                     .build()
                 INSTANCE = instance
                 instance
+            }
+        }
+
+        private val MIGRATION_5_6 = object : androidx.room.migration.Migration(5, 6) {
+            override fun migrate(db: androidx.sqlite.db.SupportSQLiteDatabase) {
+                // Add systemPrompt column
+                db.execSQL("ALTER TABLE coaches ADD COLUMN systemPrompt TEXT DEFAULT NULL")
             }
         }
     }

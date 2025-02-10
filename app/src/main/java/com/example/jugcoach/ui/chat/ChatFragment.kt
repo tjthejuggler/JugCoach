@@ -18,6 +18,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.jugcoach.R
 import com.example.jugcoach.data.entity.Coach
 import com.example.jugcoach.databinding.FragmentChatBinding
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
@@ -46,6 +47,16 @@ class ChatFragment : Fragment() {
         setupMessageInput()
         setupCoachSpinner()
         observeUiState()
+        observeApiKeys()
+    }
+
+    private fun observeApiKeys() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewModel.availableApiKeys.collect { apiKeys ->
+                // Just collect to keep the flow active
+                android.util.Log.d("ChatFragment", "Available API keys: $apiKeys")
+            }
+        }
     }
 
     private fun setupRecyclerView() {
@@ -137,7 +148,44 @@ class ChatFragment : Fragment() {
                 findNavController().navigate(R.id.action_nav_chat_to_createCoachFragment)
                 true
             }
+            R.id.action_change_api_key -> {
+                showApiKeySelectionDialog()
+                true
+            }
             else -> super.onOptionsItemSelected(item)
+        }
+    }
+
+    private fun showApiKeySelectionDialog() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            val apiKeys = viewModel.availableApiKeys.value
+            val currentCoach = viewModel.uiState.value.currentCoach
+            
+            if (apiKeys.isEmpty()) {
+                Snackbar.make(binding.root, "No API keys available. Add them in Settings first.", Snackbar.LENGTH_LONG).show()
+                return@launch
+            }
+
+            val currentKeyIndex = apiKeys.indexOf(currentCoach?.apiKeyName)
+            
+            // Convert API key names to display names
+            val displayNames = apiKeys.map { key -> 
+                key.removePrefix("llm_api_key_").let { name ->
+                    if (name.isBlank()) "Default API Key" else "API Key ${name}"
+                }
+            }.toTypedArray()
+
+            MaterialAlertDialogBuilder(requireContext())
+                .setTitle(R.string.select_api_key)
+                .setSingleChoiceItems(
+                    displayNames,
+                    currentKeyIndex
+                ) { dialog, which ->
+                    viewModel.updateCoachApiKey(apiKeys[which])
+                    dialog.dismiss()
+                }
+                .setNegativeButton(R.string.cancel, null)
+                .show()
         }
     }
 

@@ -2,12 +2,12 @@ package com.example.jugcoach.ui.chat
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.jugcoach.data.api.AnthropicRequest
+import com.example.jugcoach.data.api.AnthropicService
 import com.example.jugcoach.data.dao.CoachDao
 import com.example.jugcoach.data.dao.NoteDao
 import com.example.jugcoach.data.dao.SettingsDao
-import com.example.jugcoach.data.entity.Coach
-import com.example.jugcoach.data.entity.Note
-import com.example.jugcoach.data.entity.NoteType
+import com.example.jugcoach.data.entity.*
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -27,15 +27,45 @@ data class ChatUiState(
 class ChatViewModel @Inject constructor(
     private val settingsDao: SettingsDao,
     private val noteDao: NoteDao,
-    private val coachDao: CoachDao
+    private val coachDao: CoachDao,
+    private val anthropicService: AnthropicService
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ChatUiState())
     val uiState: StateFlow<ChatUiState> = _uiState.asStateFlow()
 
+    private val _availableApiKeys = MutableStateFlow<List<String>>(emptyList())
+    val availableApiKeys: StateFlow<List<String>> = _availableApiKeys.asStateFlow()
+
     init {
         loadData()
         ensureHeadCoach()
+        loadApiKeys()
+    }
+
+    private fun loadApiKeys() {
+        viewModelScope.launch {
+            settingsDao.getSettingsByCategory(SettingCategory.API_KEY)
+                .collect { settings ->
+                    // Filter out empty values and map to key names
+                    val validKeys = settings
+                        .filter { it.value.isNotBlank() }
+                        .map { it.key }
+                    _availableApiKeys.value = validKeys
+                    
+                    // Log for debugging
+                    android.util.Log.d("ChatViewModel", "Loaded API keys: $validKeys")
+                }
+        }
+    }
+
+    fun updateCoachApiKey(apiKeyName: String) {
+        viewModelScope.launch {
+            val currentCoach = _uiState.value.currentCoach ?: return@launch
+            val updatedCoach = currentCoach.copy(apiKeyName = apiKeyName)
+            coachDao.updateCoach(updatedCoach)
+            _uiState.update { it.copy(currentCoach = updatedCoach) }
+        }
     }
 
     private fun loadData() {
@@ -121,6 +151,7 @@ class ChatViewModel @Inject constructor(
 
             // Get API key for current coach
             val apiKey = settingsDao.getSettingValue(currentCoach.apiKeyName)
+            android.util.Log.d("ChatViewModel", "Using API key: ${apiKey?.take(4)}...${apiKey?.takeLast(4)}")
             if (apiKey.isNullOrEmpty()) {
                 addMessage(
                     ChatMessage(
@@ -138,13 +169,42 @@ class ChatViewModel @Inject constructor(
             _uiState.update { it.copy(isLoading = true) }
 
             try {
-                // TODO: Implement LLM API call with coach-specific configuration
-                val response = "This is a placeholder response from ${currentCoach.name}. LLM integration coming soon!"
+                // Get last few messages for context (reversed to get correct chronological order)
+                val recentMessages = _uiState.value.messages.reversed().takeLast(10)
+                val messageHistory = recentMessages.map { msg ->
+                    AnthropicRequest.Message(
+                        role = if (msg.sender == ChatMessage.Sender.USER) "user" else "assistant",
+                        text = msg.text
+                    )
+                }
+
+                android.util.Log.d("ChatViewModel", "Sending message to API with history size: ${messageHistory.size}")
+                android.util.Log.d("ChatViewModel", "API Key name: ${currentCoach.apiKeyName}")
+                android.util.Log.d("ChatViewModel", "System prompt: ${currentCoach.systemPrompt}")
+
+                val request = AnthropicRequest(
+                    messages = messageHistory + AnthropicRequest.Message(
+                        role = "user",
+                        text = text
+                    ),
+                    system = currentCoach.systemPrompt
+                )
+                android.util.Log.d("ChatViewModel", "Request: $request")
+
+                // Send message to Anthropic API
+                val response = anthropicService.sendMessage(
+                    apiKey = apiKey,
+                    request = request
+                )
                 
+                android.util.Log.d("ChatViewModel", "Got API response: $response")
+                val responseText = response.content.firstOrNull()?.text ?: "No response from the coach"
+                android.util.Log.d("ChatViewModel", "Response text: $responseText")
+
                 // Add coach response
                 val coachMessage = ChatMessage(
                     id = UUID.randomUUID().toString(),
-                    text = response,
+                    text = responseText,
                     sender = ChatMessage.Sender.COACH,
                     timestamp = Instant.now()
                 )
@@ -163,10 +223,16 @@ class ChatViewModel @Inject constructor(
                     )
                 )
             } catch (e: Exception) {
+                android.util.Log.e("ChatViewModel", "API call failed", e)
+                val errorMessage = when {
+                    e.message?.contains("401") == true -> "Invalid API key. Please check your settings."
+                    e.message?.contains("timeout") == true -> "Request timed out. Please try again."
+                    else -> "Failed to get response: ${e.message}"
+                }
                 addMessage(
                     ChatMessage(
                         id = UUID.randomUUID().toString(),
-                        text = "Failed to get response: ${e.message}",
+                        text = errorMessage,
                         sender = ChatMessage.Sender.COACH,
                         timestamp = Instant.now(),
                         isError = true

@@ -9,6 +9,7 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.example.jugcoach.R
 import com.example.jugcoach.databinding.ItemChatMessageBinding
+import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 
@@ -31,13 +32,14 @@ class ChatAdapter : ListAdapter<ChatMessage, ChatAdapter.MessageViewHolder>(Mess
         private val binding: ItemChatMessageBinding
     ) : RecyclerView.ViewHolder(binding.root) {
 
-        private val timeFormatter = DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT)
-
         fun bind(message: ChatMessage) {
             binding.apply {
                 // Set message text and timestamp
                 messageText.text = message.text
-                timestampText.text = timeFormatter.format(message.timestamp)
+                timestampText.text = message.timestamp
+                    .atZone(ZoneId.systemDefault())
+                    .toLocalTime()
+                    .format(DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT))
 
                 // Configure sender-specific UI
                 when (message.sender) {

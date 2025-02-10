@@ -16,5 +16,6 @@ data class Coach(
     val description: String? = null,
     val specialties: String? = null, // Stored as JSON string
     val isHeadCoach: Boolean = false,
-    val createdAt: Long = System.currentTimeMillis()
+    val createdAt: Long = System.currentTimeMillis(),
+    val systemPrompt: String? = null
 )

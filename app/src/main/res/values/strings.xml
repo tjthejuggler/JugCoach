@@ -24,6 +24,8 @@
     <string name="api_key_value">API Key</string>
     <string name="delete_api_key">Delete API Key</string>
     <string name="save_api_key">Save API Key</string>
+    <string name="change_api_key">Change API Key</string>
+    <string name="select_api_key">Select API Key</string>
     
     <!-- Pattern Details -->
     <string name="difficulty_format">Difficulty: %s</string>

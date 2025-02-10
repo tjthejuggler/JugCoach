@@ -8,7 +8,7 @@ import java.time.Instant
 
 @Dao
 interface NoteDao {
-    @Query("SELECT * FROM notes WHERE coachId = :coachId ORDER BY createdAt DESC")
+    @Query("SELECT * FROM notes WHERE coachId = :coachId ORDER BY createdAt ASC")
     fun getAllNotes(coachId: Long): Flow<List<Note>>
 
     @Query("SELECT * FROM notes WHERE id = :id AND coachId = :coachId")

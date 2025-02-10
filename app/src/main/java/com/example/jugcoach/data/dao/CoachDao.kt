@@ -34,7 +34,18 @@ interface CoachDao {
                 name = "Head Coach",
                 apiKeyName = "llm_api_key", // Default API key
                 description = "Your primary juggling coach",
-                isHeadCoach = true
+                isHeadCoach = true,
+                systemPrompt = """
+                    You are a juggling coach with expertise in teaching juggling patterns, techniques, and progressions. 
+                    Your role is to:
+                    1. Help users learn and improve their juggling skills
+                    2. Provide clear, step-by-step instructions for learning new patterns
+                    3. Offer feedback and corrections based on user descriptions
+                    4. Suggest appropriate progressions based on skill level
+                    5. Answer questions about juggling theory, history, and technique
+                    6. Provide motivation and encouragement
+                    Keep responses focused on juggling and related physical skills. Be encouraging but professional.
+                """.trimIndent()
             )
             insertCoach(headCoach)
         }
