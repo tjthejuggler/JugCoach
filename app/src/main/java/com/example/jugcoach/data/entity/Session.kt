@@ -15,17 +15,25 @@ import java.time.Instant
             entity = Pattern::class,
             parentColumns = ["id"],
             childColumns = ["patternId"],
-            onDelete = ForeignKey.CASCADE
+            onDelete = ForeignKey.Companion.CASCADE
+        ),
+        ForeignKey(
+            entity = Coach::class,
+            parentColumns = ["id"],
+            childColumns = ["coachId"],
+            onDelete = ForeignKey.Companion.CASCADE
         )
     ],
     indices = [
-        Index(value = ["patternId"])
+        Index(value = ["patternId"]),
+        Index(value = ["coachId"])
     ]
 )
 @TypeConverters(DateConverter::class)
 data class Session(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
+    val coachId: Long,
     val patternId: String,
     val startTime: Instant,
     val endTime: Instant? = null,

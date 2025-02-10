@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.jugcoach.data.dao.PatternDao
 import com.example.jugcoach.data.dao.SettingsDao
+import com.example.jugcoach.data.dao.CoachDao
 import com.example.jugcoach.data.entity.SettingCategory
 import com.example.jugcoach.data.entity.SettingType
 import com.example.jugcoach.data.entity.Settings
@@ -26,6 +27,7 @@ data class SettingsUiState(
 class SettingsViewModel @Inject constructor(
     private val settingsDao: SettingsDao,
     private val patternDao: PatternDao,
+    private val coachDao: CoachDao,
     private val patternImporter: PatternImporter
 ) : ViewModel() {
 
@@ -36,10 +38,15 @@ class SettingsViewModel @Inject constructor(
         loadData()
     }
 
+    private suspend fun getCurrentCoachId(): Long {
+        return coachDao.getAllCoaches().first().find { it.isHeadCoach }?.id ?: 1L
+    }
+
     private fun loadData() {
         viewModelScope.launch {
+            val coachId = getCurrentCoachId()
             // Load pattern count
-            patternDao.getCount().collectLatest { count ->
+            patternDao.getCount(coachId).collectLatest { count ->
                 _uiState.update { it.copy(patternCount = count) }
             }
         }
@@ -97,11 +104,12 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
-    fun importPatternsFromUri(uri: Uri) {
+    fun importPatternsFromUri(uri: Uri, asShared: Boolean = false) {
         viewModelScope.launch {
             _uiState.update { it.copy(isImporting = true) }
             try {
-                patternImporter.importFromUri(uri)
+                val coachId = if (asShared) null else getCurrentCoachId()
+                patternImporter.importFromUri(uri, coachId)
                 showMessage("Patterns imported successfully")
             } catch (e: Exception) {
                 showMessage("Failed to import patterns: ${e.message}")

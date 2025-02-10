@@ -24,10 +24,17 @@ class PatternImporter(
     }
 
     /**
-     * Imports patterns from the legacy JSON file in assets
+     * Imports patterns from a JSON file
+     * @param uri The URI of the JSON file to import
+     * @param coachId Optional coach ID. If null, patterns will be imported as shared patterns
+     * @param replaceExisting If true, will replace existing patterns with the same ID
      * @return Number of patterns imported
      */
-    suspend fun importFromUri(uri: Uri): Int = withContext(Dispatchers.IO) {
+    suspend fun importFromUri(
+        uri: Uri,
+        coachId: Long? = null,
+        replaceExisting: Boolean = false
+    ): Int = withContext(Dispatchers.IO) {
         var patternsImported = 0
 
         try {
@@ -40,14 +47,37 @@ class PatternImporter(
                     
                     // Insert patterns in batches
                     patterns.chunked(BATCH_SIZE).forEach { batch ->
-                        patternDao.insertPatterns(batch.map(PatternConverter::toEntity))
+                        val entities = batch.map { dto ->
+                            PatternConverter.toEntity(dto).copy(coachId = coachId)
+                        }
+                        if (replaceExisting) {
+                            patternDao.insertPatterns(entities)
+                        } else {
+                            // Only insert patterns that don't exist
+                            entities.forEach { pattern ->
+                                if (patternDao.getPatternById(pattern.id, coachId ?: -1) == null) {
+                                    patternDao.insertPattern(pattern)
+                                }
+                            }
+                        }
                         patternsImported += batch.size
                     }
                 } catch (e: Exception) {
                     // If that fails, try parsing as array
                     val patterns = PatternConverter.fromJsonArray(content)
                     patterns.chunked(BATCH_SIZE).forEach { batch ->
-                        patternDao.insertPatterns(batch.map(PatternConverter::toEntity))
+                        val entities = batch.map { dto ->
+                            PatternConverter.toEntity(dto).copy(coachId = coachId)
+                        }
+                        if (replaceExisting) {
+                            patternDao.insertPatterns(entities)
+                        } else {
+                            entities.forEach { pattern ->
+                                if (patternDao.getPatternById(pattern.id, coachId ?: -1) == null) {
+                                    patternDao.insertPattern(pattern)
+                                }
+                            }
+                        }
                         patternsImported += batch.size
                     }
                 }
@@ -59,6 +89,10 @@ class PatternImporter(
         patternsImported
     }
 
+    /**
+     * Imports patterns from the legacy JSON file in assets as shared patterns
+     * @return Number of patterns imported
+     */
     suspend fun importLegacyPatterns(): Int = withContext(Dispatchers.IO) {
         // Clear existing patterns before import
         patternDao.deleteAllPatterns()
@@ -98,7 +132,9 @@ class PatternImporter(
 
                                 // Batch insert if we've reached the batch size
                                 if (patterns.size >= BATCH_SIZE) {
-                                    patternDao.insertPatterns(patterns.map(PatternConverter::toEntity))
+                                    patternDao.insertPatterns(patterns.map { dto ->
+                                        PatternConverter.toEntity(dto).copy(coachId = null) // Import as shared patterns
+                                    })
                                     patternsImported += patterns.size
                                     patterns.clear()
                                 }
@@ -111,7 +147,9 @@ class PatternImporter(
 
                 // Insert any remaining patterns
                 if (patterns.isNotEmpty()) {
-                    patternDao.insertPatterns(patterns.map(PatternConverter::toEntity))
+                    patternDao.insertPatterns(patterns.map { dto ->
+                        PatternConverter.toEntity(dto).copy(coachId = null) // Import as shared patterns
+                    })
                     patternsImported += patterns.size
                 }
             }

@@ -41,7 +41,7 @@ class EditPatternFragment : Fragment() {
     private val args: EditPatternFragmentArgs by navArgs()
     private var _binding: FragmentEditPatternBinding? = null
     private val binding get() = _binding!!
-    private val viewModel: PatternDetailsViewModel by viewModels()
+    private val viewModel: EditPatternViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

@@ -8,7 +8,9 @@ import com.example.jugcoach.R
 import com.example.jugcoach.databinding.BottomSheetFiltersBinding
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.google.android.material.chip.Chip
+import dagger.hilt.android.AndroidEntryPoint
 
+@AndroidEntryPoint
 class FilterBottomSheetFragment : BottomSheetDialogFragment() {
     private var _binding: BottomSheetFiltersBinding? = null
     private val binding get() = _binding!!

@@ -2,18 +2,32 @@ package com.example.jugcoach.data.entity
 
 import androidx.room.Embedded
 import androidx.room.Entity
+import androidx.room.ForeignKey
+import androidx.room.Index
 import androidx.room.PrimaryKey
 import androidx.room.TypeConverters
 import com.example.jugcoach.data.converter.ListConverter
 import com.example.jugcoach.data.converter.DateConverter
 import com.example.jugcoach.data.converter.RunListConverter
 
-@Entity(tableName = "patterns")
+@Entity(
+    tableName = "patterns",
+    foreignKeys = [
+        ForeignKey(
+            entity = Coach::class,
+            parentColumns = ["id"],
+            childColumns = ["coachId"],
+            onDelete = ForeignKey.Companion.SET_NULL
+        )
+    ],
+    indices = [Index(value = ["coachId"])]
+)
 @TypeConverters(ListConverter::class, DateConverter::class)
 data class Pattern(
     @PrimaryKey
     val id: String,
     val name: String,
+    val coachId: Long? = null, // null means it's a shared pattern
     val difficulty: String? = null, // 1-10
     val siteswap: String? = null,
     val num: String? = null, // number of balls

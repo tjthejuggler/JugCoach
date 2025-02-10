@@ -16,24 +16,32 @@ import java.time.Instant
             entity = Pattern::class,
             parentColumns = ["id"],
             childColumns = ["relatedPatternId"],
-            onDelete = ForeignKey.SET_NULL
+            onDelete = ForeignKey.Companion.SET_NULL
         ),
         ForeignKey(
             entity = Session::class,
             parentColumns = ["id"],
             childColumns = ["relatedSessionId"],
-            onDelete = ForeignKey.SET_NULL
+            onDelete = ForeignKey.Companion.SET_NULL
+        ),
+        ForeignKey(
+            entity = Coach::class,
+            parentColumns = ["id"],
+            childColumns = ["coachId"],
+            onDelete = ForeignKey.Companion.CASCADE
         )
     ],
     indices = [
         Index(value = ["relatedPatternId"]),
-        Index(value = ["relatedSessionId"])
+        Index(value = ["relatedSessionId"]),
+        Index(value = ["coachId"])
     ]
 )
 @TypeConverters(DateConverter::class, ListConverter::class)
 data class Note(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
+    val coachId: Long,
     val title: String,
     val content: String,
     val tags: List<String> = emptyList(),

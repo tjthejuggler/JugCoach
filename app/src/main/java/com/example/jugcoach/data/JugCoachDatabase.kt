@@ -19,7 +19,7 @@ import com.example.jugcoach.data.entity.*
         Settings::class,
         Coach::class
     ],
-    version = 3,
+    version = 4,
     exportSchema = true
 )
 @TypeConverters(DateConverter::class, ListConverter::class, RunListConverter::class)
@@ -35,10 +35,30 @@ abstract class JugCoachDatabase : RoomDatabase() {
         private var INSTANCE: JugCoachDatabase? = null
 
         private val MIGRATION_2_3 = object : androidx.room.migration.Migration(2, 3) {
-            override fun migrate(database: androidx.sqlite.db.SupportSQLiteDatabase) {
+            override fun migrate(db: androidx.sqlite.db.SupportSQLiteDatabase) {
                 // Add history_runs column with default empty JSON array
-                database.execSQL("""
+                db.execSQL("""
                     ALTER TABLE patterns ADD COLUMN history_runs TEXT NOT NULL DEFAULT '[]'
+                """)
+            }
+        }
+
+        private val MIGRATION_3_4 = object : androidx.room.migration.Migration(3, 4) {
+            override fun migrate(db: androidx.sqlite.db.SupportSQLiteDatabase) {
+                // Add coachId columns
+                db.execSQL("ALTER TABLE patterns ADD COLUMN coachId INTEGER DEFAULT NULL REFERENCES coaches(id) ON DELETE SET NULL")
+                db.execSQL("CREATE INDEX index_patterns_coachId ON patterns(coachId)")
+
+                db.execSQL("ALTER TABLE sessions ADD COLUMN coachId INTEGER NOT NULL DEFAULT 1 REFERENCES coaches(id) ON DELETE CASCADE")
+                db.execSQL("CREATE INDEX index_sessions_coachId ON sessions(coachId)")
+
+                db.execSQL("ALTER TABLE notes ADD COLUMN coachId INTEGER NOT NULL DEFAULT 1 REFERENCES coaches(id) ON DELETE CASCADE")
+                db.execSQL("CREATE INDEX index_notes_coachId ON notes(coachId)")
+
+                // Create a default head coach if none exists
+                db.execSQL("""
+                    INSERT OR IGNORE INTO coaches (id, name, apiKeyName, isHeadCoach, createdAt)
+                    VALUES (1, 'Head Coach', 'default', 1, ${System.currentTimeMillis()})
                 """)
             }
         }
@@ -51,7 +71,7 @@ abstract class JugCoachDatabase : RoomDatabase() {
                     "jugcoach_database"
                 )
                     .fallbackToDestructiveMigration()
-                    .addMigrations(MIGRATION_2_3)
+                    .addMigrations(MIGRATION_2_3, MIGRATION_3_4)
                     .build()
                 INSTANCE = instance
                 instance

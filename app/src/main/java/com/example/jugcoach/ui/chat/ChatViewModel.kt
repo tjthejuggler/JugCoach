@@ -40,28 +40,30 @@ class ChatViewModel @Inject constructor(
 
     private fun loadData() {
         viewModelScope.launch {
-            // Load messages
-            noteDao.getAllNotes().collectLatest { notes ->
-                val messages = notes.map { note ->
-                    ChatMessage(
-                        id = note.id.toString(),
-                        text = note.content,
-                        sender = if (note.type == NoteType.COACHING_NOTE) ChatMessage.Sender.COACH else ChatMessage.Sender.USER,
-                        timestamp = note.createdAt
-                    )
-                }
-                _uiState.update { it.copy(messages = messages) }
-            }
-        }
-
-        viewModelScope.launch {
-            // Load coaches
+            // Load coaches first
             coachDao.getAllCoaches().collectLatest { coaches ->
+                val currentCoach = coaches.find { it.isHeadCoach } ?: coaches.firstOrNull()
                 _uiState.update { state ->
                     state.copy(
                         availableCoaches = coaches,
-                        currentCoach = state.currentCoach ?: coaches.find { it.isHeadCoach } ?: coaches.firstOrNull()
+                        currentCoach = currentCoach
                     )
+                }
+
+                // Only load messages if we have a current coach
+                currentCoach?.let { coach ->
+                    // Load messages for current coach
+                    noteDao.getAllNotes(coach.id).collectLatest { notes ->
+                        val messages = notes.map { note ->
+                            ChatMessage(
+                                id = note.id.toString(),
+                                text = note.content,
+                                sender = if (note.type == NoteType.COACHING_NOTE) ChatMessage.Sender.COACH else ChatMessage.Sender.USER,
+                                timestamp = note.createdAt
+                            )
+                        }
+                        _uiState.update { it.copy(messages = messages) }
+                    }
                 }
             }
         }
@@ -75,6 +77,20 @@ class ChatViewModel @Inject constructor(
 
     fun selectCoach(coach: Coach) {
         _uiState.update { it.copy(currentCoach = coach) }
+        // Reload messages for new coach
+        viewModelScope.launch {
+            noteDao.getAllNotes(coach.id).collectLatest { notes ->
+                val messages = notes.map { note ->
+                    ChatMessage(
+                        id = note.id.toString(),
+                        text = note.content,
+                        sender = if (note.type == NoteType.COACHING_NOTE) ChatMessage.Sender.COACH else ChatMessage.Sender.USER,
+                        timestamp = note.createdAt
+                    )
+                }
+                _uiState.update { it.copy(messages = messages) }
+            }
+        }
     }
 
     fun sendMessage(text: String) {
@@ -94,6 +110,7 @@ class ChatViewModel @Inject constructor(
             noteDao.insertNote(
                 Note(
                     id = 0,
+                    coachId = currentCoach.id,
                     title = "Chat Message",
                     content = userMessage.text,
                     type = NoteType.CONVERSATION,
@@ -137,6 +154,7 @@ class ChatViewModel @Inject constructor(
                 noteDao.insertNote(
                     Note(
                         id = 0,
+                        coachId = currentCoach.id,
                         title = "Coach Response",
                         content = coachMessage.text,
                         type = NoteType.COACHING_NOTE,

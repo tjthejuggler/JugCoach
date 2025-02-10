@@ -1,16 +1,19 @@
 package com.example.jugcoach.ui.gallery
 
-import android.app.Application
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.jugcoach.data.JugCoachDatabase
+import com.example.jugcoach.data.dao.PatternDao
+import com.example.jugcoach.data.dao.CoachDao
 import com.example.jugcoach.data.entity.Pattern
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 data class GalleryUiState(
     val patterns: List<Pattern> = emptyList(),
@@ -22,8 +25,11 @@ data class GalleryUiState(
     val shouldScrollToTop: Boolean = false
 )
 
-class GalleryViewModel(application: Application) : AndroidViewModel(application) {
-    private val patternDao = JugCoachDatabase.getDatabase(application).patternDao()
+@HiltViewModel
+class GalleryViewModel @Inject constructor(
+    private val patternDao: PatternDao,
+    private val coachDao: CoachDao
+) : ViewModel() {
     private val _uiState = MutableStateFlow(GalleryUiState())
     val uiState: StateFlow<GalleryUiState> = _uiState
     private var patternsJob: Job? = null
@@ -32,16 +38,21 @@ class GalleryViewModel(application: Application) : AndroidViewModel(application)
         loadPatterns()
     }
 
+    private suspend fun getCurrentCoachId(): Long {
+        return coachDao.getAllCoaches().first().find { it.isHeadCoach }?.id ?: 1L
+    }
+
     private fun loadPatterns() {
         patternsJob?.cancel()
         patternsJob = viewModelScope.launch {
+            val coachId = getCurrentCoachId()
             val query = _uiState.value.searchQuery
             if (query.isEmpty()) {
-                patternDao.getAllPatterns().collectLatest { patterns ->
+                patternDao.getAllPatterns(coachId).collectLatest { patterns ->
                     updatePatterns(patterns)
                 }
             } else {
-                patternDao.searchPatterns(query).collectLatest { patterns ->
+                patternDao.searchPatterns(query, coachId).collectLatest { patterns ->
                     updatePatterns(patterns)
                 }
             }

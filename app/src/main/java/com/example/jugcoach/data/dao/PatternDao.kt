@@ -6,11 +6,21 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface PatternDao {
-    @Query("SELECT * FROM patterns")
-    fun getAllPatterns(): Flow<List<Pattern>>
+    @Query("""
+        SELECT * FROM patterns 
+        WHERE coachId = :coachId OR coachId IS NULL
+        ORDER BY name ASC
+    """)
+    fun getAllPatterns(coachId: Long): Flow<List<Pattern>>
 
-    @Query("SELECT COUNT(*) FROM patterns")
-    fun getCount(): Flow<Int>
+    @Query("SELECT * FROM patterns WHERE coachId IS NULL")
+    fun getSharedPatterns(): Flow<List<Pattern>>
+
+    @Query("SELECT * FROM patterns WHERE coachId = :coachId")
+    fun getCoachPatterns(coachId: Long): Flow<List<Pattern>>
+
+    @Query("SELECT COUNT(*) FROM patterns WHERE coachId = :coachId OR coachId IS NULL")
+    fun getCount(coachId: Long): Flow<Int>
 
     @Query("""
         SELECT *, 
@@ -25,8 +35,9 @@ interface PatternDao {
             WHEN LOWER(tags) LIKE '%' || LOWER(:query) || '%' THEN 30
             ELSE 0
         END as relevance
-        FROM patterns
-        WHERE 
+        FROM patterns 
+        WHERE (coachId = :coachId OR coachId IS NULL)
+        AND (
             name LIKE '%' || :query || '%'
             OR name LIKE '%' || REPLACE(:query, ' ', '%') || '%'
             OR LOWER(name) LIKE '%' || LOWER(:query) || '%'
@@ -34,18 +45,20 @@ interface PatternDao {
             OR LOWER(explanation) LIKE '%' || LOWER(:query) || '%'
             OR tags LIKE '%' || :query || '%'
             OR LOWER(tags) LIKE '%' || LOWER(:query) || '%'
+        )
         ORDER BY relevance DESC
     """)
-    fun searchPatterns(query: String): Flow<List<Pattern>>
+    fun searchPatterns(query: String, coachId: Long): Flow<List<Pattern>>
 
-    @Query("SELECT * FROM patterns WHERE id = :id")
-    suspend fun getPatternById(id: String): Pattern?
+    @Query("SELECT * FROM patterns WHERE id = :id AND (coachId = :coachId OR coachId IS NULL)")
+    suspend fun getPatternById(id: String, coachId: Long): Pattern?
 
     @Query("""
         SELECT * FROM patterns
         WHERE tags LIKE '%"' || :tag || '"%'
+        AND (coachId = :coachId OR coachId IS NULL)
     """)
-    fun getPatternsByTag(tag: String): Flow<List<Pattern>>
+    fun getPatternsByTag(tag: String, coachId: Long): Flow<List<Pattern>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertPattern(pattern: Pattern)
@@ -62,22 +75,24 @@ interface PatternDao {
     @Query("DELETE FROM patterns")
     suspend fun deleteAllPatterns()
 
-    @Query("SELECT * FROM patterns")
-    suspend fun getAllPatternsSync(): List<Pattern>
+    @Query("SELECT * FROM patterns WHERE coachId = :coachId OR coachId IS NULL")
+    suspend fun getAllPatternsSync(coachId: Long): List<Pattern>
 
     @Transaction
     @Query("""
-        SELECT p.* FROM patterns p
+        SELECT p.* FROM patterns p 
         INNER JOIN sessions s ON p.id = s.patternId
+        WHERE (p.coachId = :coachId OR p.coachId IS NULL)
         GROUP BY p.id
         ORDER BY COUNT(s.id) DESC
         LIMIT :limit
     """)
-    fun getMostPracticedPatterns(limit: Int = 5): Flow<List<Pattern>>
+    fun getMostPracticedPatterns(coachId: Long, limit: Int = 5): Flow<List<Pattern>>
 
     @Query("""
         SELECT * FROM patterns
-        WHERE CAST(difficulty AS INTEGER) <= (
+        WHERE (coachId = :coachId OR coachId IS NULL)
+        AND CAST(difficulty AS INTEGER) <= (
             SELECT MAX(CAST(difficulty AS INTEGER)) FROM patterns
             WHERE id IN (
                 SELECT patternId FROM sessions
@@ -93,5 +108,5 @@ interface PatternDao {
         ORDER BY CAST(difficulty AS INTEGER) ASC
         LIMIT 1
     """)
-    fun suggestNextPattern(): Flow<Pattern?>
+    fun suggestNextPattern(coachId: Long): Flow<Pattern?>
 }

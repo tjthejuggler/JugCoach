@@ -51,11 +51,6 @@ class ApiKeyAdapter(
     }
 }
 
-data class ApiKeyItem(
-    val name: String,
-    val value: String
-)
-
 class ApiKeyDiffCallback : DiffUtil.ItemCallback<ApiKeyItem>() {
     override fun areItemsTheSame(oldItem: ApiKeyItem, newItem: ApiKeyItem): Boolean {
         return oldItem.name == newItem.name
