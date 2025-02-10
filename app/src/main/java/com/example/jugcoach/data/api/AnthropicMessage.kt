@@ -16,7 +16,7 @@ data class AnthropicRequest(
     ) {
         constructor(role: String, text: String) : this(
             role = role,
-            content = listOf(Content(text))
+            content = listOf(Content(text = text))
         )
     }
 
