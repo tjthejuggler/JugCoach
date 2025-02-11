@@ -1,5 +1,6 @@
 package com.example.jugcoach.ui.chat
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.jugcoach.data.api.AnthropicRequest
@@ -10,7 +11,10 @@ import com.example.jugcoach.data.dao.SettingsDao
 import com.example.jugcoach.data.dao.ConversationDao
 import com.example.jugcoach.data.dao.ChatMessageDao
 import com.example.jugcoach.data.entity.*
+import com.example.jugcoach.util.PromptLogger
+import com.example.jugcoach.util.SystemPromptLoader
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.time.Instant
@@ -34,7 +38,8 @@ class ChatViewModel @Inject constructor(
     private val coachDao: CoachDao,
     private val conversationDao: ConversationDao,
     private val chatMessageDao: ChatMessageDao,
-    private val anthropicService: AnthropicService
+    private val anthropicService: AnthropicService,
+    @ApplicationContext private val context: Context
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ChatUiState())
@@ -285,12 +290,34 @@ class ChatViewModel @Inject constructor(
                     )
                 }
 
+                val systemPrompt = SystemPromptLoader.loadSystemPrompt(context, currentCoach.systemPrompt)
                 val request = AnthropicRequest(
                     messages = messageHistory + AnthropicRequest.Message(
                         role = "user",
                         content = listOf(AnthropicRequest.Content(text = text))
                     ),
-                    system = currentCoach.systemPrompt
+                    system = systemPrompt
+                )
+
+                // Log the complete request for debugging
+                PromptLogger.logInteraction(
+                    context = context,
+                    systemPrompt = """
+                        === Complete Request ===
+                        System Prompt: $systemPrompt
+                        
+                        === Message History ===
+                        ${recentMessages.joinToString("\n\n") { msg ->
+                            """
+                            Role: ${if (msg.sender == ChatMessage.Sender.USER) "user" else "assistant"}
+                            Content: ${msg.text}
+                            """.trimIndent()
+                        }}
+                        
+                        Role: user
+                        Content: $text
+                    """.trimIndent(),
+                    userMessage = text
                 )
 
                 val response = anthropicService.sendMessage(

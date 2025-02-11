@@ -4,6 +4,7 @@ import android.content.Context
 import com.example.jugcoach.data.JugCoachDatabase
 import com.example.jugcoach.data.dao.*
 import com.example.jugcoach.data.importer.PatternImporter
+import com.example.jugcoach.data.service.PatternDatabaseService
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -14,6 +15,13 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 object DatabaseModule {
+
+    @Provides
+    @Singleton
+    fun providePatternDatabaseService(patternDao: PatternDao): PatternDatabaseService {
+        return PatternDatabaseService(patternDao)
+    }
+
 
     @Provides
     @Singleton
