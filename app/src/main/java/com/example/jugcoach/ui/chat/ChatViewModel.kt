@@ -292,11 +292,27 @@ class ChatViewModel @Inject constructor(
 
                 val systemPrompt = SystemPromptLoader.loadSystemPrompt(context, currentCoach.systemPrompt)
                 val request = AnthropicRequest(
+                    system = systemPrompt,
                     messages = messageHistory + AnthropicRequest.Message(
                         role = "user",
                         content = listOf(AnthropicRequest.Content(text = text))
                     ),
-                    system = systemPrompt
+                    tools = listOf(
+                        AnthropicRequest.Tool(
+                            name = "lookupPattern",
+                            description = "Get full details of a specific pattern given its pattern_id.",
+                            inputSchema = AnthropicRequest.InputSchema(
+                                properties = mapOf(
+                                    "pattern_id" to AnthropicRequest.Property(
+                                        type = "string",
+                                        description = "The unique identifier for the pattern."
+                                    )
+                                ),
+                                required = listOf("pattern_id")
+                            )
+                        ),
+                        // Add other tools here following the same pattern
+                    )
                 )
 
                 // Log the complete request for debugging

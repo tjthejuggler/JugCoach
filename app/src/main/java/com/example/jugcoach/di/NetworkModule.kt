@@ -28,9 +28,9 @@ object NetworkModule {
                 val request = chain.request()
                 android.util.Log.d("NetworkModule", "Processing request: ${request.url}")
 
-                // Get API key from request header
+                // Get API key from x-api-key header
                 val apiKey = request.header("x-api-key")
-                android.util.Log.d("NetworkModule", "Raw API key present: ${!apiKey.isNullOrEmpty()}")
+                android.util.Log.d("NetworkModule", "API key present: ${!apiKey.isNullOrEmpty()}")
                 android.util.Log.d("NetworkModule", "Request URL: ${request.url}")
                 android.util.Log.d("NetworkModule", "Original headers: ${request.headers}")
                 android.util.Log.d("NetworkModule", "Request method: ${request.method}")
@@ -42,11 +42,9 @@ object NetworkModule {
                     header("Accept", "application/json")
                     header("anthropic-version", "2023-06-01")
 
-                    // Only set API key if it's present
+                    // Only set Authorization if API key is present
                     if (!apiKey.isNullOrEmpty()) {
-                        // Anthropic API expects raw API key
                         android.util.Log.d("NetworkModule", "Using API key: ${apiKey.take(10)}...${apiKey.takeLast(4)}")
-                        android.util.Log.d("NetworkModule", "API key format: ${if (apiKey.startsWith("sk-")) "Valid" else "Invalid"}")
                         header("x-api-key", apiKey)
                     } else {
                         android.util.Log.e("NetworkModule", "No API key found in request")
@@ -99,7 +97,7 @@ object NetworkModule {
     @Singleton
     fun provideRetrofit(okHttpClient: OkHttpClient): Retrofit {
         return Retrofit.Builder()
-            .baseUrl("https://api.anthropic.com/")
+            .baseUrl("https://api.anthropic.com/v1/")
             .client(okHttpClient)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
