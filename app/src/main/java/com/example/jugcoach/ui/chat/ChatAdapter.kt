@@ -82,7 +82,14 @@ class ChatAdapter(
                     ChatMessage.Sender.COACH -> {
                         senderText.text = currentCoach?.name ?: "Coach"
                         messageCard.apply {
-                            setCardBackgroundColor(ContextCompat.getColor(context, R.color.coach_message_background))
+                            // Set background color based on message type
+                            val backgroundColor = when (message.messageType) {
+                                ChatMessage.MessageType.ACTION -> R.color.action_message_background
+                                ChatMessage.MessageType.THINKING -> R.color.thinking_message_background
+                                ChatMessage.MessageType.TALKING -> R.color.talking_message_background
+                            }
+                            setCardBackgroundColor(ContextCompat.getColor(context, backgroundColor))
+                            
                             strokeWidth = itemView.context.resources.getDimensionPixelSize(R.dimen.message_stroke_width)
                             strokeColor = ContextCompat.getColor(context, R.color.message_border)
                             (layoutParams as ConstraintLayout.LayoutParams).apply {

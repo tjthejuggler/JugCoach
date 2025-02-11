@@ -28,5 +28,12 @@ data class ChatMessage(
     val text: String,
     val isFromUser: Boolean,
     val timestamp: Long = System.currentTimeMillis(),
-    val isError: Boolean = false
-)
+    val isError: Boolean = false,
+    val messageType: MessageType = MessageType.TALKING
+) {
+    enum class MessageType {
+        ACTION,    // When performing an action/tool use
+        TALKING,   // When communicating with the user
+        THINKING   // Internal thoughts (shown in different color)
+    }
+}

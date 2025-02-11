@@ -5,10 +5,7 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
-import com.example.jugcoach.data.converter.DateConverter
-import com.example.jugcoach.data.converter.ListConverter
-import com.example.jugcoach.data.converter.ProposalStatusConverter
-import com.example.jugcoach.data.converter.RunListConverter
+import com.example.jugcoach.data.converter.*
 import com.example.jugcoach.data.dao.*
 import com.example.jugcoach.data.entity.*
 
@@ -23,10 +20,16 @@ import com.example.jugcoach.data.entity.*
         ChatMessage::class,
         CoachProposal::class
     ],
-    version = 9,
+    version = 10,
     exportSchema = true
 )
-@TypeConverters(DateConverter::class, ListConverter::class, RunListConverter::class, ProposalStatusConverter::class)
+@TypeConverters(
+    DateConverter::class,
+    ListConverter::class,
+    RunListConverter::class,
+    ProposalStatusConverter::class,
+    MessageTypeConverter::class
+)
 abstract class JugCoachDatabase : RoomDatabase() {
     abstract fun patternDao(): PatternDao
     abstract fun sessionDao(): SessionDao
@@ -189,11 +192,19 @@ abstract class JugCoachDatabase : RoomDatabase() {
                         MIGRATION_5_6,
                         MIGRATION_6_7,
                         MIGRATION_7_8,
-                        MIGRATION_8_9
+                        MIGRATION_8_9,
+                        MIGRATION_9_10
                     )
                     .build()
                 INSTANCE = instance
                 instance
+            }
+        }
+
+        private val MIGRATION_9_10 = object : androidx.room.migration.Migration(9, 10) {
+            override fun migrate(db: androidx.sqlite.db.SupportSQLiteDatabase) {
+                // Add messageType column with default value TALKING
+                db.execSQL("ALTER TABLE chat_messages ADD COLUMN messageType TEXT NOT NULL DEFAULT 'TALKING'")
             }
         }
     }

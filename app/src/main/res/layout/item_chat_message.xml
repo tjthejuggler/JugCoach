@@ -26,7 +26,11 @@
         app:layout_constraintTop_toTopOf="parent"
         android:clipToPadding="false"
         android:clipChildren="false"
-        android:layerType="hardware">
+        android:layerType="hardware"
+        tools:cardBackgroundColor="@{message.isFromUser ? @color/user_message_background : 
+            message.messageType == MessageType.ACTION ? @color/action_message_background :
+            message.messageType == MessageType.THINKING ? @color/thinking_message_background :
+            @color/talking_message_background}">
 
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="wrap_content"
