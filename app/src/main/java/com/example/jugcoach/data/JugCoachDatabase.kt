@@ -7,6 +7,7 @@ import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import com.example.jugcoach.data.converter.DateConverter
 import com.example.jugcoach.data.converter.ListConverter
+import com.example.jugcoach.data.converter.ProposalStatusConverter
 import com.example.jugcoach.data.converter.RunListConverter
 import com.example.jugcoach.data.dao.*
 import com.example.jugcoach.data.entity.*
@@ -19,12 +20,13 @@ import com.example.jugcoach.data.entity.*
         Settings::class,
         Coach::class,
         Conversation::class,
-        ChatMessage::class
+        ChatMessage::class,
+        CoachProposal::class
     ],
-    version = 8,
+    version = 9,
     exportSchema = true
 )
-@TypeConverters(DateConverter::class, ListConverter::class, RunListConverter::class)
+@TypeConverters(DateConverter::class, ListConverter::class, RunListConverter::class, ProposalStatusConverter::class)
 abstract class JugCoachDatabase : RoomDatabase() {
     abstract fun patternDao(): PatternDao
     abstract fun sessionDao(): SessionDao
@@ -33,6 +35,7 @@ abstract class JugCoachDatabase : RoomDatabase() {
     abstract fun coachDao(): CoachDao
     abstract fun conversationDao(): ConversationDao
     abstract fun chatMessageDao(): ChatMessageDao
+    abstract fun coachProposalDao(): CoachProposalDao
 
     companion object {
         @Volatile
@@ -147,6 +150,30 @@ abstract class JugCoachDatabase : RoomDatabase() {
             }
         }
 
+        private val MIGRATION_8_9 = object : androidx.room.migration.Migration(8, 9) {
+            override fun migrate(db: androidx.sqlite.db.SupportSQLiteDatabase) {
+                // Create coach_proposals table
+                db.execSQL("""
+                    CREATE TABLE coach_proposals (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        patternId TEXT NOT NULL,
+                        coachId INTEGER NOT NULL,
+                        proposedChanges TEXT NOT NULL,
+                        status TEXT NOT NULL,
+                        createdAt INTEGER NOT NULL,
+                        notes TEXT,
+                        FOREIGN KEY(patternId) REFERENCES patterns(id) ON DELETE CASCADE,
+                        FOREIGN KEY(coachId) REFERENCES coaches(id) ON DELETE CASCADE
+                    )
+                """)
+                
+                // Create indices
+                db.execSQL("CREATE INDEX index_coach_proposals_patternId ON coach_proposals(patternId)")
+                db.execSQL("CREATE INDEX index_coach_proposals_coachId ON coach_proposals(coachId)")
+                db.execSQL("CREATE INDEX index_coach_proposals_status ON coach_proposals(status)")
+            }
+        }
+
         fun getDatabase(context: Context): JugCoachDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -161,7 +188,8 @@ abstract class JugCoachDatabase : RoomDatabase() {
                         MIGRATION_4_5,
                         MIGRATION_5_6,
                         MIGRATION_6_7,
-                        MIGRATION_7_8
+                        MIGRATION_7_8,
+                        MIGRATION_8_9
                     )
                     .build()
                 INSTANCE = instance

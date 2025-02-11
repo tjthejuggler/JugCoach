@@ -68,6 +68,19 @@ class EditPatternFragment : Fragment() {
         setupTagInput()
         setupPatternSelectionButtons()
         observePattern()
+        observeCoachStatus()
+    }
+
+    private fun observeCoachStatus() {
+        viewModel.isHeadCoach.observe(viewLifecycleOwner) { isHeadCoach ->
+            // Update save button text
+            binding.toolbar.menu.findItem(R.id.action_save)?.setTitle(
+                if (isHeadCoach) R.string.save else R.string.submit_for_approval
+            )
+            
+            // Show/hide coach notice
+            binding.coachNotice.visibility = if (isHeadCoach) View.GONE else View.VISIBLE
+        }
     }
 
     private fun setupToolbar() {
@@ -284,87 +297,124 @@ class EditPatternFragment : Fragment() {
 
     private fun savePattern() {
         try {
-            // Validate required fields
-            val name = binding.nameEdit.text.toString().trim()
-            if (name.isEmpty()) {
-                binding.nameEdit.error = getString(R.string.required_field)
-                return
-            }
-
-            // Validate difficulty
-            val difficultyStr = binding.difficultyEdit.text.toString().trim()
-            val difficulty = if (difficultyStr.isNotEmpty()) {
-                try {
-                    val diff = difficultyStr.toInt()
-                    if (diff !in 1..10) {
-                        binding.difficultyEdit.error = getString(R.string.difficulty_range_error)
-                        return
-                    }
-                    difficultyStr
-                } catch (e: NumberFormatException) {
-                    binding.difficultyEdit.error = getString(R.string.invalid_number)
-                    return
-                }
-            } else null
-
-            // Validate number of balls
-            val numBallsStr = binding.numBallsEdit.text.toString().trim()
-            val numBalls = if (numBallsStr.isNotEmpty()) {
-                try {
-                    val num = numBallsStr.toInt()
-                    if (num <= 0) {
-                        binding.numBallsEdit.error = getString(R.string.invalid_number_of_balls)
-                        return
-                    }
-                    numBallsStr
-                } catch (e: NumberFormatException) {
-                    binding.numBallsEdit.error = getString(R.string.invalid_number)
-                    return
-                }
-            } else null
-
-            val pattern = viewModel.pattern.value?.copy(
-                name = name,
-                difficulty = difficulty,
-                num = numBalls,
-                siteswap = binding.siteswapEdit.text.toString().trim(),
-                explanation = binding.explanationEdit.text.toString().trim(),
-                gifUrl = binding.gifUrlEdit.text.toString().trim(),
-                video = binding.videoUrlEdit.text.toString().trim(),
-                url = binding.externalUrlEdit.text.toString().trim(),
-                tags = binding.tagsGroup.children.map { (it as Chip).text.toString() }.toList(),
-                record = if (binding.recordCatchesEdit.text.toString().isNotEmpty()) {
-                    val catches = try {
-                        binding.recordCatchesEdit.text.toString().toInt()
-                    } catch (e: NumberFormatException) {
-                        binding.recordCatchesEdit.error = getString(R.string.invalid_number)
-                        return
-                    }
-                    Record(
-                        catches = catches,
-                        date = try {
-                            dateFormat.parse(binding.recordDateEdit.text.toString())?.time
-                                ?: System.currentTimeMillis()
-                        } catch (e: Exception) {
-                            System.currentTimeMillis()
-                        }
-                    )
-                } else null,
-                runHistory = RunHistory(runAdapter.currentList)
-            )
+            if (!validatePattern()) return
             
-            pattern?.let {
-                viewModel.updatePattern(it)
-                findNavController().navigateUp()
+            val pattern = createPatternFromInput() ?: return
+
+            if (viewModel.isHeadCoach.value == true) {
+                submitPattern(pattern)
+            } else {
+                showConfirmationDialog(pattern)
             }
         } catch (e: Exception) {
-            android.util.Log.e("EditPattern", "Error saving pattern: ${e.message}", e)
-            MaterialAlertDialogBuilder(requireContext())
-                .setTitle(R.string.error)
-                .setMessage(getString(R.string.error_saving_pattern))
-                .setPositiveButton(R.string.ok, null)
-                .show()
+            showErrorDialog()
         }
+    }
+
+    private fun validatePattern(): Boolean {
+        // Validate name
+        val name = binding.nameEdit.text.toString().trim()
+        if (name.isEmpty()) {
+            binding.nameEdit.error = getString(R.string.required_field)
+            return false
+        }
+
+        // Validate difficulty
+        val difficultyStr = binding.difficultyEdit.text.toString().trim()
+        if (difficultyStr.isNotEmpty()) {
+            try {
+                val diff = difficultyStr.toInt()
+                if (diff !in 1..10) {
+                    binding.difficultyEdit.error = getString(R.string.difficulty_range_error)
+                    return false
+                }
+            } catch (e: NumberFormatException) {
+                binding.difficultyEdit.error = getString(R.string.invalid_number)
+                return false
+            }
+        }
+
+        // Validate number of balls
+        val numBallsStr = binding.numBallsEdit.text.toString().trim()
+        if (numBallsStr.isNotEmpty()) {
+            try {
+                val num = numBallsStr.toInt()
+                if (num <= 0) {
+                    binding.numBallsEdit.error = getString(R.string.invalid_number_of_balls)
+                    return false
+                }
+            } catch (e: NumberFormatException) {
+                binding.numBallsEdit.error = getString(R.string.invalid_number)
+                return false
+            }
+        }
+
+        return true
+    }
+
+    private fun createPatternFromInput(): Pattern? {
+        val currentPattern = viewModel.pattern.value ?: return null
+        
+        return currentPattern.copy(
+            name = binding.nameEdit.text.toString().trim(),
+            difficulty = binding.difficultyEdit.text.toString().trim(),
+            num = binding.numBallsEdit.text.toString().trim(),
+            siteswap = binding.siteswapEdit.text.toString().trim(),
+            explanation = binding.explanationEdit.text.toString().trim(),
+            gifUrl = binding.gifUrlEdit.text.toString().trim(),
+            video = binding.videoUrlEdit.text.toString().trim(),
+            url = binding.externalUrlEdit.text.toString().trim(),
+            tags = binding.tagsGroup.children.map { (it as Chip).text.toString() }.toList(),
+            record = if (binding.recordCatchesEdit.text.toString().isNotEmpty()) {
+                val catches = try {
+                    binding.recordCatchesEdit.text.toString().toInt()
+                } catch (e: NumberFormatException) {
+                    binding.recordCatchesEdit.error = getString(R.string.invalid_number)
+                    return null
+                }
+                Record(
+                    catches = catches,
+                    date = try {
+                        dateFormat.parse(binding.recordDateEdit.text.toString())?.time
+                            ?: System.currentTimeMillis()
+                    } catch (e: Exception) {
+                        System.currentTimeMillis()
+                    }
+                )
+            } else null,
+            runHistory = RunHistory(runAdapter.currentList)
+        )
+    }
+
+    private fun submitPattern(pattern: Pattern) {
+        viewModel.updatePattern(pattern)
+        findNavController().navigateUp()
+    }
+
+    private fun showConfirmationDialog(pattern: Pattern) {
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle(R.string.confirm_submit_changes)
+            .setMessage(R.string.confirm_submit_message)
+            .setPositiveButton(R.string.submit) { _, _ ->
+                viewModel.updatePattern(pattern)
+                MaterialAlertDialogBuilder(requireContext())
+                    .setMessage(R.string.changes_submitted)
+                    .setPositiveButton(R.string.ok) { _, _ ->
+                        findNavController().navigateUp()
+                    }
+                    .show()
+            }
+            .setNegativeButton(R.string.cancel, null)
+            .show()
+    }
+
+    private fun showErrorDialog() {
+        android.util.Log.e("EditPattern", "Error saving pattern", Exception())
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle(R.string.error)
+            .setMessage(getString(R.string.error_saving_pattern))
+            .setPositiveButton(R.string.ok, null)
+            .show()
     }
 
     override fun onDestroyView() {

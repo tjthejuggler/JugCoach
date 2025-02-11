@@ -9,6 +9,7 @@ import androidx.room.TypeConverters
 import com.example.jugcoach.data.converter.ListConverter
 import com.example.jugcoach.data.converter.DateConverter
 import com.example.jugcoach.data.converter.RunListConverter
+import com.example.jugcoach.data.entity.Coach
 
 @Entity(
     tableName = "patterns",

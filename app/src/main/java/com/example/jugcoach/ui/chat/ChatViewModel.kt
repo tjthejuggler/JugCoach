@@ -214,39 +214,46 @@ class ChatViewModel @Inject constructor(
         viewModelScope.launch {
             val currentCoach = _uiState.value.currentCoach ?: return@launch
 
-            val conversation = _uiState.value.currentConversation?.also {
-                // Delete current conversation if it's empty
-                conversationDao.deleteIfEmpty(it.id)
-            } ?: run {
-                // Create a new conversation if none exists
-                val timestamp = System.currentTimeMillis()
-                val newConversation = Conversation(
+            // Get or create conversation in a transaction to ensure consistency
+            val conversation = try {
+                val conv = conversationDao.getOrCreateConversation(
+                    existingConversation = _uiState.value.currentConversation,
                     coachId = currentCoach.id,
-                    title = "Chat ${java.time.format.DateTimeFormatter.ISO_INSTANT.format(Instant.now())}",
-                    createdAt = timestamp,
-                    lastMessageAt = timestamp
+                    title = "Chat ${java.time.format.DateTimeFormatter.ISO_INSTANT.format(Instant.now())}"
                 )
-                val id = conversationDao.insert(newConversation)
-                val createdConversation = newConversation.copy(id = id)
-                
-                // Select the new conversation
+
+                // Verify conversation exists before proceeding
+                conversationDao.getConversationById(conv.id)
+                    ?: throw IllegalStateException("Failed to verify conversation existence")
+            } catch (e: Exception) {
                 _uiState.update { it.copy(
-                    currentConversation = createdConversation,
-                    messages = emptyList()
+                    error = "Failed to create conversation: ${e.message}"
                 )}
-                
-                createdConversation
+                return@launch
             }
 
-            // Add user message and capture inserted ID
-            val userMessage = com.example.jugcoach.data.entity.ChatMessage(
-                conversationId = conversation.id,
-                text = text,
-                isFromUser = true,
-                timestamp = System.currentTimeMillis()
-            )
-            val userMessageId = chatMessageDao.insert(userMessage)
-            conversationDao.updateLastMessageTime(conversation.id, userMessage.timestamp)
+            // Update UI with the verified conversation
+            _uiState.update { it.copy(
+                currentConversation = conversation,
+                messages = emptyList()
+            )}
+
+            // Add user message
+            try {
+                val timestamp = System.currentTimeMillis()
+                val userMessage = com.example.jugcoach.data.entity.ChatMessage(
+                    conversationId = conversation.id,
+                    text = text,
+                    isFromUser = true,
+                    timestamp = timestamp
+                )
+                chatMessageDao.insertAndUpdateConversation(userMessage, conversation.id, timestamp)
+            } catch (e: Exception) {
+                _uiState.update { it.copy(
+                    error = "Failed to save message: ${e.message}"
+                )}
+                return@launch
+            }
 
             // Get API key for current coach
             val apiKeyName = currentCoach.apiKeyName
@@ -293,15 +300,15 @@ class ChatViewModel @Inject constructor(
 
                 val responseText = response.content.firstOrNull()?.text ?: "No response from the coach"
 
-                // Add coach response and capture inserted ID
+                // Add coach response using transaction
+                val timestamp = System.currentTimeMillis()
                 val coachMessage = com.example.jugcoach.data.entity.ChatMessage(
                     conversationId = conversation.id,
                     text = responseText,
                     isFromUser = false,
-                    timestamp = System.currentTimeMillis()
+                    timestamp = timestamp
                 )
-                val coachMessageId = chatMessageDao.insert(coachMessage)
-                conversationDao.updateLastMessageTime(conversation.id, coachMessage.timestamp)
+                chatMessageDao.insertAndUpdateConversation(coachMessage, conversation.id, timestamp)
 
             } catch (e: retrofit2.HttpException) {
                 val errorMessage = when (e.code()) {

@@ -1,6 +1,7 @@
 package com.example.jugcoach.ui.chat
 
 import android.view.LayoutInflater
+import com.example.jugcoach.data.entity.Coach
 import android.view.ViewGroup
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.ContextCompat
@@ -13,7 +14,14 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 
-class ChatAdapter : ListAdapter<ChatMessage, ChatAdapter.MessageViewHolder>(MessageDiffCallback()) {
+class ChatAdapter(
+    private var currentCoach: Coach? = null
+) : ListAdapter<ChatMessage, ChatAdapter.MessageViewHolder>(MessageDiffCallback()) {
+
+    fun updateCoach(coach: Coach?) {
+        currentCoach = coach
+        notifyDataSetChanged()
+    }
 
     init {
         setHasStableIds(true)
@@ -43,7 +51,7 @@ class ChatAdapter : ListAdapter<ChatMessage, ChatAdapter.MessageViewHolder>(Mess
         super.submitList(newList)
     }
 
-    class MessageViewHolder(
+    inner class MessageViewHolder(
         private val binding: ItemChatMessageBinding
     ) : RecyclerView.ViewHolder(binding.root) {
 
@@ -72,7 +80,7 @@ class ChatAdapter : ListAdapter<ChatMessage, ChatAdapter.MessageViewHolder>(Mess
                         }
                     }
                     ChatMessage.Sender.COACH -> {
-                        senderText.text = "Coach"
+                        senderText.text = currentCoach?.name ?: "Coach"
                         messageCard.apply {
                             setCardBackgroundColor(ContextCompat.getColor(context, R.color.coach_message_background))
                             strokeWidth = itemView.context.resources.getDimensionPixelSize(R.dimen.message_stroke_width)

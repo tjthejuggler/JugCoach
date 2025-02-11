@@ -57,6 +57,11 @@ object DatabaseModule {
     }
 
     @Provides
+    fun provideCoachProposalDao(database: JugCoachDatabase): CoachProposalDao {
+        return database.coachProposalDao()
+    }
+
+    @Provides
     fun providePatternImporter(
         @ApplicationContext context: Context,
         patternDao: PatternDao

@@ -107,4 +107,18 @@
     <string name="invalid_number_of_balls">Number of balls must be greater than 0</string>
     <string name="error_loading_patterns">Failed to load patterns</string>
     <string name="error_saving_pattern">Failed to save pattern</string>
+
+    <!-- Coach Pattern Editing -->
+    <string name="submit_for_approval">Submit for Approval</string>
+    <string name="coach_edit_notice">As a coach, your changes will be submitted for approval</string>
+    <string name="confirm_submit_changes">Submit Changes?</string>
+    <string name="confirm_submit_message">Your changes will be submitted for approval by the head coach. Would you like to proceed?</string>
+    <string name="changes_submitted">Changes submitted for approval</string>
+    <string name="submit">Submit</string>
+    <string name="approve">Approve</string>
+    <string name="reject">Reject</string>
+    <string name="pending_changes">Pending Changes</string>
+    <string name="no_pending_changes">No pending changes</string>
+    <string name="changes_approved">Changes approved</string>
+    <string name="changes_rejected">Changes rejected</string>
 </resources>

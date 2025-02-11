@@ -115,7 +115,7 @@ class ChatFragment : Fragment() {
 
     private fun setupRecyclerView() {
         android.util.Log.d("ChatFragment", "Setting up RecyclerView")
-        chatAdapter = ChatAdapter().apply {
+        chatAdapter = ChatAdapter(viewModel.uiState.value.currentCoach).apply {
             setHasStableIds(true)  // Enable stable IDs for better performance
         }
         layoutManager = LinearLayoutManager(requireContext()).apply {
@@ -210,6 +210,9 @@ class ChatFragment : Fragment() {
             }
             isUpdatingConversationSpinner = false
             
+            // Update coach in adapter
+            chatAdapter.updateCoach(state.currentCoach)
+
             // Update messages with distinct check
             val currentList = chatAdapter.currentList
             if (state.messages != currentList) {

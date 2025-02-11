@@ -7,7 +7,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.jugcoach.data.dao.PatternDao
 import com.example.jugcoach.data.dao.CoachDao
+import com.example.jugcoach.data.dao.CoachProposalDao
 import com.example.jugcoach.data.entity.Pattern
+import com.example.jugcoach.data.entity.CoachProposal
+import com.example.jugcoach.data.entity.ProposalStatus
+import com.google.gson.Gson
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -19,8 +23,14 @@ import javax.inject.Inject
 class EditPatternViewModel @Inject constructor(
     private val patternDao: PatternDao,
     private val coachDao: CoachDao,
+    private val coachProposalDao: CoachProposalDao,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
+
+    private val gson = Gson()
+    private var currentCoachId: Long = 1L
+    private val _isHeadCoach = MutableLiveData<Boolean>(true)
+    val isHeadCoach: LiveData<Boolean> = _isHeadCoach
 
     private val _pattern = MutableLiveData<Pattern>()
     val pattern: LiveData<Pattern> = _pattern
@@ -35,8 +45,14 @@ class EditPatternViewModel @Inject constructor(
         loadAvailablePatterns()
     }
 
-    private suspend fun getCurrentCoachId(): Long {
-        return coachDao.getAllCoaches().first().find { it.isHeadCoach }?.id ?: 1L
+    private suspend fun initializeCoachInfo() {
+        coachDao.getAllCoaches().first().find { it.isHeadCoach }?.let { headCoach ->
+            currentCoachId = headCoach.id
+            _isHeadCoach.postValue(true)
+        } ?: run {
+            currentCoachId = coachDao.getAllCoaches().first().first().id
+            _isHeadCoach.postValue(false)
+        }
     }
 
     fun setPatternId(id: String) {
@@ -45,8 +61,8 @@ class EditPatternViewModel @Inject constructor(
 
     private fun loadPattern(id: String) {
         viewModelScope.launch {
-            val coachId = getCurrentCoachId()
-            patternDao.getPatternById(id, coachId)?.let { pattern ->
+            initializeCoachInfo()
+            patternDao.getPatternById(id, currentCoachId)?.let { pattern ->
                 _pattern.value = pattern
             }
         }
@@ -54,8 +70,7 @@ class EditPatternViewModel @Inject constructor(
 
     private fun loadAvailablePatterns() {
         viewModelScope.launch {
-            val coachId = getCurrentCoachId()
-            patternDao.getAllPatterns(coachId).collect { patterns ->
+            patternDao.getAllPatterns(currentCoachId).collect { patterns ->
                 _availablePatterns.value = patterns
             }
         }
@@ -63,7 +78,67 @@ class EditPatternViewModel @Inject constructor(
 
     fun updatePattern(pattern: Pattern) {
         viewModelScope.launch {
-            patternDao.updatePattern(pattern)
+            if (isHeadCoach.value == true) {
+                patternDao.updatePattern(pattern)
+            } else {
+                // Create a proposal for the changes
+                val currentPattern = _pattern.value ?: return@launch
+                val changes = createChangeProposal(currentPattern, pattern)
+                
+                coachProposalDao.insertProposal(
+                    CoachProposal(
+                        patternId = pattern.id,
+                        coachId = currentCoachId,
+                        proposedChanges = gson.toJson(changes),
+                        status = ProposalStatus.PENDING,
+                        notes = buildProposalNotes(changes)
+                    )
+                )
+            }
+        }
+    }
+
+    private fun createChangeProposal(oldPattern: Pattern, newPattern: Pattern): Map<String, Any> {
+        val changes = mutableMapOf<String, Any>()
+        
+        if (oldPattern.name != newPattern.name) 
+            changes["name"] = newPattern.name
+        if (oldPattern.explanation != newPattern.explanation) 
+            changes["explanation"] = newPattern.explanation ?: ""
+        if (oldPattern.difficulty != newPattern.difficulty) 
+            changes["difficulty"] = newPattern.difficulty ?: ""
+        if (oldPattern.num != newPattern.num) 
+            changes["num"] = newPattern.num ?: ""
+        if (oldPattern.siteswap != newPattern.siteswap) 
+            changes["siteswap"] = newPattern.siteswap ?: ""
+        if (oldPattern.gifUrl != newPattern.gifUrl) 
+            changes["gifUrl"] = newPattern.gifUrl ?: ""
+        if (oldPattern.video != newPattern.video) 
+            changes["video"] = newPattern.video ?: ""
+        if (oldPattern.url != newPattern.url) 
+            changes["url"] = newPattern.url ?: ""
+        if (oldPattern.prerequisites != newPattern.prerequisites) 
+            changes["prerequisites"] = newPattern.prerequisites
+        if (oldPattern.dependents != newPattern.dependents) 
+            changes["dependents"] = newPattern.dependents
+        if (oldPattern.related != newPattern.related) 
+            changes["related"] = newPattern.related
+        if (oldPattern.tags != newPattern.tags) 
+            changes["tags"] = newPattern.tags
+        if (oldPattern.runHistory != newPattern.runHistory) 
+            changes["runHistory"] = gson.toJson(newPattern.runHistory)
+        if (oldPattern.record != newPattern.record) 
+            changes["record"] = gson.toJson(newPattern.record)
+        
+        return changes
+    }
+
+    private fun buildProposalNotes(changes: Map<String, Any>): String {
+        return buildString {
+            append("Proposed changes:\n")
+            changes.forEach { (field, value) ->
+                append("• $field: $value\n")
+            }
         }
     }
 

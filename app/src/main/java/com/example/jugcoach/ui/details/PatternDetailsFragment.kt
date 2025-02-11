@@ -24,6 +24,7 @@ import androidx.navigation.fragment.navArgs
 import com.example.jugcoach.R
 import com.example.jugcoach.data.entity.Pattern
 import com.example.jugcoach.data.entity.Run
+import com.example.jugcoach.data.entity.CoachProposal
 import com.example.jugcoach.databinding.FragmentPatternDetailsBinding
 import com.example.jugcoach.databinding.DialogAddRunBinding
 import com.example.jugcoach.ui.adapters.PatternAdapter
@@ -55,6 +56,15 @@ class PatternDetailsFragment : Fragment() {
     }
 
     private val runHistoryAdapter = RunHistoryAdapter()
+    
+    private val proposalAdapter = ProposalAdapter(
+        onApprove = { proposal ->
+            viewModel.approveProposal(proposal)
+        },
+        onReject = { proposal ->
+            viewModel.rejectProposal(proposal)
+        }
+    )
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -79,6 +89,7 @@ class PatternDetailsFragment : Fragment() {
         setupCollapsibleSections()
         observeUiState()
         observeRelatedPatterns()
+        observePendingProposals()
 
         // Reload data when fragment becomes visible
         viewLifecycleOwner.lifecycleScope.launch {
@@ -145,6 +156,7 @@ class PatternDetailsFragment : Fragment() {
         binding.dependentsList.adapter = dependentsAdapter
         binding.relatedList.adapter = relatedAdapter
         binding.runHistoryList.adapter = runHistoryAdapter
+        binding.proposalsList.adapter = proposalAdapter
     }
 
     private fun setupCollapsibleSections() {
@@ -161,6 +173,9 @@ class PatternDetailsFragment : Fragment() {
             
             runHistoryList.isVisible = false
             historyExpandIcon.rotation = 0f
+            
+            proposalsList.isVisible = false
+            proposalsExpandIcon.rotation = 0f
 
             prerequisitesHeader.setOnClickListener {
                 toggleSection(prerequisitesList, prerequisitesExpandIcon)
@@ -173,6 +188,9 @@ class PatternDetailsFragment : Fragment() {
             }
             historyHeader.setOnClickListener {
                 toggleSection(runHistoryList, historyExpandIcon)
+            }
+            proposalsHeader.setOnClickListener {
+                toggleSection(proposalsList, proposalsExpandIcon)
             }
         }
     }
@@ -247,6 +265,19 @@ class PatternDetailsFragment : Fragment() {
                             relatedCard.isVisible = patterns.isNotEmpty()
                             android.util.Log.d("PatternDetails", "Related visibility: ${relatedCard.isVisible}")
                         }
+                    }
+                }
+            }
+        }
+    }
+
+    private fun observePendingProposals() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.pendingProposals.collect { proposals ->
+                    binding.apply {
+                        proposalAdapter.submitList(proposals)
+                        proposalsCard.isVisible = proposals.isNotEmpty()
                     }
                 }
             }
