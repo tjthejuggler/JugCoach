@@ -47,6 +47,16 @@ object DatabaseModule {
     }
 
     @Provides
+    fun provideConversationDao(database: JugCoachDatabase): ConversationDao {
+        return database.conversationDao()
+    }
+
+    @Provides
+    fun provideChatMessageDao(database: JugCoachDatabase): ChatMessageDao {
+        return database.chatMessageDao()
+    }
+
+    @Provides
     fun providePatternImporter(
         @ApplicationContext context: Context,
         patternDao: PatternDao

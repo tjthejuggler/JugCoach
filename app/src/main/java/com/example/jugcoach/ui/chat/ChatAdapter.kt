@@ -15,6 +15,14 @@ import java.time.format.FormatStyle
 
 class ChatAdapter : ListAdapter<ChatMessage, ChatAdapter.MessageViewHolder>(MessageDiffCallback()) {
 
+    init {
+        setHasStableIds(true)
+    }
+
+    override fun getItemId(position: Int): Long {
+        return getItem(position).id.hashCode().toLong()
+    }
+
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MessageViewHolder {
         android.util.Log.d("ChatAdapter", "Creating new ViewHolder")
         val binding = ItemChatMessageBinding.inflate(
@@ -27,16 +35,12 @@ class ChatAdapter : ListAdapter<ChatMessage, ChatAdapter.MessageViewHolder>(Mess
 
     override fun onBindViewHolder(holder: MessageViewHolder, position: Int) {
         val message = getItem(position)
-        android.util.Log.d("ChatAdapter", "Binding message at position $position: ${message.sender} - ${message.text}")
         holder.bind(message)
     }
 
     override fun submitList(list: List<ChatMessage>?) {
-        android.util.Log.d("ChatAdapter", "Submitting new list with ${list?.size ?: 0} messages")
-        list?.forEachIndexed { index, msg ->
-            android.util.Log.d("ChatAdapter", "Message $index: ${msg.sender} - ${msg.text}")
-        }
-        super.submitList(list?.toList())
+        val newList = list?.toList()  // Create a new copy to ensure proper diffing
+        super.submitList(newList)
     }
 
     class MessageViewHolder(
@@ -95,15 +99,16 @@ class ChatAdapter : ListAdapter<ChatMessage, ChatAdapter.MessageViewHolder>(Mess
 
     private class MessageDiffCallback : DiffUtil.ItemCallback<ChatMessage>() {
         override fun areItemsTheSame(oldItem: ChatMessage, newItem: ChatMessage): Boolean {
-            val result = oldItem.id == newItem.id
-            android.util.Log.d("ChatAdapter", "Comparing items: ${oldItem.id} == ${newItem.id} = $result")
-            return result
+            return oldItem.id == newItem.id
         }
 
         override fun areContentsTheSame(oldItem: ChatMessage, newItem: ChatMessage): Boolean {
-            val result = oldItem == newItem
-            android.util.Log.d("ChatAdapter", "Comparing contents: $oldItem == $newItem = $result")
-            return result
+            return oldItem == newItem  // Use data class equals for complete comparison
+        }
+
+        override fun getChangePayload(oldItem: ChatMessage, newItem: ChatMessage): Any? {
+            // Return non-null to trigger partial update instead of full rebind
+            return if (oldItem.id == newItem.id) Unit else null
         }
     }
 }

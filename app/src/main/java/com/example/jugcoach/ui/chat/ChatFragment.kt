@@ -32,6 +32,10 @@ class ChatFragment : Fragment() {
     private val viewModel: ChatViewModel by viewModels()
     private lateinit var chatAdapter: ChatAdapter
     private lateinit var layoutManager: LinearLayoutManager
+    
+    // Flags to prevent spinner selection callbacks during UI updates
+    private var isUpdatingCoachSpinner = false
+    private var isUpdatingConversationSpinner = false
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -49,8 +53,56 @@ class ChatFragment : Fragment() {
         setupRecyclerView()
         setupMessageInput()
         setupCoachSpinner()
+        setupConversationControls()
         observeUiState()
         observeApiKeys()
+    }
+
+    private fun setupConversationControls() {
+        binding.apply {
+            // Setup conversation spinner
+            conversationSpinner.onItemSelectedListener = object : android.widget.AdapterView.OnItemSelectedListener {
+                override fun onItemSelected(parent: android.widget.AdapterView<*>?, view: View?, position: Int, id: Long) {
+                    if (isUpdatingConversationSpinner) return
+                    val conversations = viewModel.uiState.value.availableConversations
+                    if (position < conversations.size) {
+                        viewModel.selectConversation(conversations[position])
+                    }
+                }
+                override fun onNothingSelected(parent: android.widget.AdapterView<*>?) {}
+            }
+
+            // Setup new conversation button
+            newConversationButton.setOnClickListener {
+                viewModel.createNewConversation()
+            }
+
+            // Long press on conversation spinner to rename
+            conversationSpinner.setOnLongClickListener {
+                showRenameConversationDialog()
+                true
+            }
+        }
+    }
+
+    private fun showRenameConversationDialog() {
+        val currentConversation = viewModel.uiState.value.currentConversation ?: return
+        val editText = com.google.android.material.textfield.TextInputEditText(requireContext()).apply {
+            setText(currentConversation.title)
+            setSingleLine()
+        }
+
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle(R.string.rename_conversation)
+            .setView(editText)
+            .setPositiveButton(R.string.save) { _, _ ->
+                val newTitle = editText.text?.toString()?.takeIf { it.isNotBlank() }
+                if (newTitle != null) {
+                    viewModel.updateConversationTitle(newTitle)
+                }
+            }
+            .setNegativeButton(R.string.cancel, null)
+            .show()
     }
 
     private fun observeApiKeys() {
@@ -63,28 +115,29 @@ class ChatFragment : Fragment() {
 
     private fun setupRecyclerView() {
         android.util.Log.d("ChatFragment", "Setting up RecyclerView")
-        chatAdapter = ChatAdapter()
+        chatAdapter = ChatAdapter().apply {
+            setHasStableIds(true)  // Enable stable IDs for better performance
+        }
         layoutManager = LinearLayoutManager(requireContext()).apply {
             stackFromEnd = true
             reverseLayout = false
         }
 
         binding.messagesList.apply {
-            setHasFixedSize(true)
-            itemAnimator = null // Disable animations to prevent flickering
-            layoutManager = this@ChatFragment.layoutManager
             adapter = chatAdapter
-
-            // Add scroll listener for debugging
-            addOnScrollListener(object : RecyclerView.OnScrollListener() {
-                override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
-                    (layoutManager as? LinearLayoutManager)?.let { manager ->
-                        val firstVisible = manager.findFirstVisibleItemPosition()
-                        val lastVisible = manager.findLastVisibleItemPosition()
-                        android.util.Log.d("ChatFragment", "Scroll - First: $firstVisible, Last: $lastVisible")
-                    }
-                }
-            })
+            layoutManager = this@ChatFragment.layoutManager
+            
+            // Optimize RecyclerView settings
+            setHasFixedSize(true)
+            itemAnimator = null  // Disable animations completely
+            setItemViewCacheSize(20)  // Increase view cache
+            
+            // Prevent unnecessary processing
+            isNestedScrollingEnabled = false
+            overScrollMode = View.OVER_SCROLL_NEVER
+            
+            // Use hardware acceleration
+            setLayerType(View.LAYER_TYPE_HARDWARE, null)
         }
         android.util.Log.d("ChatFragment", "RecyclerView setup complete")
     }
@@ -111,9 +164,9 @@ class ChatFragment : Fragment() {
         android.util.Log.d("ChatFragment", "Setting up coach spinner")
         binding.coachSpinner.onItemSelectedListener = object : android.widget.AdapterView.OnItemSelectedListener {
             override fun onItemSelected(parent: android.widget.AdapterView<*>?, view: View?, position: Int, id: Long) {
+                if (isUpdatingCoachSpinner) return
                 val coaches = viewModel.uiState.value.availableCoaches
                 if (position < coaches.size) {
-                    android.util.Log.d("ChatFragment", "Selected coach: ${coaches[position].name}")
                     viewModel.selectCoach(coaches[position])
                 }
             }
@@ -124,40 +177,54 @@ class ChatFragment : Fragment() {
     private fun observeUiState() {
         android.util.Log.d("ChatFragment", "Starting UI state observation")
         viewLifecycleOwner.lifecycleScope.launch {
-            viewModel.uiState.collectLatest { state ->
+            viewModel.uiState.collect { state ->
                 updateUi(state)
             }
         }
     }
 
     private fun updateUi(state: ChatUiState) {
-        android.util.Log.d("ChatFragment", "Updating UI with state: loading=${state.isLoading}, messages=${state.messages.size}")
         binding.apply {
             loadingIndicator.isVisible = state.isLoading
             
-            // Log each message for debugging
-            state.messages.forEachIndexed { index, msg ->
-                android.util.Log.d("ChatFragment", "Message $index - ${msg.sender}: ${msg.text}")
+            // Refresh options menu when current conversation changes
+            requireActivity().invalidateOptionsMenu()
+
+            // Update conversation spinner
+            isUpdatingConversationSpinner = true
+            val conversationAdapter = ArrayAdapter(
+                requireContext(),
+                android.R.layout.simple_spinner_item,
+                state.availableConversations.map { conversation ->
+                    conversation.title ?: "Chat ${java.time.format.DateTimeFormatter.ISO_INSTANT.format(java.time.Instant.ofEpochMilli(conversation.createdAt))}"
+                }
+            ).apply {
+                setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
             }
+            conversationSpinner.adapter = conversationAdapter
+            state.currentConversation?.let { currentConversation ->
+                val index = state.availableConversations.indexOfFirst { it.id == currentConversation.id }
+                if (index >= 0) {
+                    conversationSpinner.setSelection(index)
+                }
+            }
+            isUpdatingConversationSpinner = false
             
-            // Create a new list to force DiffUtil to run
-            val newList = state.messages.toList()
-            android.util.Log.d("ChatFragment", "Submitting new list with ${newList.size} messages")
-            chatAdapter.submitList(newList) {
-                // Scroll to bottom when new messages arrive
-                if (newList.isNotEmpty()) {
-                    android.util.Log.d("ChatFragment", "Scrolling to position: ${newList.size - 1}")
-                    messagesList.post {
-                        try {
-                            messagesList.smoothScrollToPosition(newList.size - 1)
-                        } catch (e: Exception) {
-                            android.util.Log.e("ChatFragment", "Error scrolling", e)
+            // Update messages with distinct check
+            val currentList = chatAdapter.currentList
+            if (state.messages != currentList) {
+                chatAdapter.submitList(state.messages) {
+                    // Scroll to bottom only when new messages are added
+                    if (state.messages.size > currentList.size) {
+                        messagesList.post {
+                            messagesList.scrollToPosition(state.messages.size - 1)
                         }
                     }
                 }
             }
 
             // Update coach spinner
+            isUpdatingCoachSpinner = true
             val adapter = ArrayAdapter(
                 requireContext(),
                 android.R.layout.simple_spinner_item,
@@ -172,6 +239,7 @@ class ChatFragment : Fragment() {
                     coachSpinner.setSelection(index)
                 }
             }
+            isUpdatingCoachSpinner = false
 
             state.error?.let { error ->
                 android.util.Log.e("ChatFragment", "Showing error: $error")
@@ -182,11 +250,37 @@ class ChatFragment : Fragment() {
 
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
         inflater.inflate(R.menu.chat_menu, menu)
+        
+        // Update conversation-related menu items based on current conversation
+        viewModel.uiState.value.currentConversation?.let { conversation ->
+            // Show and update favorite icon
+            menu.findItem(R.id.action_favorite_conversation)?.apply {
+                setIcon(if (conversation.isFavorite) android.R.drawable.btn_star_big_on else android.R.drawable.btn_star_big_off)
+                setTitle(if (conversation.isFavorite) R.string.unfavorite_conversation else R.string.favorite_conversation)
+                isVisible = true
+            }
+            // Show rename option
+            menu.findItem(R.id.action_rename_conversation)?.isVisible = true
+        } ?: run {
+            // Hide conversation-related actions when no conversation is selected
+            menu.findItem(R.id.action_favorite_conversation)?.isVisible = false
+            menu.findItem(R.id.action_rename_conversation)?.isVisible = false
+        }
+        
         super.onCreateOptionsMenu(menu, inflater)
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
+            R.id.action_rename_conversation -> {
+                showRenameConversationDialog()
+                true
+            }
+            R.id.action_favorite_conversation -> {
+                viewModel.toggleConversationFavorite()
+                requireActivity().invalidateOptionsMenu() // Refresh menu to update icon
+                true
+            }
             R.id.action_create_coach -> {
                 findNavController().navigate(R.id.action_nav_chat_to_createCoachFragment)
                 true

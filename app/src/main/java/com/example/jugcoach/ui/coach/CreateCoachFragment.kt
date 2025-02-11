@@ -43,6 +43,7 @@ class CreateCoachFragment : Fragment() {
                 val apiKey = apiKeyDropdown.text.toString()
                 val description = descriptionInput.text.toString().takeIf { it.isNotBlank() }
                 val specialties = specialtiesInput.text.toString().takeIf { it.isNotBlank() }
+                val systemPrompt = systemPromptInput.text.toString().takeIf { it.isNotBlank() }
 
                 if (name.isBlank()) {
                     Snackbar.make(root, "Please enter a name", Snackbar.LENGTH_SHORT).show()
@@ -54,7 +55,7 @@ class CreateCoachFragment : Fragment() {
                     return@setOnClickListener
                 }
 
-                viewModel.createCoach(name, apiKey, description, specialties)
+                viewModel.createCoach(name, apiKey, description, specialties, systemPrompt)
                 findNavController().navigateUp()
             }
         }

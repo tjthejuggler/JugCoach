@@ -11,4 +11,15 @@
         android:icon="@android:drawable/ic_menu_manage"
         android:title="@string/change_api_key"
         app:showAsAction="ifRoom" />
+    <item
+        android:id="@+id/action_rename_conversation"
+        android:icon="@android:drawable/ic_menu_edit"
+        android:title="@string/rename_conversation"
+        app:showAsAction="ifRoom" />
+    <item
+        android:id="@+id/action_favorite_conversation"
+        android:icon="@android:drawable/btn_star_big_off"
+        android:title="@string/favorite_conversation"
+        android:checkable="true"
+        app:showAsAction="ifRoom" />
 </menu>

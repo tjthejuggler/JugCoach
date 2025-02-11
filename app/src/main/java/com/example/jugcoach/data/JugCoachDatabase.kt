@@ -17,9 +17,11 @@ import com.example.jugcoach.data.entity.*
         Session::class,
         Note::class,
         Settings::class,
-        Coach::class
+        Coach::class,
+        Conversation::class,
+        ChatMessage::class
     ],
-    version = 6,
+    version = 8,
     exportSchema = true
 )
 @TypeConverters(DateConverter::class, ListConverter::class, RunListConverter::class)
@@ -29,6 +31,8 @@ abstract class JugCoachDatabase : RoomDatabase() {
     abstract fun noteDao(): NoteDao
     abstract fun settingsDao(): SettingsDao
     abstract fun coachDao(): CoachDao
+    abstract fun conversationDao(): ConversationDao
+    abstract fun chatMessageDao(): ChatMessageDao
 
     companion object {
         @Volatile
@@ -96,6 +100,53 @@ abstract class JugCoachDatabase : RoomDatabase() {
             }
         }
 
+        private val MIGRATION_5_6 = object : androidx.room.migration.Migration(5, 6) {
+            override fun migrate(db: androidx.sqlite.db.SupportSQLiteDatabase) {
+                // Add systemPrompt column
+                db.execSQL("ALTER TABLE coaches ADD COLUMN systemPrompt TEXT DEFAULT NULL")
+            }
+        }
+
+        private val MIGRATION_6_7 = object : androidx.room.migration.Migration(6, 7) {
+            override fun migrate(db: androidx.sqlite.db.SupportSQLiteDatabase) {
+                // Create conversations table
+                db.execSQL("""
+                    CREATE TABLE conversations (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        coachId INTEGER NOT NULL,
+                        title TEXT,
+                        createdAt INTEGER NOT NULL,
+                        isFavorite INTEGER NOT NULL DEFAULT 0,
+                        lastMessageAt INTEGER NOT NULL,
+                        FOREIGN KEY(coachId) REFERENCES coaches(id) ON DELETE CASCADE
+                    )
+                """)
+                db.execSQL("CREATE INDEX index_conversations_coachId ON conversations(coachId)")
+
+                // Create chat_messages table
+                db.execSQL("""
+                    CREATE TABLE chat_messages (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        conversationId INTEGER NOT NULL,
+                        text TEXT NOT NULL,
+                        isFromUser INTEGER NOT NULL,
+                        timestamp INTEGER NOT NULL,
+                        isError INTEGER NOT NULL DEFAULT 0,
+                        FOREIGN KEY(conversationId) REFERENCES conversations(id) ON DELETE CASCADE
+                    )
+                """)
+                db.execSQL("CREATE INDEX index_chat_messages_conversationId ON chat_messages(conversationId)")
+            }
+        }
+
+        private val MIGRATION_7_8 = object : androidx.room.migration.Migration(7, 8) {
+            override fun migrate(db: androidx.sqlite.db.SupportSQLiteDatabase) {
+                // Add new indices for chat_messages
+                db.execSQL("CREATE INDEX index_chat_messages_timestamp ON chat_messages(timestamp)")
+                db.execSQL("CREATE INDEX index_chat_messages_conversation_timestamp ON chat_messages(conversationId, timestamp)")
+            }
+        }
+
         fun getDatabase(context: Context): JugCoachDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -104,17 +155,17 @@ abstract class JugCoachDatabase : RoomDatabase() {
                     "jugcoach_database"
                 )
                     .fallbackToDestructiveMigration()
-                    .addMigrations(MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
+                    .addMigrations(
+                        MIGRATION_2_3,
+                        MIGRATION_3_4,
+                        MIGRATION_4_5,
+                        MIGRATION_5_6,
+                        MIGRATION_6_7,
+                        MIGRATION_7_8
+                    )
                     .build()
                 INSTANCE = instance
                 instance
-            }
-        }
-
-        private val MIGRATION_5_6 = object : androidx.room.migration.Migration(5, 6) {
-            override fun migrate(db: androidx.sqlite.db.SupportSQLiteDatabase) {
-                // Add systemPrompt column
-                db.execSQL("ALTER TABLE coaches ADD COLUMN systemPrompt TEXT DEFAULT NULL")
             }
         }
     }

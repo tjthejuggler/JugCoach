@@ -36,14 +36,16 @@ class CreateCoachViewModel @Inject constructor(
         name: String,
         apiKeyName: String,
         description: String? = null,
-        specialties: String? = null
+        specialties: String? = null,
+        systemPrompt: String? = null
     ) {
         viewModelScope.launch {
             val coach = Coach(
                 name = name,
                 apiKeyName = apiKeyName,
                 description = description,
-                specialties = specialties
+                specialties = specialties,
+                systemPrompt = systemPrompt
             )
             coachDao.insertCoach(coach)
         }

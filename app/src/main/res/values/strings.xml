@@ -15,10 +15,18 @@
     <string name="select_coach">Select Coach</string>
     <string name="menu_chat">Chat with Coach</string>
 
+    <!-- Chat Management -->
+    <string name="new_conversation">New</string>
+    <string name="rename_conversation">Rename Conversation</string>
+    <string name="enter_conversation_title">Enter conversation title</string>
+    <string name="favorite_conversation">Favorite</string>
+    <string name="unfavorite_conversation">Unfavorite</string>
+
     <!-- Coach Management -->
     <string name="coach_name">Coach Name</string>
     <string name="coach_description">Coach Description</string>
     <string name="coach_specialties">Specialties</string>
+    <string name="coach_system_prompt">System Prompt</string>
     <string name="add_api_key">Add API Key</string>
     <string name="api_key_name">API Key Name</string>
     <string name="api_key_value">API Key</string>

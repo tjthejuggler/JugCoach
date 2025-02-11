@@ -30,19 +30,59 @@
 
     </com.google.android.material.appbar.AppBarLayout>
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/messagesList"
+    <!-- Conversation Selection -->
+    <LinearLayout
+        android:id="@+id/conversationContainer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="8dp"
+        android:background="?attr/colorSurface"
+        android:elevation="2dp"
+        app:layout_constraintTop_toBottomOf="@id/appBarLayout">
+
+        <Spinner
+            android:id="@+id/conversationSpinner"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginEnd="8dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/newConversationButton"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="New" />
+
+    </LinearLayout>
+
+    <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:clipToPadding="false"
-        android:paddingVertical="8dp"
-        android:overScrollMode="never"
-        android:scrollbars="vertical"
+        android:background="?android:attr/colorBackground"
         app:layout_constraintBottom_toTopOf="@id/inputContainer"
-        app:layout_constraintTop_toBottomOf="@id/appBarLayout"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        tools:listitem="@layout/item_chat_message" />
+        app:layout_constraintTop_toBottomOf="@id/conversationContainer">
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/messagesList"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:clipToPadding="false"
+            android:clipChildren="false"
+            android:paddingVertical="8dp"
+            android:overScrollMode="never"
+            android:scrollbars="vertical"
+            android:layerType="hardware"
+            android:hardwareAccelerated="true"
+            android:scrollingCache="false"
+            android:animationCache="false"
+            android:persistentDrawingCache="none"
+            android:windowContentTransitions="false"
+            tools:listitem="@layout/item_chat_message"
+            tools:itemCount="10" />
+
+    </FrameLayout>
 
     <com.google.android.material.progressindicator.CircularProgressIndicator
         android:id="@+id/loadingIndicator"
@@ -50,6 +90,7 @@
         android:layout_height="wrap_content"
         android:indeterminate="true"
         android:visibility="gone"
+        android:layerType="hardware"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
