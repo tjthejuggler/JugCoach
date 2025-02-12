@@ -30,6 +30,11 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity
+            android:name=".ui.tooltest.ToolTestActivity"
+            android:exported="false"
+            android:label="Tool Test"
+            android:theme="@style/Theme.JugCoach.NoActionBar" />
     </application>
 
 </manifest>

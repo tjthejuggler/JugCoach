@@ -91,10 +91,20 @@ class PatternQueryParser(private val patternDao: PatternDao) {
     /**
      * Get patterns related to a specific pattern
      */
-    suspend fun getRelatedPatterns(patternId: String, coachId: Long): List<Pattern> {
-        val pattern = patternDao.getPatternById(patternId, coachId) ?: return emptyList()
+    suspend fun getRelatedPatterns(patternName: String, coachId: Long): List<Pattern> {
+        // First try to find by name
+        val allPatterns = patternDao.getAllPatternsSync(coachId)
+        var pattern = allPatterns.find { it.name == patternName }
+        
+        // If not found by name, try to find by ID (as fallback)
+        if (pattern == null) {
+            pattern = patternDao.getPatternById(patternName, coachId)
+        }
+        
+        if (pattern == null) return emptyList()
+        
         val relatedIds = pattern.related + pattern.prerequisites + pattern.dependents
-        return patternDao.getAllPatternsSync(coachId).filter { it.id in relatedIds }
+        return allPatterns.filter { it.id in relatedIds }
     }
 
     /**

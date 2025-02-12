@@ -1,8 +1,9 @@
 package com.example.jugcoach
 
+import android.content.Intent
 import android.os.Bundle
-import dagger.hilt.android.AndroidEntryPoint
 import android.view.Menu
+import dagger.hilt.android.AndroidEntryPoint
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.navigation.NavigationView
 import androidx.navigation.findNavController
@@ -51,5 +52,19 @@ class MainActivity : AppCompatActivity() {
     override fun onSupportNavigateUp(): Boolean {
         val navController = findNavController(R.id.nav_host_fragment_content_main)
         return navController.navigateUp(appBarConfiguration) || super.onSupportNavigateUp()
+    }
+
+    override fun onOptionsItemSelected(item: android.view.MenuItem): Boolean {
+        return when (item.itemId) {
+            R.id.action_settings -> {
+                findNavController(R.id.nav_host_fragment_content_main).navigate(R.id.nav_settings)
+                true
+            }
+            R.id.action_tool_test -> {
+                startActivity(Intent(this, com.example.jugcoach.ui.tooltest.ToolTestActivity::class.java))
+                true
+            }
+            else -> super.onOptionsItemSelected(item)
+        }
     }
 }

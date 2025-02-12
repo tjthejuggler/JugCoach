@@ -17,9 +17,8 @@ object PatternConverter {
 
     fun toEntity(dto: PatternDTO): Pattern {
         // Generate or retrieve ID for this pattern
-        val id = nameToIdMap.getOrPut(dto.name) { 
-            UUID.randomUUID().toString()
-        }
+        // Use the pattern name as the ID since that's what's used in lookupPattern
+        val id = dto.name
         return Pattern(
             id = id,
             name = dto.name,
@@ -60,28 +59,12 @@ object PatternConverter {
     }
 
     fun fromJsonTricksWrapper(json: String): List<PatternDTO> {
-        nameToIdMap.clear() // Clear the map before processing new data
         val wrapper = gson.fromJson(json, TricksWrapper::class.java)
-        val patterns = wrapper.tricks.values.toList()
-        
-        // First pass: create IDs for all patterns
-        patterns.forEach { dto ->
-            nameToIdMap[dto.name] = UUID.randomUUID().toString()
-        }
-        
-        return patterns
+        return wrapper.tricks.values.toList()
     }
 
     fun fromJsonArray(json: String): List<PatternDTO> {
-        nameToIdMap.clear() // Clear the map before processing new data
-        val patterns = gson.fromJson(json, Array<PatternDTO>::class.java).toList()
-        
-        // First pass: create IDs for all patterns
-        patterns.forEach { dto ->
-            nameToIdMap[dto.name] = UUID.randomUUID().toString()
-        }
-        
-        return patterns
+        return gson.fromJson(json, Array<PatternDTO>::class.java).toList()
     }
 
     fun toJson(patterns: List<Pattern>): String {

@@ -20,13 +20,21 @@ class PatternDatabaseService @Inject constructor(
     private val queryParser = PatternQueryParser(patternDao)
 
     /**
-     * Look up a specific pattern by ID
-     * Command: lookupPattern <pattern_id>
+     * Look up a specific pattern by name
+     * Command: lookupPattern <pattern_name>
+     * Example: lookupPattern 55500
      */
-    suspend fun lookupPattern(patternId: String, coachId: Long): String {
-        val pattern = patternDao.getPatternById(patternId, coachId)
+    suspend fun lookupPattern(patternName: String, coachId: Long): String {
+        // First try to find by name
+        var pattern = patternDao.getAllPatternsSync(coachId).find { it.name == patternName }
+        
+        // If not found by name, try to find by ID (as fallback)
+        if (pattern == null) {
+            pattern = patternDao.getPatternById(patternName, coachId)
+        }
+        
         return pattern?.let { queryParser.formatPatternResponse(it) }
-            ?: """{"error": "Pattern not found"}"""
+            ?: """{"error": "Pattern not found with name: $patternName"}"""
     }
 
     /**
@@ -49,7 +57,8 @@ class PatternDatabaseService @Inject constructor(
 
     /**
      * Get patterns related to a specific pattern
-     * Command: getRelatedPatterns <pattern_id>
+     * Command: getRelatedPatterns <pattern_name>
+     * Example: getRelatedPatterns 55500
      */
     suspend fun getRelatedPatterns(patternId: String, coachId: Long): String {
         val patterns = queryParser.getRelatedPatterns(patternId, coachId)

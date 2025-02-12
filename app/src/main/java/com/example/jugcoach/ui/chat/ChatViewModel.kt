@@ -15,6 +15,7 @@ import com.example.jugcoach.data.dao.ConversationDao
 import com.example.jugcoach.data.dao.ChatMessageDao
 import com.example.jugcoach.data.dao.PatternDao
 import com.example.jugcoach.data.entity.*
+import com.example.jugcoach.data.query.PatternQueryParser
 import com.google.gson.JsonParser
 import com.example.jugcoach.util.PromptLogger
 import com.example.jugcoach.util.SystemPromptLoader
@@ -48,6 +49,7 @@ class ChatViewModel @Inject constructor(
     @ApplicationContext private val context: Context
 ) : ViewModel() {
 
+    private val queryParser = PatternQueryParser(patternDao)
     private val gson = Gson()
     
     private val _uiState = MutableStateFlow(ChatUiState())
@@ -165,7 +167,7 @@ class ChatViewModel @Inject constructor(
                                 msg.text.contains("analyzing tool output") -> ChatMessage.MessageType.THINKING
                                 else -> ChatMessage.MessageType.TALKING
                             },
-                            isInternal = msg.text.startsWith("Tool Output:") || extractJsonFromText(msg.text) != null
+                            isInternal = extractJsonFromText(msg.text) != null // Only mark JSON messages as internal
                         )
                     }
                     _uiState.update { it.copy(messages = uiMessages) }
@@ -417,7 +419,7 @@ class ChatViewModel @Inject constructor(
                             text = initialResponse,
                             isFromUser = false,
                             timestamp = initialTimestamp,
-                            isInternal = true
+                            isInternal = false
                         )
                         chatMessageDao.insertAndUpdateConversation(initialMessage, conversation.id, initialTimestamp)
                     }
@@ -428,29 +430,21 @@ class ChatViewModel @Inject constructor(
                         when (toolCall.name) {
                             "lookupPattern" -> {
                                 val jsonObject = JsonParser.parseString(toolCall.arguments).asJsonObject
-                                val patternId = jsonObject.get("pattern_id")?.asString
-                                Log.d("JugCoachDebug", "Extracted pattern_id: $patternId")
+                                val patternName = jsonObject.get("pattern_id")?.asString
+                                Log.d("JugCoachDebug", "Extracted pattern_id: $patternName")
                                 
-                                if (patternId != null) {
-                                    val pattern = patternDao.getPatternById(patternId, currentCoach.id)
+                                if (patternName != null) {
+                                    // Get all patterns first to search by name
+                                    val allPatterns = patternDao.getAllPatternsSync(currentCoach.id)
+                                    Log.d("JugCoachDebug", "Available patterns: ${allPatterns.map { it.name }}")
+                                    
+                                    // Search by name like in ToolTest
+                                    val pattern = allPatterns.find { it.name == patternName }
                                     if (pattern != null) {
-                                        val patternInfo = """
-                                            Pattern Details:
-                                            Name: ${pattern.name}
-                                            Difficulty: ${pattern.difficulty ?: "Not specified"}
-                                            Siteswap: ${pattern.siteswap ?: "Not specified"}
-                                            Number of Balls: ${pattern.num ?: "Not specified"}
-                                            Explanation: ${pattern.explanation ?: "No explanation available"}
-                                            Tags: ${pattern.tags.joinToString(", ")}
-                                            Prerequisites: ${pattern.prerequisites.joinToString(", ")}
-                                            Related Patterns: ${pattern.related.joinToString(", ")}
-                                            ${if (pattern.gifUrl != null) "Animation: ${pattern.gifUrl}" else ""}
-                                            ${if (pattern.video != null) "Video Tutorial: ${pattern.video}" else ""}
-                                            ${if (pattern.url != null) "Additional Resources: ${pattern.url}" else ""}
-                                        """.trimIndent()
+                                        val patternInfo = queryParser.formatPatternResponse(pattern)
                                         toolResults.add(patternInfo)
                                     } else {
-                                        toolResults.add("Pattern not found: $patternId")
+                                        toolResults.add("Pattern not found: $patternName")
                                     }
                                 }
                             }
@@ -467,7 +461,7 @@ class ChatViewModel @Inject constructor(
                             text = "Tool Output:\n\n${toolResults.joinToString("\n\n")}",
                             isFromUser = false,
                             timestamp = toolOutputTimestamp,
-                            isInternal = true
+                            isInternal = false
                         )
                         chatMessageDao.insertAndUpdateConversation(toolOutputMessage, conversation.id, toolOutputTimestamp)
 
@@ -480,7 +474,7 @@ class ChatViewModel @Inject constructor(
                                 sender = ChatMessage.Sender.COACH,
                                 timestamp = Instant.ofEpochMilli(toolOutputTimestamp),
                                 isError = false,
-                                isInternal = true
+                                isInternal = false
                             )
                         )
 

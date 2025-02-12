@@ -21,6 +21,7 @@ class PatternImporter(
     companion object {
         private const val BATCH_SIZE = 50
         private const val ASSET_FILE_PATH = "juggling_data.json"
+        private const val TAG = "PatternImporter"
     }
 
     /**
@@ -93,70 +94,68 @@ class PatternImporter(
      * Imports patterns from the legacy JSON file in assets as shared patterns
      * @return Number of patterns imported
      */
+
     suspend fun importLegacyPatterns(): Int = withContext(Dispatchers.IO) {
+        android.util.Log.d(TAG, "Starting legacy pattern import")
+        
         // Clear existing patterns before import
+        android.util.Log.d(TAG, "Clearing existing patterns")
         patternDao.deleteAllPatterns()
         var patternsImported = 0
 
         try {
-            context.assets.open(ASSET_FILE_PATH).use { inputStream ->
-                val reader = BufferedReader(InputStreamReader(inputStream))
-                val content = StringBuilder()
-                var line: String?
-                var openBrackets = 0
-                var isInArray = false
-                val patterns = mutableListOf<PatternDTO>()
+            // First read the entire file to see what we're working with
+            val fullContent = context.assets.open(ASSET_FILE_PATH).use { inputStream ->
+                inputStream.bufferedReader().readText()
+            }
+            android.util.Log.d(TAG, "Read ${fullContent.length} bytes from $ASSET_FILE_PATH")
 
-                // Process the file character by character to handle large JSON
-                while (reader.read().also { char: Int -> line = char.toChar().toString() } != -1) {
-                    when (line) {
-                        "[" -> {
-                            isInArray = true
-                            continue
-                        }
-                        "]" -> {
-                            // Process any remaining content
-                            if (content.isNotEmpty()) {
-                                processPattern(content.toString(), patterns)
-                            }
-                            break
-                        }
-                        "{" -> openBrackets++
-                        "}" -> {
-                            openBrackets--
-                            if (openBrackets == 0 && isInArray) {
-                                content.append(line)
-                                // Process complete pattern object
-                                processPattern(content.toString(), patterns)
-                                content.clear()
-
-                                // Batch insert if we've reached the batch size
-                                if (patterns.size >= BATCH_SIZE) {
-                                    patternDao.insertPatterns(patterns.map { dto ->
-                                        PatternConverter.toEntity(dto).copy(coachId = null) // Import as shared patterns
-                                    })
-                                    patternsImported += patterns.size
-                                    patterns.clear()
-                                }
-                                continue
-                            }
-                        }
+            // Try parsing as tricks wrapper first
+            try {
+                android.util.Log.d(TAG, "Attempting to parse as tricks wrapper")
+                val patterns = PatternConverter.fromJsonTricksWrapper(fullContent)
+                android.util.Log.d(TAG, "Successfully parsed ${patterns.size} patterns from tricks wrapper")
+                
+                // Insert patterns in batches
+                patterns.chunked(BATCH_SIZE).forEach { batch ->
+                    val entities = batch.map { dto ->
+                        PatternConverter.toEntity(dto).copy(coachId = null)
                     }
-                    content.append(line)
+                    android.util.Log.d(TAG, "Inserting batch of ${entities.size} patterns")
+                    android.util.Log.d(TAG, "First pattern in batch: id=${entities.first().id}, name=${entities.first().name}")
+                    patternDao.insertPatterns(entities)
+                    patternsImported += batch.size
                 }
-
-                // Insert any remaining patterns
-                if (patterns.isNotEmpty()) {
-                    patternDao.insertPatterns(patterns.map { dto ->
-                        PatternConverter.toEntity(dto).copy(coachId = null) // Import as shared patterns
-                    })
-                    patternsImported += patterns.size
+            } catch (e: Exception) {
+                android.util.Log.e(TAG, "Failed to parse as tricks wrapper, trying array format", e)
+                // If that fails, try parsing as array
+                val patterns = PatternConverter.fromJsonArray(fullContent)
+                android.util.Log.d(TAG, "Successfully parsed ${patterns.size} patterns from array")
+                
+                patterns.chunked(BATCH_SIZE).forEach { batch ->
+                    val entities = batch.map { dto ->
+                        PatternConverter.toEntity(dto).copy(coachId = null)
+                    }
+                    android.util.Log.d(TAG, "Inserting batch of ${entities.size} patterns")
+                    android.util.Log.d(TAG, "First pattern in batch: id=${entities.first().id}, name=${entities.first().name}")
+                    patternDao.insertPatterns(entities)
+                    patternsImported += batch.size
                 }
             }
+
+            // Verify imported patterns
+            val allPatterns = patternDao.getAllPatternsSync(-1)
+            android.util.Log.d(TAG, "Verification: Found ${allPatterns.size} patterns in database")
+            allPatterns.take(5).forEach { pattern ->
+                android.util.Log.d(TAG, "Sample pattern: id=${pattern.id}, name=${pattern.name}")
+            }
+
         } catch (e: Exception) {
+            android.util.Log.e(TAG, "Failed to import patterns", e)
             throw ImportException("Failed to import patterns: ${e.message}", e)
         }
 
+        android.util.Log.d(TAG, "Import completed. Total patterns imported: $patternsImported")
         patternsImported
     }
 

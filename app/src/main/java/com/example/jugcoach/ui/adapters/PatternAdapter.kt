@@ -33,7 +33,12 @@ class PatternAdapter(
 
         fun bind(pattern: Pattern) {
             binding.apply {
-                patternName.text = pattern.name
+                // If the name is a number (like "55500"), show it with a more descriptive format
+                patternName.text = if (pattern.name.matches(Regex("\\d+"))) {
+                    "Pattern ${pattern.name} (ID: ${pattern.id})"
+                } else {
+                    "${pattern.name} (ID: ${pattern.id})"
+                }
                 patternDescription.text = pattern.explanation
                 
                 // Show pattern info

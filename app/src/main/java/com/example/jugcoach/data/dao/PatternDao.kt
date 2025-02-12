@@ -28,6 +28,7 @@ interface PatternDao {
             WHEN name = :query THEN 100
             WHEN name LIKE :query || '%' THEN 90
             WHEN name LIKE '%' || :query || '%' THEN 80
+            WHEN name LIKE '%(' || :query || ')%' THEN 80  -- Match exact number in parentheses
             WHEN LOWER(name) LIKE '%' || LOWER(:query) || '%' THEN 70
             WHEN explanation LIKE '%' || :query || '%' THEN 60
             WHEN LOWER(explanation) LIKE '%' || LOWER(:query) || '%' THEN 50
@@ -40,6 +41,7 @@ interface PatternDao {
         AND (
             name LIKE '%' || :query || '%'
             OR name LIKE '%' || REPLACE(:query, ' ', '%') || '%'
+            OR name LIKE '%(' || :query || ')%'  -- Match exact number in parentheses
             OR LOWER(name) LIKE '%' || LOWER(:query) || '%'
             OR explanation LIKE '%' || :query || '%'
             OR LOWER(explanation) LIKE '%' || LOWER(:query) || '%'

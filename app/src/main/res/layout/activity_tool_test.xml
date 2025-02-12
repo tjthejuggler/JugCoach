@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout 
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <!-- Pattern ID input -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Enter Pattern Name"
+        android:layout_marginBottom="8dp"/>
+
+    <com.google.android.material.textfield.TextInputLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="16dp">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/editTextArgument"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="e.g. 55500, cascade, 3ball, etc"/>
+
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <!-- Button to trigger the tool call -->
+    <Button
+        android:id="@+id/buttonSendToolRequest"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Test lookupPattern"
+        android:layout_marginBottom="16dp"/>
+
+    <!-- TextView to display the tool response -->
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <TextView
+            android:id="@+id/textViewToolResponse"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textIsSelectable="true"
+            android:fontFamily="monospace"
+            android:text="Response will appear here"/>
+
+    </ScrollView>
+
+</LinearLayout>
