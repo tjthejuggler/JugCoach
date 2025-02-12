@@ -8,7 +8,7 @@ data class AnthropicRequest(
     val system: String? = null,
     @SerializedName("max_tokens")
     val maxTokens: Int = 1024,
-    val temperature: Double = 0.7,
+    val temperature: Double = 0.5,
     val tools: List<Tool>? = null
 ) {
     data class Message(

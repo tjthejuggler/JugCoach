@@ -1,16 +1,21 @@
 package com.example.jugcoach.ui.chat
 
 import android.content.Context
+import android.util.Log
+import com.google.gson.Gson
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.jugcoach.data.api.AnthropicRequest
+import com.example.jugcoach.data.api.AnthropicResponse
 import com.example.jugcoach.data.api.AnthropicService
 import com.example.jugcoach.data.dao.CoachDao
 import com.example.jugcoach.data.dao.NoteDao
 import com.example.jugcoach.data.dao.SettingsDao
 import com.example.jugcoach.data.dao.ConversationDao
 import com.example.jugcoach.data.dao.ChatMessageDao
+import com.example.jugcoach.data.dao.PatternDao
 import com.example.jugcoach.data.entity.*
+import com.google.gson.JsonParser
 import com.example.jugcoach.util.PromptLogger
 import com.example.jugcoach.util.SystemPromptLoader
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -38,10 +43,13 @@ class ChatViewModel @Inject constructor(
     private val coachDao: CoachDao,
     private val conversationDao: ConversationDao,
     private val chatMessageDao: ChatMessageDao,
+    private val patternDao: PatternDao,
     private val anthropicService: AnthropicService,
     @ApplicationContext private val context: Context
 ) : ViewModel() {
 
+    private val gson = Gson()
+    
     private val _uiState = MutableStateFlow(ChatUiState())
     val uiState: StateFlow<ChatUiState> = _uiState.asStateFlow()
 
@@ -336,22 +344,187 @@ class ChatViewModel @Inject constructor(
                     userMessage = text
                 )
 
+                // Log the initial request with full JSON
+                Log.d("JugCoachDebug", "Initial Request JSON: ${gson.toJson(request)}")
+                Log.d("JugCoachDebug", "Tools provided: ${gson.toJson(request.tools)}")
+
                 val response = anthropicService.sendMessage(
                     apiKey = apiKey,
                     request = request
                 )
 
-                val responseText = response.content.firstOrNull()?.text ?: "No response from the coach"
+                // Log the entire response with full JSON
+                Log.d("JugCoachDebug", "Initial API Response JSON: ${gson.toJson(response)}")
+                Log.d("JugCoachDebug", "Stop reason: ${response.stopReason}")
 
-                // Add coach response using transaction
-                val timestamp = System.currentTimeMillis()
-                val coachMessage = com.example.jugcoach.data.entity.ChatMessage(
-                    conversationId = conversation.id,
-                    text = responseText,
-                    isFromUser = false,
-                    timestamp = timestamp
-                )
-                chatMessageDao.insertAndUpdateConversation(coachMessage, conversation.id, timestamp)
+                // Get initial response text and try to extract tool calls
+                var toolCalls = response.toolCalls
+                var toolResults = mutableListOf<String>()
+                var initialResponse = response.content.firstOrNull()?.text ?: "No response from the coach"
+
+                Log.d("JugCoachDebug", "Initial response text: $initialResponse")
+                Log.d("JugCoachDebug", "Tool calls from response: ${toolCalls?.size ?: 0}")
+
+                // If no tool calls in response object, try to parse the text as JSON
+                if (toolCalls.isNullOrEmpty()) {
+                    Log.d("JugCoachDebug", "No tool calls in response. Attempting to parse text as JSON.")
+                    val assistantText = initialResponse.trim()
+                    try {
+                        if (assistantText.startsWith("{") && assistantText.endsWith("}")) {
+                            Log.d("JugCoachDebug", "Found JSON-like text, attempting to parse")
+                            val jsonObject = com.google.gson.JsonParser.parseString(assistantText).asJsonObject
+                            if (jsonObject.has("tool") && jsonObject.has("arguments")) {
+                                val toolName = jsonObject.get("tool").asString
+                                val arguments = jsonObject.get("arguments").asJsonObject
+                                Log.d("JugCoachDebug", "Successfully parsed JSON - tool: $toolName, arguments: $arguments")
+                                
+                                toolCalls = listOf(AnthropicResponse.ToolCall(
+                                    id = UUID.randomUUID().toString(),
+                                    type = "function",
+                                    name = toolName,
+                                    arguments = arguments.toString()
+                                ))
+                                Log.d("JugCoachDebug", "Created tool call object: ${gson.toJson(toolCalls)}")
+                                
+                                // Clear the initial response since it was just a JSON object
+                                initialResponse = ""
+                            } else {
+                                Log.d("JugCoachDebug", "JSON missing required fields - tool: ${jsonObject.has("tool")}, arguments: ${jsonObject.has("arguments")}")
+                            }
+                        } else {
+                            Log.d("JugCoachDebug", "Text is not a JSON object")
+                        }
+                    } catch (e: Exception) {
+                        Log.d("JugCoachDebug", "Failed to parse text as JSON: ${e.message}")
+                        Log.d("JugCoachDebug", "Exception stack trace: ${e.stackTrace.joinToString("\n")}")
+                    }
+                }
+
+                if (!toolCalls.isNullOrEmpty()) {
+                    // Save initial assistant response
+                    val initialTimestamp = System.currentTimeMillis()
+                    val initialMessage = com.example.jugcoach.data.entity.ChatMessage(
+                        conversationId = conversation.id,
+                        text = initialResponse,
+                        isFromUser = false,
+                        timestamp = initialTimestamp
+                    )
+                    chatMessageDao.insertAndUpdateConversation(initialMessage, conversation.id, initialTimestamp)
+
+                    for (toolCall in toolCalls) {
+                        Log.d("JugCoachDebug", "Processing tool call: ${toolCall.name} with arguments: ${toolCall.arguments}")
+                        
+                        when (toolCall.name) {
+                            "lookupPattern" -> {
+                                val jsonObject = com.google.gson.JsonParser.parseString(toolCall.arguments).asJsonObject
+                                val patternId = jsonObject.get("pattern_id")?.asString
+                                Log.d("JugCoachDebug", "Extracted pattern_id: $patternId")
+                                
+                                if (patternId != null) {
+                                    val pattern = patternDao.getPatternById(patternId, currentCoach.id)
+                                    if (pattern != null) {
+                                        val patternInfo = """
+                                            Pattern Details:
+                                            Name: ${pattern.name}
+                                            Difficulty: ${pattern.difficulty ?: "Not specified"}
+                                            Siteswap: ${pattern.siteswap ?: "Not specified"}
+                                            Number of Balls: ${pattern.num ?: "Not specified"}
+                                            Explanation: ${pattern.explanation ?: "No explanation available"}
+                                            Tags: ${pattern.tags.joinToString(", ")}
+                                            Prerequisites: ${pattern.prerequisites.joinToString(", ")}
+                                            Related Patterns: ${pattern.related.joinToString(", ")}
+                                            ${if (pattern.gifUrl != null) "Animation: ${pattern.gifUrl}" else ""}
+                                            ${if (pattern.video != null) "Video Tutorial: ${pattern.video}" else ""}
+                                            ${if (pattern.url != null) "Additional Resources: ${pattern.url}" else ""}
+                                        """.trimIndent()
+                                        toolResults.add(patternInfo)
+                                    } else {
+                                        toolResults.add("Pattern not found: $patternId")
+                                    }
+                                }
+                            }
+                            // Add other tool handlers here as needed
+                        }
+                    }
+
+                    // Insert tool output as a dedicated message
+                    if (toolResults.isNotEmpty()) {
+                        Log.d("JugCoachDebug", "Tool results to process: ${toolResults.size}")
+                        val toolOutputTimestamp = System.currentTimeMillis()
+                        val toolOutputMessage = com.example.jugcoach.data.entity.ChatMessage(
+                            conversationId = conversation.id,
+                            text = "Tool Output:\n\n${toolResults.joinToString("\n\n")}",
+                            isFromUser = false,
+                            timestamp = toolOutputTimestamp
+                        )
+                        chatMessageDao.insertAndUpdateConversation(toolOutputMessage, conversation.id, toolOutputTimestamp)
+
+                        // Get updated message history including tool output
+                        Log.d("JugCoachDebug", "Building updated message history")
+                        val updatedMessages = _uiState.value.messages + listOf(
+                            ChatMessage(
+                                id = UUID.randomUUID().toString(),
+                                text = initialResponse,
+                                sender = ChatMessage.Sender.COACH,
+                                timestamp = Instant.ofEpochMilli(initialTimestamp),
+                                isError = false
+                            ),
+                            ChatMessage(
+                                id = UUID.randomUUID().toString(),
+                                text = "Tool Output:\n\n${toolResults.joinToString("\n\n")}",
+                                sender = ChatMessage.Sender.COACH,
+                                timestamp = Instant.ofEpochMilli(toolOutputTimestamp),
+                                isError = false
+                            )
+                        )
+
+                        // Make follow-up API call with explicit instruction to analyze tool output
+                        Log.d("JugCoachDebug", "Building follow-up request")
+                        val followUpRequest = AnthropicRequest(
+                            system = systemPrompt,
+                            messages = updatedMessages.map { msg ->
+                                AnthropicRequest.Message(
+                                    role = if (msg.sender == ChatMessage.Sender.USER) "user" else "assistant",
+                                    content = listOf(AnthropicRequest.Content(text = msg.text))
+                                )
+                            } + AnthropicRequest.Message(
+                                role = "user",
+                                content = listOf(AnthropicRequest.Content(text = "Please analyze the above tool output and explain its implications for the juggling pattern."))
+                            ),
+                            tools = request.tools // Keep the same tools available
+                        )
+
+                        Log.d("JugCoachDebug", "Follow-up request payload: $followUpRequest")
+                        
+                        val followUpResponse = anthropicService.sendMessage(
+                            apiKey = apiKey,
+                            request = followUpRequest
+                        )
+                        
+                        Log.d("JugCoachDebug", "Follow-up response received: $followUpResponse")
+
+                        // Save the analysis response
+                        val analysisTimestamp = System.currentTimeMillis()
+                        Log.d("JugCoachDebug", "Saving analysis response")
+                        val analysisMessage = com.example.jugcoach.data.entity.ChatMessage(
+                            conversationId = conversation.id,
+                            text = followUpResponse.content.firstOrNull()?.text ?: "No analysis provided",
+                            isFromUser = false,
+                            timestamp = analysisTimestamp
+                        )
+                        chatMessageDao.insertAndUpdateConversation(analysisMessage, conversation.id, analysisTimestamp)
+                    }
+                } else {
+                    // If no tool calls, just save the initial response
+                    val timestamp = System.currentTimeMillis()
+                    val coachMessage = com.example.jugcoach.data.entity.ChatMessage(
+                        conversationId = conversation.id,
+                        text = initialResponse,
+                        isFromUser = false,
+                        timestamp = timestamp
+                    )
+                    chatMessageDao.insertAndUpdateConversation(coachMessage, conversation.id, timestamp)
+                }
 
             } catch (e: retrofit2.HttpException) {
                 val errorMessage = when (e.code()) {
@@ -393,5 +566,56 @@ class ChatViewModel @Inject constructor(
 
     private fun addMessage(message: ChatMessage) {
         _uiState.update { it.copy(messages = it.messages + message) }
+    }
+
+    private fun extractToolCallsFromText(text: String): List<AnthropicResponse.ToolCall>? {
+        try {
+            Log.d("JugCoachDebug", "Starting tool call extraction from text")
+            Log.d("JugCoachDebug", "Input text: $text")
+
+            // More robust regex pattern that looks for complete JSON objects with tool and arguments
+            val pattern = """\{(?:[^{}]|"[^"]*")*"tool"\s*:\s*"[^"]*"(?:[^{}]|"[^"]*")*"arguments"\s*:\s*\{[^{}]*\}(?:[^{}]|"[^"]*")*\}""".toRegex()
+            val matches = pattern.findAll(text)
+            
+            Log.d("JugCoachDebug", "Searching for tool call JSON objects")
+            
+            val toolCalls = matches.mapNotNull { match ->
+                try {
+                    val json = match.value
+                    Log.d("JugCoachDebug", "Found potential tool call JSON: $json")
+                    
+                    val jsonObject = gson.fromJson(json, Map::class.java)
+                    val tool = jsonObject["tool"]
+                    val arguments = jsonObject["arguments"]
+                    
+                    Log.d("JugCoachDebug", "Parsed JSON - tool: $tool, arguments: $arguments")
+                    
+                    if (tool != null && arguments != null) {
+                        val toolCall = AnthropicResponse.ToolCall(
+                            id = UUID.randomUUID().toString(),
+                            type = "function",
+                            name = tool as String,
+                            arguments = gson.toJson(arguments)
+                        )
+                        Log.d("JugCoachDebug", "Successfully created tool call: ${gson.toJson(toolCall)}")
+                        toolCall
+                    } else {
+                        Log.d("JugCoachDebug", "Missing required fields in JSON - tool: $tool, arguments: $arguments")
+                        null
+                    }
+                } catch (e: Exception) {
+                    Log.d("JugCoachDebug", "Failed to parse tool call JSON: ${e.message}")
+                    Log.d("JugCoachDebug", "Exception stack trace: ${e.stackTrace.joinToString("\n")}")
+                    null
+                }
+            }.toList()
+
+            Log.d("JugCoachDebug", "Extracted ${toolCalls.size} valid tool calls")
+            return toolCalls.takeIf { it.isNotEmpty() }
+        } catch (e: Exception) {
+            Log.d("JugCoachDebug", "Failed to extract tool calls from text: ${e.message}")
+            Log.d("JugCoachDebug", "Exception stack trace: ${e.stackTrace.joinToString("\n")}")
+            return null
+        }
     }
 }
