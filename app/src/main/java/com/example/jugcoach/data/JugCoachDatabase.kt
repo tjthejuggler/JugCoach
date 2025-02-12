@@ -20,7 +20,7 @@ import com.example.jugcoach.data.entity.*
         ChatMessage::class,
         CoachProposal::class
     ],
-    version = 10,
+    version = 11,
     exportSchema = true
 )
 @TypeConverters(
@@ -177,6 +177,20 @@ abstract class JugCoachDatabase : RoomDatabase() {
             }
         }
 
+        private val MIGRATION_9_10 = object : androidx.room.migration.Migration(9, 10) {
+            override fun migrate(db: androidx.sqlite.db.SupportSQLiteDatabase) {
+                // Add messageType column with default value TALKING
+                db.execSQL("ALTER TABLE chat_messages ADD COLUMN messageType TEXT NOT NULL DEFAULT 'TALKING'")
+            }
+        }
+
+        private val MIGRATION_10_11 = object : androidx.room.migration.Migration(10, 11) {
+            override fun migrate(db: androidx.sqlite.db.SupportSQLiteDatabase) {
+                // Add isInternal column with default value false
+                db.execSQL("ALTER TABLE chat_messages ADD COLUMN isInternal INTEGER NOT NULL DEFAULT 0")
+            }
+        }
+
         fun getDatabase(context: Context): JugCoachDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -193,18 +207,12 @@ abstract class JugCoachDatabase : RoomDatabase() {
                         MIGRATION_6_7,
                         MIGRATION_7_8,
                         MIGRATION_8_9,
-                        MIGRATION_9_10
+                        MIGRATION_9_10,
+                        MIGRATION_10_11
                     )
                     .build()
                 INSTANCE = instance
                 instance
-            }
-        }
-
-        private val MIGRATION_9_10 = object : androidx.room.migration.Migration(9, 10) {
-            override fun migrate(db: androidx.sqlite.db.SupportSQLiteDatabase) {
-                // Add messageType column with default value TALKING
-                db.execSQL("ALTER TABLE chat_messages ADD COLUMN messageType TEXT NOT NULL DEFAULT 'TALKING'")
             }
         }
     }

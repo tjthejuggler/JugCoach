@@ -29,7 +29,8 @@ data class ChatMessage(
     val isFromUser: Boolean,
     val timestamp: Long = System.currentTimeMillis(),
     val isError: Boolean = false,
-    val messageType: MessageType = MessageType.TALKING
+    val messageType: MessageType = MessageType.TALKING,
+    val isInternal: Boolean = false // NEW: internal messages are not shown to the user
 ) {
     enum class MessageType {
         ACTION,    // When performing an action/tool use

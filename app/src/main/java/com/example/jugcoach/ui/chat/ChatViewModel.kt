@@ -159,7 +159,13 @@ class ChatViewModel @Inject constructor(
                             text = msg.text,
                             sender = if (msg.isFromUser) ChatMessage.Sender.USER else ChatMessage.Sender.COACH,
                             timestamp = Instant.ofEpochMilli(msg.timestamp),
-                            isError = msg.isError
+                            isError = msg.isError,
+                            messageType = when {
+                                msg.text.startsWith("Tool Output:") -> ChatMessage.MessageType.ACTION
+                                msg.text.contains("analyzing tool output") -> ChatMessage.MessageType.THINKING
+                                else -> ChatMessage.MessageType.TALKING
+                            },
+                            isInternal = msg.text.startsWith("Tool Output:") || extractJsonFromText(msg.text) != null
                         )
                     }
                     _uiState.update { it.copy(messages = uiMessages) }
@@ -369,10 +375,13 @@ class ChatViewModel @Inject constructor(
                 if (toolCalls.isNullOrEmpty()) {
                     Log.d("JugCoachDebug", "No tool calls in response. Attempting to parse text as JSON.")
                     val assistantText = initialResponse.trim()
-                    try {
-                        if (assistantText.startsWith("{") && assistantText.endsWith("}")) {
-                            Log.d("JugCoachDebug", "Found JSON-like text, attempting to parse")
-                            val jsonObject = com.google.gson.JsonParser.parseString(assistantText).asJsonObject
+                    
+                    // Always try to extract a JSON substring
+                    val jsonSubstring = extractJsonFromText(assistantText)
+                    if (jsonSubstring != null) {
+                        Log.d("JugCoachDebug", "Extracted JSON substring: $jsonSubstring")
+                        try {
+                            val jsonObject = JsonParser.parseString(jsonSubstring).asJsonObject
                             if (jsonObject.has("tool") && jsonObject.has("arguments")) {
                                 val toolName = jsonObject.get("tool").asString
                                 val arguments = jsonObject.get("arguments").asJsonObject
@@ -386,37 +395,39 @@ class ChatViewModel @Inject constructor(
                                 ))
                                 Log.d("JugCoachDebug", "Created tool call object: ${gson.toJson(toolCalls)}")
                                 
-                                // Clear the initial response since it was just a JSON object
+                                // Clear the initial response since it was just a tool call
                                 initialResponse = ""
                             } else {
                                 Log.d("JugCoachDebug", "JSON missing required fields - tool: ${jsonObject.has("tool")}, arguments: ${jsonObject.has("arguments")}")
                             }
-                        } else {
-                            Log.d("JugCoachDebug", "Text is not a JSON object")
+                        } catch (e: Exception) {
+                            Log.d("JugCoachDebug", "Error parsing extracted JSON: ${e.message}")
                         }
-                    } catch (e: Exception) {
-                        Log.d("JugCoachDebug", "Failed to parse text as JSON: ${e.message}")
-                        Log.d("JugCoachDebug", "Exception stack trace: ${e.stackTrace.joinToString("\n")}")
+                    } else {
+                        Log.d("JugCoachDebug", "Failed to extract JSON from assistant text")
                     }
                 }
 
                 if (!toolCalls.isNullOrEmpty()) {
-                    // Save initial assistant response
-                    val initialTimestamp = System.currentTimeMillis()
-                    val initialMessage = com.example.jugcoach.data.entity.ChatMessage(
-                        conversationId = conversation.id,
-                        text = initialResponse,
-                        isFromUser = false,
-                        timestamp = initialTimestamp
-                    )
-                    chatMessageDao.insertAndUpdateConversation(initialMessage, conversation.id, initialTimestamp)
+                    // Save initial assistant response (if not empty) as internal message
+                    if (initialResponse.isNotEmpty()) {
+                        val initialTimestamp = System.currentTimeMillis()
+                        val initialMessage = com.example.jugcoach.data.entity.ChatMessage(
+                            conversationId = conversation.id,
+                            text = initialResponse,
+                            isFromUser = false,
+                            timestamp = initialTimestamp,
+                            isInternal = true
+                        )
+                        chatMessageDao.insertAndUpdateConversation(initialMessage, conversation.id, initialTimestamp)
+                    }
 
                     for (toolCall in toolCalls) {
                         Log.d("JugCoachDebug", "Processing tool call: ${toolCall.name} with arguments: ${toolCall.arguments}")
                         
                         when (toolCall.name) {
                             "lookupPattern" -> {
-                                val jsonObject = com.google.gson.JsonParser.parseString(toolCall.arguments).asJsonObject
+                                val jsonObject = JsonParser.parseString(toolCall.arguments).asJsonObject
                                 val patternId = jsonObject.get("pattern_id")?.asString
                                 Log.d("JugCoachDebug", "Extracted pattern_id: $patternId")
                                 
@@ -447,7 +458,7 @@ class ChatViewModel @Inject constructor(
                         }
                     }
 
-                    // Insert tool output as a dedicated message
+                    // Insert tool output as a dedicated internal message
                     if (toolResults.isNotEmpty()) {
                         Log.d("JugCoachDebug", "Tool results to process: ${toolResults.size}")
                         val toolOutputTimestamp = System.currentTimeMillis()
@@ -455,7 +466,8 @@ class ChatViewModel @Inject constructor(
                             conversationId = conversation.id,
                             text = "Tool Output:\n\n${toolResults.joinToString("\n\n")}",
                             isFromUser = false,
-                            timestamp = toolOutputTimestamp
+                            timestamp = toolOutputTimestamp,
+                            isInternal = true
                         )
                         chatMessageDao.insertAndUpdateConversation(toolOutputMessage, conversation.id, toolOutputTimestamp)
 
@@ -464,17 +476,11 @@ class ChatViewModel @Inject constructor(
                         val updatedMessages = _uiState.value.messages + listOf(
                             ChatMessage(
                                 id = UUID.randomUUID().toString(),
-                                text = initialResponse,
-                                sender = ChatMessage.Sender.COACH,
-                                timestamp = Instant.ofEpochMilli(initialTimestamp),
-                                isError = false
-                            ),
-                            ChatMessage(
-                                id = UUID.randomUUID().toString(),
                                 text = "Tool Output:\n\n${toolResults.joinToString("\n\n")}",
                                 sender = ChatMessage.Sender.COACH,
                                 timestamp = Instant.ofEpochMilli(toolOutputTimestamp),
-                                isError = false
+                                isError = false,
+                                isInternal = true
                             )
                         )
 
@@ -503,25 +509,27 @@ class ChatViewModel @Inject constructor(
                         
                         Log.d("JugCoachDebug", "Follow-up response received: $followUpResponse")
 
-                        // Save the analysis response
+                        // Save the analysis response as a visible message
                         val analysisTimestamp = System.currentTimeMillis()
                         Log.d("JugCoachDebug", "Saving analysis response")
                         val analysisMessage = com.example.jugcoach.data.entity.ChatMessage(
                             conversationId = conversation.id,
                             text = followUpResponse.content.firstOrNull()?.text ?: "No analysis provided",
                             isFromUser = false,
-                            timestamp = analysisTimestamp
+                            timestamp = analysisTimestamp,
+                            isInternal = false
                         )
                         chatMessageDao.insertAndUpdateConversation(analysisMessage, conversation.id, analysisTimestamp)
                     }
                 } else {
-                    // If no tool calls, just save the initial response
+                    // If no tool calls, just save the initial response as a visible message
                     val timestamp = System.currentTimeMillis()
                     val coachMessage = com.example.jugcoach.data.entity.ChatMessage(
                         conversationId = conversation.id,
                         text = initialResponse,
                         isFromUser = false,
-                        timestamp = timestamp
+                        timestamp = timestamp,
+                        isInternal = false
                     )
                     chatMessageDao.insertAndUpdateConversation(coachMessage, conversation.id, timestamp)
                 }
@@ -568,14 +576,45 @@ class ChatViewModel @Inject constructor(
         _uiState.update { it.copy(messages = it.messages + message) }
     }
 
+    private fun extractJsonFromText(text: String): String? {
+        // This regex will match a JSON object (assuming it starts with { and ends with })
+        val jsonRegex = "\\{.*\\}".toRegex(RegexOption.DOT_MATCHES_ALL)
+        val matchResult = jsonRegex.find(text)
+        return matchResult?.value
+    }
+
     private fun extractToolCallsFromText(text: String): List<AnthropicResponse.ToolCall>? {
         try {
             Log.d("JugCoachDebug", "Starting tool call extraction from text")
             Log.d("JugCoachDebug", "Input text: $text")
 
-            // More robust regex pattern that looks for complete JSON objects with tool and arguments
+            // First try to extract JSON substring if the text contains non-JSON content
+            val jsonText = if (text.trim().startsWith("{") && text.trim().endsWith("}")) {
+                text
+            } else {
+                extractJsonFromText(text) ?: return null
+            }
+
+            // Try parsing as a single tool call first
+            try {
+                val jsonObject = JsonParser.parseString(jsonText).asJsonObject
+                if (jsonObject.has("tool") && jsonObject.has("arguments")) {
+                    return listOf(
+                        AnthropicResponse.ToolCall(
+                            id = UUID.randomUUID().toString(),
+                            type = "function",
+                            name = jsonObject.get("tool").asString,
+                            arguments = jsonObject.get("arguments").toString()
+                        )
+                    )
+                }
+            } catch (e: Exception) {
+                Log.d("JugCoachDebug", "Not a single tool call JSON: ${e.message}")
+            }
+
+            // If not a single tool call, look for multiple tool calls
             val pattern = """\{(?:[^{}]|"[^"]*")*"tool"\s*:\s*"[^"]*"(?:[^{}]|"[^"]*")*"arguments"\s*:\s*\{[^{}]*\}(?:[^{}]|"[^"]*")*\}""".toRegex()
-            val matches = pattern.findAll(text)
+            val matches = pattern.findAll(jsonText)
             
             Log.d("JugCoachDebug", "Searching for tool call JSON objects")
             

@@ -47,7 +47,8 @@ class ChatAdapter(
     }
 
     override fun submitList(list: List<ChatMessage>?) {
-        val newList = list?.toList()  // Create a new copy to ensure proper diffing
+        // Filter out internal messages and create a new copy for proper diffing
+        val newList = list?.filter { !it.isInternal }?.toList()
         super.submitList(newList)
     }
 

@@ -8,7 +8,8 @@ data class ChatMessage(
     val sender: Sender,
     val timestamp: Instant,
     val isError: Boolean = false,
-    val messageType: MessageType = MessageType.TALKING
+    val messageType: MessageType = MessageType.TALKING,
+    val isInternal: Boolean = false // NEW: internal messages are not shown to the user
 ) {
     enum class Sender {
         USER,
