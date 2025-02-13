@@ -62,30 +62,46 @@ class PatternQueryParser(private val patternDao: PatternDao) {
     /**
      * Format a pattern into a JSON response suitable for LLM consumption
      */
-    fun formatPatternResponse(pattern: Pattern): String {
-        return JSONObject().apply {
-            put("id", pattern.id)
-            put("name", pattern.name)
-            put("difficulty", pattern.difficulty)
-            put("siteswap", pattern.siteswap)
-            put("numberOfBalls", pattern.num)
-            put("explanation", pattern.explanation)
-            put("tags", pattern.tags)
-            put("prerequisites", pattern.prerequisites)
-            put("dependents", pattern.dependents)
-            put("related", pattern.related)
-            // Include URLs if available
-            pattern.gifUrl?.let { put("gifUrl", it) }
-            pattern.video?.let { put("videoUrl", it) }
-            pattern.url?.let { put("externalUrl", it) }
-            // Include record if available
-            pattern.record?.let { record ->
-                put("record", JSONObject().apply {
-                    put("catches", record.catches)
-                    put("date", record.date)
-                })
-            }
-        }.toString(2)
+    fun formatPatternResponse(pattern: Pattern, concise: Boolean = false): String {
+        return if (concise) {
+            JSONObject().apply {
+                put("name", pattern.name)
+                put("difficulty", pattern.difficulty)
+                put("numberOfBalls", pattern.num)
+                put("tags", pattern.tags)
+                // Include record if available
+                pattern.record?.let { record ->
+                    put("record", JSONObject().apply {
+                        put("catches", record.catches)
+                        put("date", record.date)
+                    })
+                }
+            }.toString(2)
+        } else {
+            JSONObject().apply {
+                put("id", pattern.id)
+                put("name", pattern.name)
+                put("difficulty", pattern.difficulty)
+                put("siteswap", pattern.siteswap)
+                put("numberOfBalls", pattern.num)
+                put("explanation", pattern.explanation)
+                put("tags", pattern.tags)
+                put("prerequisites", pattern.prerequisites)
+                put("dependents", pattern.dependents)
+                put("related", pattern.related)
+                // Include URLs if available
+                pattern.gifUrl?.let { put("gifUrl", it) }
+                pattern.video?.let { put("videoUrl", it) }
+                pattern.url?.let { put("externalUrl", it) }
+                // Include record if available
+                pattern.record?.let { record ->
+                    put("record", JSONObject().apply {
+                        put("catches", record.catches)
+                        put("date", record.date)
+                    })
+                }
+            }.toString(2)
+        }
     }
 
     /**

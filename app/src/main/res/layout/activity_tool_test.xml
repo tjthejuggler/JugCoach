@@ -6,7 +6,14 @@
     android:orientation="vertical"
     android:padding="16dp">
 
-    <!-- Pattern ID input -->
+    <!-- Pattern Lookup Section -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Pattern Lookup"
+        android:textStyle="bold"
+        android:layout_marginBottom="8dp"/>
+
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -26,13 +33,42 @@
 
     </com.google.android.material.textfield.TextInputLayout>
 
-    <!-- Button to trigger the tool call -->
+    <!-- Button to trigger the lookup -->
     <Button
         android:id="@+id/buttonSendToolRequest"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Test lookupPattern"
-        android:layout_marginBottom="16dp"/>
+        android:text="Lookup Pattern"
+        android:layout_marginBottom="24dp"/>
+
+    <!-- Pattern Search Section -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Pattern Search"
+        android:textStyle="bold"
+        android:layout_marginBottom="8dp"/>
+
+    <com.google.android.material.textfield.TextInputLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="16dp">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/editTextSearch"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="e.g. difficulty:>=5, balls:3, tags:[cascade]"/>
+
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <!-- Button to trigger the search -->
+    <Button
+        android:id="@+id/buttonSearch"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Search Patterns"
+        android:layout_marginBottom="24dp"/>
 
     <!-- TextView to display the tool response -->
     <ScrollView

@@ -17,6 +17,7 @@ private const val TAG = "ToolTest"
 
 data class ToolTestUiState(
     val patternId: String = "",
+    val searchCriteria: String = "",
     val response: String = "Response will appear here",
     val isLoading: Boolean = false,
     val error: String? = null
@@ -33,6 +34,56 @@ class ToolTestViewModel @Inject constructor(
 
     fun setPatternId(patternId: String) {
         _uiState.update { it.copy(patternId = patternId) }
+    }
+
+    fun setSearchCriteria(criteria: String) {
+        _uiState.update { it.copy(searchCriteria = criteria) }
+    }
+
+    fun testSearchPatterns() {
+        val criteria = _uiState.value.searchCriteria.trim()
+        if (criteria.isEmpty()) {
+            _uiState.update { it.copy(error = "Please enter search criteria") }
+            return
+        }
+
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true, error = null) }
+            try {
+                Log.d(TAG, "Searching patterns with criteria: $criteria")
+                
+                // Use the queryParser to search patterns
+                queryParser.parseSearchCommand(criteria, 1L).collect { patterns ->
+                    Log.d(TAG, "Found ${patterns.size} patterns matching criteria")
+                    
+                    // Format each pattern using concise format
+                    val formattedPatterns = patterns.map { pattern ->
+                        queryParser.formatPatternResponse(pattern, concise = true)
+                    }
+                    
+                    // Update UI with results
+                    _uiState.update { 
+                        it.copy(
+                            response = """
+                                Found ${patterns.size} patterns:
+                                
+                                ${formattedPatterns.joinToString("\n\n")}
+                            """.trimIndent(),
+                            isLoading = false
+                        )
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error searching patterns", e)
+                _uiState.update { 
+                    it.copy(
+                        error = "Error: ${e.message}",
+                        response = "Failed to search patterns: ${e.message}",
+                        isLoading = false
+                    )
+                }
+            }
+        }
     }
 
     init {

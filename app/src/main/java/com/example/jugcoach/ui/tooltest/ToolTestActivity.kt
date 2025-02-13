@@ -28,12 +28,22 @@ class ToolTestActivity : AppCompatActivity() {
     }
 
     private fun setupViews() {
+        // Pattern lookup
         binding.editTextArgument.doAfterTextChanged { text ->
             viewModel.setPatternId(text?.toString() ?: "")
         }
 
         binding.buttonSendToolRequest.setOnClickListener {
             viewModel.testLookupPattern()
+        }
+
+        // Pattern search
+        binding.editTextSearch.doAfterTextChanged { text ->
+            viewModel.setSearchCriteria(text?.toString() ?: "")
+        }
+
+        binding.buttonSearch.setOnClickListener {
+            viewModel.testSearchPatterns()
         }
     }
 
@@ -44,8 +54,10 @@ class ToolTestActivity : AppCompatActivity() {
                     // Update response text
                     binding.textViewToolResponse.text = state.response
 
-                    // Update loading state
-                    binding.buttonSendToolRequest.isEnabled = !state.isLoading
+                    // Update loading states
+                    val isLoading = state.isLoading
+                    binding.buttonSendToolRequest.isEnabled = !isLoading
+                    binding.buttonSearch.isEnabled = !isLoading
 
                     // Show error if any
                     state.error?.let { error ->
