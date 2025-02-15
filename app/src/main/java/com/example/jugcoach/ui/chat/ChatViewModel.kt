@@ -27,6 +27,8 @@ import java.time.Instant
 import java.util.UUID
 import javax.inject.Inject
 
+private const val TAG = "ChatViewModel"
+
 data class ChatUiState(
     val messages: List<ChatMessage> = emptyList(),
     val isLoading: Boolean = false,
@@ -327,7 +329,19 @@ class ChatViewModel @Inject constructor(
                                 required = listOf("pattern_id")
                             )
                         ),
-                        // Add other tools here following the same pattern
+                        AnthropicRequest.Tool(
+                            name = "searchPatterns",
+                            description = "Search for patterns using criteria like difficulty, number of balls, and tags.",
+                            inputSchema = AnthropicRequest.InputSchema(
+                                properties = mapOf(
+                                    "criteria" to AnthropicRequest.Property(
+                                        type = "string",
+                                        description = "Search criteria in format: difficulty:>=5, balls:3, tags:[\"cascade\", \"syncopated\"]"
+                                    )
+                                ),
+                                required = listOf("criteria")
+                            )
+                        )
                     )
                 )
 
@@ -448,7 +462,34 @@ class ChatViewModel @Inject constructor(
                                     }
                                 }
                             }
-                            // Add other tool handlers here as needed
+                            "searchPatterns" -> {
+                                val jsonObject = JsonParser.parseString(toolCall.arguments).asJsonObject
+                                val criteria = jsonObject.get("criteria")?.asString
+                                Log.d(TAG, "Extracted search criteria: $criteria")
+                                
+                                if (criteria != null) {
+                                    try {
+                                        // Use the queryParser to search patterns like in ToolTest
+                                        queryParser.parseSearchCommand(criteria, currentCoach.id).collect { patterns ->
+                                            Log.d(TAG, "Found ${patterns.size} patterns matching criteria")
+                                            
+                                            // Format each pattern using concise format
+                                            val formattedPatterns = patterns.map { pattern ->
+                                                queryParser.formatPatternResponse(pattern, concise = true)
+                                            }
+                                            
+                                            toolResults.add("""
+                                                Found ${patterns.size} patterns:
+                                                
+                                                ${formattedPatterns.joinToString("\n\n")}
+                                            """.trimIndent())
+                                        }
+                                    } catch (e: Exception) {
+                                        Log.e(TAG, "Error searching patterns", e)
+                                        toolResults.add("Error searching patterns: ${e.message}")
+                                    }
+                                }
+                            }
                         }
                     }
 
