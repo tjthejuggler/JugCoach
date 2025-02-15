@@ -60,6 +60,30 @@ class SettingsFragment : Fragment() {
                 getContent.launch("application/json")
             }
 
+            // Set up model settings save functionality
+            routingModelNameInput.setOnFocusChangeListener { _, hasFocus ->
+                if (!hasFocus) saveModelSettings()
+            }
+            routingModelKeyInput.setOnFocusChangeListener { _, hasFocus ->
+                if (!hasFocus) saveModelSettings()
+            }
+            toolUseModelNameInput.setOnFocusChangeListener { _, hasFocus ->
+                if (!hasFocus) saveModelSettings()
+            }
+            toolUseModelKeyInput.setOnFocusChangeListener { _, hasFocus ->
+                if (!hasFocus) saveModelSettings()
+            }
+        }
+    }
+
+    private fun saveModelSettings() {
+        binding.apply {
+            viewModel.saveModelSettings(
+                routingModelName = routingModelNameInput.text.toString(),
+                routingModelKey = routingModelKeyInput.text.toString(),
+                toolUseModelName = toolUseModelNameInput.text.toString(),
+                toolUseModelKey = toolUseModelKeyInput.text.toString()
+            )
         }
     }
 
@@ -77,6 +101,20 @@ class SettingsFragment : Fragment() {
             patternsCountText.text = "Patterns: ${state.patternCount}"
             addApiKeyButton.isEnabled = !state.isSaving
             importButton.isEnabled = !state.isImporting
+
+            // Update model settings
+            if (routingModelNameInput.text.toString() != state.routingModelName) {
+                routingModelNameInput.setText(state.routingModelName)
+            }
+            if (routingModelKeyInput.text.toString() != state.routingModelKey) {
+                routingModelKeyInput.setText(state.routingModelKey)
+            }
+            if (toolUseModelNameInput.text.toString() != state.toolUseModelName) {
+                toolUseModelNameInput.setText(state.toolUseModelName)
+            }
+            if (toolUseModelKeyInput.text.toString() != state.toolUseModelKey) {
+                toolUseModelKeyInput.setText(state.toolUseModelKey)
+            }
 
             // Show loading indicators
             importButton.text = if (state.isImporting) "Importing..." else "Import Patterns"

@@ -20,7 +20,11 @@ data class SettingsUiState(
     val patternCount: Int = 0,
     val isSaving: Boolean = false,
     val isImporting: Boolean = false,
-    val message: String? = null
+    val message: String? = null,
+    val routingModelName: String = "",
+    val routingModelKey: String = "",
+    val toolUseModelName: String = "",
+    val toolUseModelKey: String = ""
 )
 
 @HiltViewModel
@@ -34,8 +38,16 @@ class SettingsViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(SettingsUiState())
     val uiState: StateFlow<SettingsUiState> = _uiState.asStateFlow()
 
+    companion object {
+        const val ROUTING_MODEL_NAME_KEY = "routing_model_name"
+        const val ROUTING_MODEL_KEY_KEY = "routing_model_key"
+        const val TOOL_USE_MODEL_NAME_KEY = "tool_use_model_name"
+        const val TOOL_USE_MODEL_KEY_KEY = "tool_use_model_key"
+    }
+
     init {
         loadData()
+        loadModelSettings()
     }
 
     private fun loadData() {
@@ -148,5 +160,89 @@ class SettingsViewModel @Inject constructor(
 
     fun clearMessage() {
         _uiState.update { it.copy(message = null) }
+    }
+
+    private fun loadModelSettings() {
+        viewModelScope.launch {
+            try {
+                val routingModelName = settingsDao.getSettingValue(ROUTING_MODEL_NAME_KEY) ?: ""
+                val routingModelKey = settingsDao.getSettingValue(ROUTING_MODEL_KEY_KEY) ?: ""
+                val toolUseModelName = settingsDao.getSettingValue(TOOL_USE_MODEL_NAME_KEY) ?: ""
+                val toolUseModelKey = settingsDao.getSettingValue(TOOL_USE_MODEL_KEY_KEY) ?: ""
+
+                _uiState.update {
+                    it.copy(
+                        routingModelName = routingModelName,
+                        routingModelKey = routingModelKey,
+                        toolUseModelName = toolUseModelName,
+                        toolUseModelKey = toolUseModelKey
+                    )
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("SettingsViewModel", "Failed to load model settings", e)
+                showMessage("Failed to load model settings: ${e.message}")
+            }
+        }
+    }
+
+    fun saveModelSettings(
+        routingModelName: String,
+        routingModelKey: String,
+        toolUseModelName: String,
+        toolUseModelKey: String
+    ) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isSaving = true) }
+            try {
+                // Save routing model settings
+                settingsDao.setSettingValue(
+                    key = ROUTING_MODEL_NAME_KEY,
+                    value = routingModelName,
+                    type = SettingType.STRING,
+                    category = SettingCategory.SYSTEM,
+                    description = "Routing Model Name"
+                )
+                settingsDao.setSettingValue(
+                    key = ROUTING_MODEL_KEY_KEY,
+                    value = routingModelKey,
+                    type = SettingType.STRING,
+                    category = SettingCategory.SYSTEM,
+                    description = "Routing Model API Key",
+                    isEncrypted = true
+                )
+
+                // Save tool use model settings
+                settingsDao.setSettingValue(
+                    key = TOOL_USE_MODEL_NAME_KEY,
+                    value = toolUseModelName,
+                    type = SettingType.STRING,
+                    category = SettingCategory.SYSTEM,
+                    description = "Tool Use Model Name"
+                )
+                settingsDao.setSettingValue(
+                    key = TOOL_USE_MODEL_KEY_KEY,
+                    value = toolUseModelKey,
+                    type = SettingType.STRING,
+                    category = SettingCategory.SYSTEM,
+                    description = "Tool Use Model API Key",
+                    isEncrypted = true
+                )
+
+                _uiState.update {
+                    it.copy(
+                        routingModelName = routingModelName,
+                        routingModelKey = routingModelKey,
+                        toolUseModelName = toolUseModelName,
+                        toolUseModelKey = toolUseModelKey
+                    )
+                }
+                showMessage("Model settings saved successfully")
+            } catch (e: Exception) {
+                android.util.Log.e("SettingsViewModel", "Failed to save model settings", e)
+                showMessage("Failed to save model settings: ${e.message}")
+            } finally {
+                _uiState.update { it.copy(isSaving = false) }
+            }
+        }
     }
 }
