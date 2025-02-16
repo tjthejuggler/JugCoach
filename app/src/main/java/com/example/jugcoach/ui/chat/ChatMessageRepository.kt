@@ -7,6 +7,7 @@ import com.example.jugcoach.ui.chat.ChatMessage
 import com.example.jugcoach.data.entity.Conversation
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import java.time.Instant
 import javax.inject.Inject
@@ -90,11 +91,9 @@ class ChatMessageRepository @Inject constructor(
     }
 
     suspend fun deleteEmptyConversations(coachId: Long) {
-        val conversations = conversationDao.getConversationsForCoach(coachId).distinctUntilChanged()
-        conversations.collect { convs ->
-            convs.forEach { conversation ->
-                conversationDao.deleteIfEmpty(conversation.id)
-            }
+        val conversations = conversationDao.getConversationsForCoach(coachId).distinctUntilChanged().first()
+        for (conversation in conversations) {
+            conversationDao.deleteIfEmpty(conversation.id)
         }
     }
 }
