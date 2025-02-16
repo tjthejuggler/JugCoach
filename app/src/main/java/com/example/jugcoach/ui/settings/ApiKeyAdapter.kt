@@ -40,12 +40,7 @@ class ApiKeyAdapter(
 
         private fun validateApiKey(key: String?) {
             android.util.Log.d("ApiKeyAdapter", "Validating API key: ${key?.take(4)}...")
-            binding.apiKeyLayout.error = when {
-                key.isNullOrBlank() -> "API key is required"
-                !key.startsWith("sk-") -> "API key must start with 'sk-'"
-                key.length < 34 -> "API key is too short"
-                else -> null
-            }
+            binding.apiKeyLayout.error = if (key.isNullOrBlank()) "API key is required" else null
             binding.saveButton.isEnabled = binding.apiKeyLayout.error == null && !key.isNullOrBlank()
         }
 

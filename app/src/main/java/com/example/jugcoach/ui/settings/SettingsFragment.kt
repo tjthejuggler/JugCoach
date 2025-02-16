@@ -4,6 +4,8 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ArrayAdapter
+import android.widget.AutoCompleteTextView
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
@@ -64,25 +66,81 @@ class SettingsFragment : Fragment() {
             routingModelNameInput.setOnFocusChangeListener { _, hasFocus ->
                 if (!hasFocus) saveModelSettings()
             }
-            routingModelKeyInput.setOnFocusChangeListener { _, hasFocus ->
-                if (!hasFocus) saveModelSettings()
-            }
             toolUseModelNameInput.setOnFocusChangeListener { _, hasFocus ->
                 if (!hasFocus) saveModelSettings()
             }
-            toolUseModelKeyInput.setOnFocusChangeListener { _, hasFocus ->
-                if (!hasFocus) saveModelSettings()
+
+            // Set up API key dropdowns
+            setupApiKeyDropdowns()
+        }
+    }
+
+    private fun setupApiKeyDropdowns() {
+        binding.apply {
+            val routingKeyAdapter = ArrayAdapter(
+                requireContext(),
+                android.R.layout.simple_dropdown_item_1line,
+                mutableListOf<String>()
+            )
+            val toolUseKeyAdapter = ArrayAdapter(
+                requireContext(),
+                android.R.layout.simple_dropdown_item_1line,
+                mutableListOf<String>()
+            )
+
+            (routingModelKeyInput as? AutoCompleteTextView)?.setAdapter(routingKeyAdapter)
+            (toolUseModelKeyInput as? AutoCompleteTextView)?.setAdapter(toolUseKeyAdapter)
+
+            // Update adapters when API keys change
+            viewLifecycleOwner.lifecycleScope.launch {
+                viewModel.uiState.collectLatest { state ->
+                    val apiKeyNames = state.apiKeys.map { it.name }
+                    routingKeyAdapter.clear()
+                    routingKeyAdapter.addAll(apiKeyNames)
+                    toolUseKeyAdapter.clear()
+                    toolUseKeyAdapter.addAll(apiKeyNames)
+
+                    // Set current values
+                    if (state.routingModelKey.isNotEmpty()) {
+                        (routingModelKeyInput as? AutoCompleteTextView)?.setText(
+                            state.apiKeys.find { it.value == state.routingModelKey }?.name ?: "",
+                            false
+                        )
+                    }
+                    if (state.toolUseModelKey.isNotEmpty()) {
+                        (toolUseModelKeyInput as? AutoCompleteTextView)?.setText(
+                            state.apiKeys.find { it.value == state.toolUseModelKey }?.name ?: "",
+                            false
+                        )
+                    }
+                }
+            }
+
+            // Handle selection changes
+            (routingModelKeyInput as? AutoCompleteTextView)?.setOnItemClickListener { _, _, position, _ ->
+                val selectedName = routingKeyAdapter.getItem(position) as String
+                val selectedKey = viewModel.uiState.value.apiKeys.find { it.name == selectedName }?.value ?: ""
+                saveModelSettings(routingModelKey = selectedKey)
+            }
+
+            (toolUseModelKeyInput as? AutoCompleteTextView)?.setOnItemClickListener { _, _, position, _ ->
+                val selectedName = toolUseKeyAdapter.getItem(position) as String
+                val selectedKey = viewModel.uiState.value.apiKeys.find { it.name == selectedName }?.value ?: ""
+                saveModelSettings(toolUseModelKey = selectedKey)
             }
         }
     }
 
-    private fun saveModelSettings() {
+    private fun saveModelSettings(
+        routingModelKey: String? = null,
+        toolUseModelKey: String? = null
+    ) {
         binding.apply {
             viewModel.saveModelSettings(
                 routingModelName = routingModelNameInput.text.toString(),
-                routingModelKey = routingModelKeyInput.text.toString(),
+                routingModelKey = routingModelKey ?: viewModel.uiState.value.routingModelKey,
                 toolUseModelName = toolUseModelNameInput.text.toString(),
-                toolUseModelKey = toolUseModelKeyInput.text.toString()
+                toolUseModelKey = toolUseModelKey ?: viewModel.uiState.value.toolUseModelKey
             )
         }
     }
@@ -102,18 +160,12 @@ class SettingsFragment : Fragment() {
             addApiKeyButton.isEnabled = !state.isSaving
             importButton.isEnabled = !state.isImporting
 
-            // Update model settings
+            // Update model names
             if (routingModelNameInput.text.toString() != state.routingModelName) {
                 routingModelNameInput.setText(state.routingModelName)
             }
-            if (routingModelKeyInput.text.toString() != state.routingModelKey) {
-                routingModelKeyInput.setText(state.routingModelKey)
-            }
             if (toolUseModelNameInput.text.toString() != state.toolUseModelName) {
                 toolUseModelNameInput.setText(state.toolUseModelName)
-            }
-            if (toolUseModelKeyInput.text.toString() != state.toolUseModelKey) {
-                toolUseModelKeyInput.setText(state.toolUseModelKey)
             }
 
             // Show loading indicators
