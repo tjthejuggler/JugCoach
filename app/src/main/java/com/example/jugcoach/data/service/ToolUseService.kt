@@ -3,6 +3,7 @@ package com.example.jugcoach.data.service
 import android.util.Log
 import com.example.jugcoach.data.dao.SettingsDao
 import com.example.jugcoach.data.api.GroqService
+import com.example.jugcoach.util.SettingsConstants
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -17,8 +18,8 @@ class ToolUseService @Inject constructor(
         systemPrompt: String,
         messageHistory: List<Pair<String, String>>
     ): String {
-        val modelName = settingsDao.getSettingValue("tool_use_model_name")
-        val apiKey = settingsDao.getSettingValue("tool_use_model_key")
+        val modelName = settingsDao.getSettingValue(SettingsConstants.TOOL_USE_MODEL_NAME_KEY)
+        val apiKey = settingsDao.getSettingValue(SettingsConstants.TOOL_USE_MODEL_KEY_KEY)
 
         if (modelName.isNullOrEmpty() || apiKey.isNullOrEmpty()) {
             Log.w("ToolUseService", "Model name or API key not set")

@@ -40,7 +40,9 @@ class ChatMessageRepository @Inject constructor(
                             msg.text.contains("analyzing tool output") -> ChatMessage.MessageType.THINKING
                             else -> ChatMessage.MessageType.TALKING
                         },
-                        isInternal = msg.isInternal
+                        isInternal = msg.isInternal,
+                        model = msg.model,
+                        apiKeyName = msg.apiKeyName
                     )
                 }
             }
@@ -51,7 +53,9 @@ class ChatMessageRepository @Inject constructor(
         text: String,
         isFromUser: Boolean,
         isError: Boolean = false,
-        isInternal: Boolean = false
+        isInternal: Boolean = false,
+        model: String? = null,
+        apiKeyName: String? = null
     ) {
         val timestamp = System.currentTimeMillis()
         val message = DbChatMessage(
@@ -60,7 +64,9 @@ class ChatMessageRepository @Inject constructor(
             isFromUser = isFromUser,
             timestamp = timestamp,
             isError = isError,
-            isInternal = isInternal
+            isInternal = isInternal,
+            model = model,
+            apiKeyName = apiKeyName
         )
         chatMessageDao.insertAndUpdateConversation(message, conversationId, timestamp)
     }

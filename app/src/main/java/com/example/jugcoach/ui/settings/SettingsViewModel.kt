@@ -10,6 +10,7 @@ import com.example.jugcoach.data.entity.SettingCategory
 import com.example.jugcoach.data.entity.SettingType
 import com.example.jugcoach.data.entity.Settings
 import com.example.jugcoach.data.importer.PatternImporter
+import com.example.jugcoach.util.SettingsConstants
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -37,13 +38,6 @@ class SettingsViewModel @Inject constructor(
 
     private val _uiState = MutableStateFlow(SettingsUiState())
     val uiState: StateFlow<SettingsUiState> = _uiState.asStateFlow()
-
-    companion object {
-        const val ROUTING_MODEL_NAME_KEY = "routing_model_name"
-        const val ROUTING_MODEL_KEY_KEY = "routing_model_key"
-        const val TOOL_USE_MODEL_NAME_KEY = "tool_use_model_name"
-        const val TOOL_USE_MODEL_KEY_KEY = "tool_use_model_key"
-    }
 
     init {
         loadData()
@@ -165,10 +159,10 @@ class SettingsViewModel @Inject constructor(
     private fun loadModelSettings() {
         viewModelScope.launch {
             try {
-                val routingModelName = settingsDao.getSettingValue(ROUTING_MODEL_NAME_KEY) ?: ""
-                val routingModelKey = settingsDao.getSettingValue(ROUTING_MODEL_KEY_KEY) ?: ""
-                val toolUseModelName = settingsDao.getSettingValue(TOOL_USE_MODEL_NAME_KEY) ?: ""
-                val toolUseModelKey = settingsDao.getSettingValue(TOOL_USE_MODEL_KEY_KEY) ?: ""
+                val routingModelName = settingsDao.getSettingValue(SettingsConstants.ROUTING_MODEL_NAME_KEY) ?: ""
+                val routingModelKey = settingsDao.getSettingValue(SettingsConstants.ROUTING_MODEL_KEY_KEY) ?: ""
+                val toolUseModelName = settingsDao.getSettingValue(SettingsConstants.TOOL_USE_MODEL_NAME_KEY) ?: ""
+                val toolUseModelKey = settingsDao.getSettingValue(SettingsConstants.TOOL_USE_MODEL_KEY_KEY) ?: ""
 
                 _uiState.update {
                     it.copy(
@@ -196,14 +190,14 @@ class SettingsViewModel @Inject constructor(
             try {
                 // Save routing model settings
                 settingsDao.setSettingValue(
-                    key = ROUTING_MODEL_NAME_KEY,
+                    key = SettingsConstants.ROUTING_MODEL_NAME_KEY,
                     value = routingModelName,
                     type = SettingType.STRING,
                     category = SettingCategory.SYSTEM,
                     description = "Routing Model Name"
                 )
                 settingsDao.setSettingValue(
-                    key = ROUTING_MODEL_KEY_KEY,
+                    key = SettingsConstants.ROUTING_MODEL_KEY_KEY,
                     value = routingModelKey,
                     type = SettingType.STRING,
                     category = SettingCategory.SYSTEM,
@@ -213,14 +207,14 @@ class SettingsViewModel @Inject constructor(
 
                 // Save tool use model settings
                 settingsDao.setSettingValue(
-                    key = TOOL_USE_MODEL_NAME_KEY,
+                    key = SettingsConstants.TOOL_USE_MODEL_NAME_KEY,
                     value = toolUseModelName,
                     type = SettingType.STRING,
                     category = SettingCategory.SYSTEM,
                     description = "Tool Use Model Name"
                 )
                 settingsDao.setSettingValue(
-                    key = TOOL_USE_MODEL_KEY_KEY,
+                    key = SettingsConstants.TOOL_USE_MODEL_KEY_KEY,
                     value = toolUseModelKey,
                     type = SettingType.STRING,
                     category = SettingCategory.SYSTEM,

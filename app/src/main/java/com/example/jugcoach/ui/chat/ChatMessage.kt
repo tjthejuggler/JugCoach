@@ -9,7 +9,9 @@ data class ChatMessage(
     val timestamp: Instant,
     val isError: Boolean = false,
     val messageType: MessageType = MessageType.TALKING,
-    val isInternal: Boolean = false
+    val isInternal: Boolean = false,
+    val model: String? = null,
+    val apiKeyName: String? = null
 ) {
     enum class Sender {
         USER, COACH

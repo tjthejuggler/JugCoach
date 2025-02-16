@@ -1,86 +1,122 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout 
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:paddingHorizontal="8dp"
-    android:paddingVertical="4dp"
-    android:clipToPadding="false"
-    android:clipChildren="false"
-    android:layerType="none">
+    xmlns:tools="http://schemas.android.com/tools">
 
-    <com.google.android.material.card.MaterialCardView
-        android:id="@+id/messageCard"
-        android:layout_width="0dp"
+    <data>
+        <import type="android.view.View"/>
+        <import type="com.example.jugcoach.ui.chat.ChatMessage.MessageType"/>
+        <variable
+            name="message"
+            type="com.example.jugcoach.ui.chat.ChatMessage" />
+    </data>
+
+    <androidx.constraintlayout.widget.ConstraintLayout 
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        app:cardElevation="1dp"
-        app:cardCornerRadius="12dp"
-        app:layout_constraintWidth_percent="0.8"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
+        android:paddingHorizontal="8dp"
+        android:paddingVertical="4dp"
         android:clipToPadding="false"
         android:clipChildren="false"
-        android:layerType="hardware"
-        tools:cardBackgroundColor="@{message.isFromUser ? @color/user_message_background : 
-            message.messageType == MessageType.ACTION ? @color/action_message_background :
-            message.messageType == MessageType.THINKING ? @color/thinking_message_background :
-            @color/talking_message_background}">
+        android:layerType="none">
 
-        <androidx.constraintlayout.widget.ConstraintLayout
-            android:layout_width="match_parent"
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/messageCard"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:padding="12dp"
+            app:cardElevation="1dp"
+            app:cardCornerRadius="12dp"
+            app:layout_constraintWidth_percent="0.8"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
             android:clipToPadding="false"
             android:clipChildren="false"
-            android:layerType="none">
+            android:layerType="hardware"
+            app:messageBackground="@{message}">
 
-            <TextView
-                android:id="@+id/senderText"
+            <androidx.constraintlayout.widget.ConstraintLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:textAppearance="?attr/textAppearanceCaption"
-                android:textColor="@color/white"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent"
-                android:includeFontPadding="false"
-                tools:text="Coach"/>
+                android:padding="12dp"
+                android:clipToPadding="false"
+                android:clipChildren="false"
+                android:layerType="none">
 
-            <TextView
-                android:id="@+id/messageText"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:textAppearance="?attr/textAppearanceBody1"
-                android:textColor="@color/white"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/senderText"
-                android:includeFontPadding="false"
-                android:textIsSelectable="true"
-                android:autoLink="web"
-                android:linksClickable="true"
-                android:breakStrategy="high_quality"
-                android:hyphenationFrequency="full"
-                tools:text="This is a sample message that might be quite long and wrap to multiple lines"/>
+                <TextView
+                    android:id="@+id/senderText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textAppearance="?attr/textAppearanceCaption"
+                    android:textColor="@color/white"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent"
+                    android:includeFontPadding="false"
+                    tools:text="Coach"/>
 
-            <TextView
-                android:id="@+id/timestampText"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:textAppearance="?attr/textAppearanceCaption"
-                android:textColor="@color/white"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/messageText"
-                app:layout_constraintBottom_toBottomOf="parent"
-                android:includeFontPadding="false"
-                tools:text="12:34 PM"/>
+                <TextView
+                    android:id="@+id/modelText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textAppearance="?attr/textAppearanceCaption"
+                    android:textColor="@color/white"
+                    android:textSize="10sp"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/senderText"
+                    android:includeFontPadding="false"
+                    android:visibility="@{message.model != null ? View.VISIBLE : View.GONE}"
+                    android:text="@{`Model: ` + message.model}"
+                    tools:text="Model: Claude-3"/>
 
-        </androidx.constraintlayout.widget.ConstraintLayout>
+                <TextView
+                    android:id="@+id/apiKeyText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:textAppearance="?attr/textAppearanceCaption"
+                    android:textColor="@color/white"
+                    android:textSize="10sp"
+                    app:layout_constraintStart_toEndOf="@id/modelText"
+                    app:layout_constraintTop_toBottomOf="@id/senderText"
+                    android:includeFontPadding="false"
+                    android:visibility="@{message.apiKeyName != null ? View.VISIBLE : View.GONE}"
+                    android:text="@{`API: ` + message.apiKeyName}"
+                    tools:text="API: Anthropic"/>
 
-    </com.google.android.material.card.MaterialCardView>
+                <TextView
+                    android:id="@+id/messageText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:textAppearance="?attr/textAppearanceBody1"
+                    android:textColor="@color/white"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/modelText"
+                    android:includeFontPadding="false"
+                    android:textIsSelectable="true"
+                    android:autoLink="web"
+                    android:linksClickable="true"
+                    android:breakStrategy="high_quality"
+                    android:hyphenationFrequency="full"
+                    tools:text="This is a sample message that might be quite long and wrap to multiple lines"/>
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+                <TextView
+                    android:id="@+id/timestampText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:textAppearance="?attr/textAppearanceCaption"
+                    android:textColor="@color/white"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/messageText"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    android:includeFontPadding="false"
+                    tools:text="12:34 PM"/>
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
+        </com.google.android.material.card.MaterialCardView>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</layout>

@@ -12,6 +12,7 @@ import java.time.Instant
 import java.util.UUID
 import retrofit2.HttpException
 import javax.inject.Inject
+import com.example.jugcoach.data.api.AnthropicResponse
 
 @HiltViewModel
 class ChatViewModel @Inject constructor(
@@ -103,6 +104,8 @@ class ChatViewModel @Inject constructor(
                 return@launch
             }
 
+            var response: com.example.jugcoach.data.api.AnthropicResponse? = null
+            
             try {
                 // Get message history
                 val recentMessages = stateManager.uiState.value.messages.takeLast(10)
@@ -120,13 +123,25 @@ class ChatViewModel @Inject constructor(
                 val route = apiService.determineRoute(text)
 
                 // Get initial response
-                val (initialResponse, toolCalls) = if (route == "no_tool") {
-                    val request = apiService.createAnthropicRequest(systemPrompt, messageHistory, text)
-                    val response = apiService.sendMessage(apiKey, request)
-                    Pair(
-                        response.content.firstOrNull()?.text ?: "No response from the coach",
-                        response.toolCalls
-                    )
+                val request = apiService.createAnthropicRequest(systemPrompt, messageHistory, text)
+                response = if (route == "no_tool") {
+                    apiService.sendMessage(apiKey, request)
+                } else {
+                    null
+                }
+
+                val (initialResponse, toolCalls) = if (response != null) {
+                    val text = response.content.firstOrNull()?.text ?: "No response from the coach"
+                    if (text.isNotEmpty()) {
+                        messageRepository.saveMessage(
+                            conversationId = conversation.id,
+                            text = text,
+                            isFromUser = false,
+                            model = response.model,
+                            apiKeyName = currentCoach.apiKeyName
+                        )
+                    }
+                    Pair(text, response.toolCalls)
                 } else {
                     Pair(
                         apiService.processWithTool(text, route, systemPrompt, messageHistory),
@@ -137,14 +152,6 @@ class ChatViewModel @Inject constructor(
                 // Process tool calls if any
                 val extractedToolCalls = toolCalls ?: toolHandler.extractToolCallsFromText(initialResponse)
                 if (!extractedToolCalls.isNullOrEmpty()) {
-                    // Save initial response if not empty
-                    if (initialResponse.isNotEmpty()) {
-                        messageRepository.saveMessage(
-                            conversationId = conversation.id,
-                            text = initialResponse,
-                            isFromUser = false
-                        )
-                    }
 
                     // Process tool calls and get results
                     val toolResults = toolHandler.processToolCalls(extractedToolCalls, currentCoach.id)
@@ -154,7 +161,9 @@ class ChatViewModel @Inject constructor(
                         messageRepository.saveMessage(
                             conversationId = conversation.id,
                             text = "Tool Output:\n\n${toolResults.joinToString("\n\n")}",
-                            isFromUser = false
+                            isFromUser = false,
+                            model = response?.model ?: "Tool Processing",
+                            apiKeyName = currentCoach.apiKeyName
                         )
 
                         // Create follow-up request to analyze tool output
@@ -170,16 +179,12 @@ class ChatViewModel @Inject constructor(
                         messageRepository.saveMessage(
                             conversationId = conversation.id,
                             text = followUpResponse.content.firstOrNull()?.text ?: "No analysis provided",
-                            isFromUser = false
+                            isFromUser = false,
+                            model = followUpResponse.model,
+                            apiKeyName = currentCoach.apiKeyName
                         )
                     }
                 } else {
-                    // Save initial response as is
-                    messageRepository.saveMessage(
-                        conversationId = conversation.id,
-                        text = initialResponse,
-                        isFromUser = false
-                    )
                 }
             } catch (e: retrofit2.HttpException) {
                 val errorMessage = when (e.code()) {
@@ -191,7 +196,9 @@ class ChatViewModel @Inject constructor(
                     conversationId = conversation.id,
                     text = errorMessage,
                     isFromUser = false,
-                    isError = true
+                    isError = true,
+                    model = response?.model,
+                    apiKeyName = currentCoach.apiKeyName
                 )
             } catch (e: Exception) {
                 val errorMessage = when {
@@ -203,7 +210,9 @@ class ChatViewModel @Inject constructor(
                     conversationId = conversation.id,
                     text = errorMessage,
                     isFromUser = false,
-                    isError = true
+                    isError = true,
+                    model = response?.model,
+                    apiKeyName = currentCoach.apiKeyName
                 )
             } finally {
                 stateManager.setLoading(false)
