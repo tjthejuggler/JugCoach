@@ -6,6 +6,8 @@ import com.example.jugcoach.data.dao.SettingsDao
 import com.example.jugcoach.data.api.GroqService
 import com.example.jugcoach.util.PromptLogger
 import com.example.jugcoach.util.SettingsConstants
+import com.example.jugcoach.ui.chat.ChatToolHandler
+import com.google.gson.Gson
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -13,16 +15,28 @@ import javax.inject.Singleton
 class ToolUseService @Inject constructor(
     private val groqService: GroqService,
     private val settingsDao: SettingsDao,
-    private val context: Context
+    private val context: Context,
+    private val toolHandler: ChatToolHandler
 ) {
+    private val gson = Gson() // Create Gson instance for logging
     suspend fun processWithTool(
         query: String,
         toolName: String,
         systemPrompt: String,
-        messageHistory: List<Pair<String, String>>
+        messageHistory: List<Pair<String, String>>,
+        coachId: Long
     ): String {
         val modelName = settingsDao.getSettingValue(SettingsConstants.TOOL_USE_MODEL_NAME_KEY)
         val apiKey = settingsDao.getSettingValue(SettingsConstants.TOOL_USE_MODEL_KEY_KEY)
+
+        Log.d("ToolUseService", """
+            === Tool Use Service Configuration ===
+            Model Name: $modelName
+            Has API Key: ${!apiKey.isNullOrEmpty()}
+            Tool Name: $toolName
+            Message History Size: ${messageHistory.size}
+            Coach ID: $coachId
+        """.trimIndent())
 
         if (modelName.isNullOrEmpty() || apiKey.isNullOrEmpty()) {
             Log.w("ToolUseService", "Model name or API key not set")
@@ -30,7 +44,15 @@ class ToolUseService @Inject constructor(
         }
 
         try {
-            // Log the tool call
+            // Enhanced logging for tool use
+            Log.d("ToolUseService", """
+                === Tool Use Request ===
+                Model: $modelName
+                Tool: $toolName
+                Query: $query
+                Message History Length: ${messageHistory.size}
+            """.trimIndent())
+
             PromptLogger.logToolCall(
                 llmName = modelName,
                 toolName = toolName,
@@ -38,70 +60,32 @@ class ToolUseService @Inject constructor(
                 context = context
             )
 
-            // Create the request
-            val request = com.example.jugcoach.data.api.GroqChatRequest(
-                model = modelName,
-                messages = messageHistory.map { (role, content) ->
-                    com.example.jugcoach.data.api.GroqMessage(
-                        role = role,
-                        content = content
-                    )
-                } + listOf(
-                    com.example.jugcoach.data.api.GroqMessage(
-                        role = "system",
-                        content = """
-                            $systemPrompt
-                            
-                            You are a tool use assistant. Based on the user's query, you should use the appropriate tool.
-                            For pattern lookups, use the 'lookupPattern' tool with the pattern ID.
-                            For pattern searches, use the 'searchPatterns' tool with search criteria.
-                            
-                            Current tool to use: $toolName
-                        """.trimIndent()
-                    ),
-                    com.example.jugcoach.data.api.GroqMessage(
-                        role = "user",
-                        content = query
-                    )
-                ),
-                tools = listOf(
-                    com.example.jugcoach.data.api.GroqTool(
-                        type = "function",
-                        function = com.example.jugcoach.data.api.GroqFunction(
-                            name = "lookupPattern",
-                            description = "Get full details of a specific pattern given its pattern_id.",
-                            parameters = mapOf(
-                                "type" to "object",
-                                "properties" to mapOf(
-                                    "pattern_id" to mapOf(
-                                        "type" to "string",
-                                        "description" to "The unique identifier for the pattern."
-                                    )
-                                ),
-                                "required" to listOf("pattern_id")
-                            )
-                        )
-                    ),
-                    com.example.jugcoach.data.api.GroqTool(
-                        type = "function",
-                        function = com.example.jugcoach.data.api.GroqFunction(
-                            name = "searchPatterns",
-                            description = "Search for patterns using criteria like difficulty, number of balls, and tags.",
-                            parameters = mapOf(
-                                "type" to "object",
-                                "properties" to mapOf(
-                                    "criteria" to mapOf(
-                                        "type" to "string",
-                                        "description" to "Search criteria in format: difficulty:>=5, balls:3, tags:[\"cascade\", \"syncopated\"]"
-                                    )
-                                ),
-                                "required" to listOf("criteria")
-                            )
-                        )
-                    )
-                ),
-                toolChoice = "auto"
+            val request = createToolRequest(
+                modelName = modelName,
+                query = query,
+                toolName = toolName
             )
+
+            // Convert request to JSON for logging
+            val gson = Gson()
+            val requestJson = gson.toJson(request)
+
+            // Log the complete request details including raw JSON
+            Log.d("TOOL_DEBUG", """
+                === [ToolUseService] Tool Use Request Details ===
+                Model: ${request.model}
+                System Message: ${request.messages.find { it.role == "system" }?.content?.take(200)}...
+                User Message: ${request.messages.last().content}
+                Tool Configuration:
+                - Name: lookupPattern
+                - Description: ${request.tools?.find { it.function.name == "lookupPattern" }?.function?.description}
+                - Parameters: ${request.tools?.find { it.function.name == "lookupPattern" }?.function?.parameters}
+                Tool Choice: ${request.tool_choice}
+                Temperature: ${request.temperature}
+                
+                Raw Request JSON:
+                $requestJson
+            """.trimIndent())
 
             val response = groqService.createChatCompletion(
                 authorization = "Bearer $apiKey",
@@ -109,15 +93,97 @@ class ToolUseService @Inject constructor(
             )
 
             if (!response.isSuccessful) {
-                Log.e("ToolUseService", "API error: ${response.code()} - ${response.message()}")
-                return "Failed to process tool request: ${response.message()}"
+                // Get error body as string
+                val errorBody = response.errorBody()?.string()
+                
+                // Log detailed error information
+                Log.e("TOOL_DEBUG", """
+                    === [ToolUseService] API Error Details ===
+                    HTTP Status: ${response.code()}
+                    Error Message: ${response.message()}
+                    Error Body: $errorBody
+                    
+                    Request Details:
+                    Model: ${request.model}
+                    Temperature: ${request.temperature}
+                    
+                    Raw Request JSON:
+                    ${gson.toJson(request)}
+                    
+                    Raw Response Headers:
+                    ${response.headers().joinToString("\n") { "${it.first}: ${it.second}" }}
+                """.trimIndent())
+                return "Failed to process tool request: ${response.message()} (Status: ${response.code()})"
             }
 
-            val result = response.body()?.choices?.firstOrNull()?.message?.content
-            return result ?: "No response from tool use model"
+            val message = response.body()?.choices?.firstOrNull()?.message
+            if (message == null) {
+                Log.e("ToolUseService", "No response received from tool use model")
+                return "No response from tool use model"
+            }
+
+            Log.d("ToolUseService", """
+                === Tool Use Model Response ===
+                Model Used: $modelName
+                Has Tool Calls: ${!message.toolCalls.isNullOrEmpty()}
+                Tool Calls Count: ${message.toolCalls?.size ?: 0}
+                Raw Content: ${message.content?.take(100)}...
+            """.trimIndent())
+
+            // First check if the content contains our custom JSON tool call format
+            val content = message.content
+            if (content != null) {
+                Log.d("ToolUseService", """
+                    === Checking Content for Tool Calls ===
+                    Content Preview: ${content.take(100)}...
+                """.trimIndent())
+
+                val extractedToolCalls = toolHandler.extractToolCallsFromText(content)
+                if (!extractedToolCalls.isNullOrEmpty()) {
+                    Log.d("ToolUseService", """
+                        === Processing Extracted Tool Calls ===
+                        Number of Tool Calls: ${extractedToolCalls.size}
+                        Tools: ${extractedToolCalls.joinToString(", ") { it.name }}
+                    """.trimIndent())
+
+                    val toolResults = toolHandler.processToolCalls(extractedToolCalls, coachId)
+                    return toolResults.joinToString("\n\n")
+                }
+            }
+
+            // If we still haven't found any tool calls, return an error
+            Log.e("ToolUseService", "No tool calls found in response")
+            return "Error: The model did not make a proper tool call. Response: $content"
         } catch (e: Exception) {
             Log.e("ToolUseService", "Failed to process with tool", e)
             return "Error processing tool request: ${e.message}"
         }
+    }
+
+    private fun createToolRequest(
+        modelName: String,
+        query: String,
+        toolName: String
+    ): com.example.jugcoach.data.api.GroqChatRequest {
+        // Load the full system prompt that contains JSON format instructions
+        val systemPrompt = context.assets.open("LLM_coach/system_prompt.txt").bufferedReader().use { it.readText() }
+        
+        return com.example.jugcoach.data.api.GroqChatRequest(
+            model = modelName,
+            messages = listOf(
+                com.example.jugcoach.data.api.GroqMessage(
+                    role = "system",
+                    content = systemPrompt
+                ),
+                com.example.jugcoach.data.api.GroqMessage(
+                    role = "user",
+                    content = query
+                )
+            ),
+            // Remove tools array since we want the model to use our custom JSON format
+            tools = null,
+            tool_choice = null,
+            temperature = 0.7
+        )
     }
 }

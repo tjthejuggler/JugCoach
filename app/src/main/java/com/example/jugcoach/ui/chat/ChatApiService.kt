@@ -28,11 +28,32 @@ class ChatApiService @Inject constructor(
     }
 
     suspend fun determineRoute(query: String): String {
-        return try {
-            routingService.routeQuery(query)
+        Log.d(TAG, """
+            === Starting Route Determination ===
+            Query: $query
+        """.trimIndent())
+
+        val route = try {
+            val decision = routingService.routeQuery(query)
+            Log.d(TAG, """
+                === Route Decision ===
+                Query: $query
+                Decision: $decision
+                Using Tool: ${decision != "no_tool"}
+            """.trimIndent())
+            decision
         } catch (e: Exception) {
             Log.e(TAG, "Routing failed, falling back to no tool", e)
             "no_tool"
+        }
+
+        // Validate route is one of the expected values
+        return when (route) {
+            "lookupPattern", "searchPatterns", "no_tool" -> route
+            else -> {
+                Log.e(TAG, "Invalid route returned: $route, falling back to no_tool")
+                "no_tool"
+            }
         }
     }
 
@@ -52,34 +73,7 @@ class ChatApiService @Inject constructor(
                 role = "user",
                 content = listOf(AnthropicRequest.Content(text = userMessage))
             ),
-            tools = listOf(
-                AnthropicRequest.Tool(
-                    name = "lookupPattern",
-                    description = "Get full details of a specific pattern given its pattern_id.",
-                    inputSchema = AnthropicRequest.InputSchema(
-                        properties = mapOf(
-                            "pattern_id" to AnthropicRequest.Property(
-                                type = "string",
-                                description = "The unique identifier for the pattern."
-                            )
-                        ),
-                        required = listOf("pattern_id")
-                    )
-                ),
-                AnthropicRequest.Tool(
-                    name = "searchPatterns",
-                    description = "Search for patterns using criteria like difficulty, number of balls, and tags.",
-                    inputSchema = AnthropicRequest.InputSchema(
-                        properties = mapOf(
-                            "criteria" to AnthropicRequest.Property(
-                                type = "string",
-                                description = "Search criteria in format: difficulty:>=5, balls:3, tags:[\"cascade\", \"syncopated\"]"
-                            )
-                        ),
-                        required = listOf("criteria")
-                    )
-                )
-            )
+            tools = null // Claude should not have tool capabilities
         )
     }
 
@@ -87,14 +81,39 @@ class ChatApiService @Inject constructor(
         query: String,
         toolName: String,
         systemPrompt: String,
-        messageHistory: List<Pair<String, String>>
+        messageHistory: List<Pair<String, String>>,
+        coachId: Long
     ): String {
-        return toolUseService.processWithTool(
+        // Validate tool name
+        if (toolName !in listOf("lookupPattern", "searchPatterns")) {
+            Log.e(TAG, "Invalid tool name: $toolName")
+            return "Error: Invalid tool specified"
+        }
+
+        Log.d(TAG, """
+            === Starting Tool Processing ===
+            Query: $query
+            Tool: $toolName
+            Message History Size: ${messageHistory.size}
+            Coach ID: $coachId
+        """.trimIndent())
+
+        val result = toolUseService.processWithTool(
             query = query,
             toolName = toolName,
             systemPrompt = systemPrompt,
-            messageHistory = messageHistory
+            messageHistory = messageHistory,
+            coachId = coachId
         )
+
+        Log.d(TAG, """
+            === Tool Processing Complete ===
+            Tool: $toolName
+            Result Preview: ${result.take(100)}...
+            Success: ${!result.startsWith("Error") && !result.startsWith("Failed")}
+        """.trimIndent())
+
+        return result
     }
 
     suspend fun sendMessage(
@@ -124,18 +143,12 @@ class ChatApiService @Inject constructor(
             request = request
         )
 
-        // Log any tool calls in the response
-        response.content.firstOrNull()?.text?.let { text ->
-            val extractedToolCalls = chatToolHandler.extractToolCallsFromText(text)
-            extractedToolCalls?.forEach { toolCall ->
-                PromptLogger.logToolCall(
-                    llmName = "claude",
-                    toolName = toolCall.name,
-                    arguments = toolCall.arguments,
-                    context = context
-                )
-            }
-        }
+        // Log the response for debugging
+        Log.d(TAG, """
+            === Claude Response ===
+            Content: ${response.content.firstOrNull()?.text?.take(100)}...
+            Model: ${response.model}
+        """.trimIndent())
 
         return response
     }

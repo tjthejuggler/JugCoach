@@ -17,17 +17,29 @@ data class GroqChatRequest(
     val model: String,
     val messages: List<GroqMessage>,
     val tools: List<GroqTool>? = null,
-    val toolChoice: String? = null,
-    val maxTokens: Int? = null,
+    val tool_choice: String? = null,
+    val max_tokens: Int? = null,
     val temperature: Double? = null,
-    val topP: Double? = null,
+    val top_p: Double? = null,
     val stop: List<String>? = null
 )
 
 data class GroqMessage(
     val role: String,
     val content: String,
-    val name: String? = null
+    val name: String? = null,
+    val toolCalls: List<GroqToolCall>? = null
+)
+
+data class GroqToolCall(
+    val id: String,
+    val type: String,
+    val function: GroqToolCallFunction
+)
+
+data class GroqToolCallFunction(
+    val name: String,
+    val arguments: String
 )
 
 data class GroqTool(

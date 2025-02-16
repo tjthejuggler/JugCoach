@@ -1,5 +1,6 @@
 package com.example.jugcoach.ui.chat
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.jugcoach.ui.chat.ChatMessage
@@ -13,13 +14,16 @@ import java.util.UUID
 import retrofit2.HttpException
 import javax.inject.Inject
 import com.example.jugcoach.data.api.AnthropicResponse
+import com.example.jugcoach.data.dao.SettingsDao
+import com.example.jugcoach.util.SettingsConstants
 
 @HiltViewModel
 class ChatViewModel @Inject constructor(
     private val stateManager: ChatStateManager,
     private val messageRepository: ChatMessageRepository,
     private val apiService: ChatApiService,
-    private val toolHandler: ChatToolHandler
+    private val toolHandler: ChatToolHandler,
+    private val settingsDao: SettingsDao
 ) : ViewModel() {
 
     val uiState: StateFlow<ChatUiState> = stateManager.uiState
@@ -118,73 +122,96 @@ class ChatViewModel @Inject constructor(
                     } else null
                 }
 
+                Log.d("TOOL_DEBUG", """
+                    === [ChatViewModel] Starting Message Processing ===
+                    Message: $text
+                    Coach: ${currentCoach.name}
+                    Message History Size: ${messageHistory.size}
+                """.trimIndent())
+
                 // Load system prompt and determine route
                 val systemPrompt = apiService.loadSystemPrompt(currentCoach.systemPrompt ?: "system_prompt.txt")
+                Log.d("TOOL_DEBUG", """
+                    === [ChatViewModel] Loaded System Prompt ===
+                    Prompt Source: ${currentCoach.systemPrompt ?: "system_prompt.txt"}
+                    Prompt Preview: ${systemPrompt.take(100)}...
+                """.trimIndent())
+
                 val route = apiService.determineRoute(text)
+                Log.d("TOOL_DEBUG", """
+                    === [ChatViewModel] Route Determination ===
+                    Message: $text
+                    Determined Route: $route
+                    Will Use Tools: ${route != "no_tool"}
+                """.trimIndent())
 
-                // Get initial response
-                val request = apiService.createAnthropicRequest(systemPrompt, messageHistory, text)
-                response = if (route == "no_tool") {
-                    apiService.sendMessage(apiKey, request)
-                } else {
-                    null
-                }
-
-                val (initialResponse, toolCalls) = if (response != null) {
-                    val text = response.content.firstOrNull()?.text ?: "No response from the coach"
-                    if (text.isNotEmpty()) {
+                // Handle response based on route
+                if (route == "no_tool") {
+                    Log.d("TOOL_DEBUG", "=== [ChatViewModel] Using Main LLM (No Tool) ===")
+                    // For non-tool routes, use Claude
+                    val request = apiService.createAnthropicRequest(systemPrompt, messageHistory, text)
+                    response = apiService.sendMessage(apiKey, request)
+                    val responseText = response.content.firstOrNull()?.text ?: "No response from the coach"
+                    if (responseText.isNotEmpty()) {
                         messageRepository.saveMessage(
                             conversationId = conversation.id,
-                            text = text,
+                            text = responseText,
                             isFromUser = false,
                             model = response.model,
                             apiKeyName = currentCoach.apiKeyName
                         )
                     }
-                    Pair(text, response.toolCalls)
                 } else {
-                    Pair(
-                        apiService.processWithTool(text, route, systemPrompt, messageHistory),
-                        null
+                    Log.d("TOOL_DEBUG", """
+                        === [ChatViewModel] Starting Tool Use Flow ===
+                        Route: $route
+                        Tool to Use: $route
+                        Message: $text
+                        Coach ID: ${currentCoach.id}
+                    """.trimIndent())
+                    
+                    // Get tool-use model name and settings
+                    val toolUseModelName = settingsDao.getSettingValue(SettingsConstants.TOOL_USE_MODEL_NAME_KEY)
+                    val toolUseModelKey = settingsDao.getSettingValue(SettingsConstants.TOOL_USE_MODEL_KEY_KEY)
+                    
+                    Log.d("TOOL_DEBUG", """
+                        === [ChatViewModel] Tool Use Configuration ===
+                        Model Name: $toolUseModelName
+                        Has Model Key: ${!toolUseModelKey.isNullOrEmpty()}
+                    """.trimIndent())
+                    
+                    // Process with tool-use LLM
+                    val toolResponse = apiService.processWithTool(
+                        query = text,
+                        toolName = route,
+                        systemPrompt = systemPrompt,
+                        messageHistory = messageHistory,
+                        coachId = currentCoach.id
                     )
-                }
 
-                // Process tool calls if any
-                val extractedToolCalls = toolCalls ?: toolHandler.extractToolCallsFromText(initialResponse)
-                if (!extractedToolCalls.isNullOrEmpty()) {
+                    Log.d("TOOL_DEBUG", """
+                        === [ChatViewModel] Tool Response Received ===
+                        Response Length: ${toolResponse.length}
+                        Response Preview: ${toolResponse.take(100)}...
+                    """.trimIndent())
+                    
+                    Log.d("TOOL_DEBUG", """
+                        === [ChatViewModel] Saving Tool Response ===
+                        Conversation ID: ${conversation.id}
+                        Response Length: ${toolResponse.length}
+                        Model: ${toolUseModelName ?: "Tool-use LLM"}
+                        Is Error Response: ${toolResponse.startsWith("Error")}
+                    """.trimIndent())
 
-                    // Process tool calls and get results
-                    val toolResults = toolHandler.processToolCalls(extractedToolCalls, currentCoach.id)
+                    messageRepository.saveMessage(
+                        conversationId = conversation.id,
+                        text = toolResponse,
+                        isFromUser = false,
+                        model = toolUseModelName ?: "Tool-use LLM",
+                        apiKeyName = currentCoach.apiKeyName
+                    )
 
-                    // Save tool output
-                    if (toolResults.isNotEmpty()) {
-                        messageRepository.saveMessage(
-                            conversationId = conversation.id,
-                            text = "Tool Output:\n\n${toolResults.joinToString("\n\n")}",
-                            isFromUser = false,
-                            model = response?.model ?: "Tool Processing",
-                            apiKeyName = currentCoach.apiKeyName
-                        )
-
-                        // Create follow-up request to analyze tool output
-                        val followUpRequest = apiService.createAnthropicRequest(
-                            systemPrompt = systemPrompt,
-                            messageHistory = messageHistory + listOf(Pair("assistant", toolResults.joinToString("\n\n"))),
-                            userMessage = "Please analyze the above tool output and explain its implications for the juggling pattern."
-                        )
-
-                        val followUpResponse = apiService.sendMessage(apiKey, followUpRequest)
-                        
-                        // Save analysis
-                        messageRepository.saveMessage(
-                            conversationId = conversation.id,
-                            text = followUpResponse.content.firstOrNull()?.text ?: "No analysis provided",
-                            isFromUser = false,
-                            model = followUpResponse.model,
-                            apiKeyName = currentCoach.apiKeyName
-                        )
-                    }
-                } else {
+                    Log.d("TOOL_DEBUG", "=== [ChatViewModel] Tool Response Saved Successfully ===")
                 }
             } catch (e: retrofit2.HttpException) {
                 val errorMessage = when (e.code()) {
