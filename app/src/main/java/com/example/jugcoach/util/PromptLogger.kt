@@ -11,6 +11,7 @@ import java.util.*
  */
 object PromptLogger {
     private const val TAG = "LLM_PROMPT"
+    private const val TOOL_TAG = "LLM_TOOL_CALL"
     private const val LOG_FOLDER = "prompt_logs"
     private val dateFormat = SimpleDateFormat("yyyy-MM-dd_HH-mm-ss", Locale.US)
 
@@ -83,6 +84,45 @@ object PromptLogger {
         val logs = listLogs(context)
         if (logs.size > keepCount) {
             logs.drop(keepCount).forEach { it.delete() }
+        }
+    }
+
+    /**
+     * Log when an LLM makes a tool call
+     */
+    fun logToolCall(
+        llmName: String,
+        toolName: String,
+        arguments: String,
+        context: Context? = null
+    ) {
+        val logMessage = buildString {
+            appendLine("=== Tool Call ===")
+            appendLine("LLM: $llmName")
+            appendLine("Tool: $toolName")
+            appendLine("Arguments: $arguments")
+            appendLine("Timestamp: ${dateFormat.format(Date())}")
+        }
+
+        // Always log to logcat for easy filtering
+        logMessage.lines().forEach { line ->
+            Log.i(TOOL_TAG, line)
+        }
+
+        // If context is provided, also log to file
+        context?.let { ctx ->
+            try {
+                val logDir = File(ctx.getExternalFilesDir(null), LOG_FOLDER)
+                if (!logDir.exists()) {
+                    logDir.mkdirs()
+                }
+
+                val timestamp = dateFormat.format(Date())
+                val logFile = File(logDir, "tool_call_log_$timestamp.txt")
+                logFile.writeText(logMessage)
+            } catch (e: Exception) {
+                Log.e(TOOL_TAG, "Error logging tool call to file", e)
+            }
         }
     }
 }

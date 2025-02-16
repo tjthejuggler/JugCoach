@@ -20,7 +20,8 @@ class ChatApiService @Inject constructor(
     private val anthropicService: AnthropicService,
     private val routingService: RoutingService,
     private val toolUseService: ToolUseService,
-    private val context: Context
+    private val context: Context,
+    private val chatToolHandler: ChatToolHandler
 ) {
     suspend fun getApiKey(apiKeyName: String): String? {
         return settingsDao.getSettingValue(apiKeyName)
@@ -118,10 +119,25 @@ class ChatApiService @Inject constructor(
             userMessage = request.messages.lastOrNull()?.content?.firstOrNull()?.text ?: ""
         )
 
-        return anthropicService.sendMessage(
+        val response = anthropicService.sendMessage(
             apiKey = apiKey,
             request = request
         )
+
+        // Log any tool calls in the response
+        response.content.firstOrNull()?.text?.let { text ->
+            val extractedToolCalls = chatToolHandler.extractToolCallsFromText(text)
+            extractedToolCalls?.forEach { toolCall ->
+                PromptLogger.logToolCall(
+                    llmName = "claude",
+                    toolName = toolCall.name,
+                    arguments = toolCall.arguments,
+                    context = context
+                )
+            }
+        }
+
+        return response
     }
 
     fun loadSystemPrompt(coachSystemPrompt: String): String {
