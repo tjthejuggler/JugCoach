@@ -206,4 +206,40 @@ class ChatStateManager @Inject constructor(
             it.copy(patternRecommendation = it.patternRecommendation.copy(selectedPattern = pattern))
         }
     }
+
+    fun startPatternRun(pattern: Pattern) {
+        _uiState.update {
+            it.copy(
+                patternRun = PatternRunState(pattern = pattern),
+                patternRecommendation = it.patternRecommendation.copy(isVisible = false)
+            )
+        }
+    }
+
+    fun startTimer() {
+        _uiState.update {
+            it.copy(
+                patternRun = it.patternRun?.copy(
+                    isTimerRunning = true,
+                    showEndButtons = true
+                )
+            )
+        }
+    }
+
+    fun updateTimer(elapsedTime: Long) {
+        _uiState.update {
+            it.copy(
+                patternRun = it.patternRun?.copy(
+                    elapsedTime = elapsedTime
+                )
+            )
+        }
+    }
+
+    fun endPatternRun() {
+        _uiState.update {
+            it.copy(patternRun = null)
+        }
+    }
 }

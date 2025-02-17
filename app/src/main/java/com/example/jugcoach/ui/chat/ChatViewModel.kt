@@ -320,4 +320,43 @@ class ChatViewModel @Inject constructor(
             stateManager.selectPattern(pattern)
         }
     }
+
+    fun startPatternRun(pattern: Pattern) {
+        viewModelScope.launch {
+            stateManager.startPatternRun(pattern)
+        }
+    }
+
+    private var timerJob: kotlinx.coroutines.Job? = null
+
+    fun startTimer() {
+        timerJob?.cancel()
+        timerJob = viewModelScope.launch {
+            val startTime = System.currentTimeMillis()
+            while (true) {
+                val elapsedTime = System.currentTimeMillis() - startTime
+                stateManager.updateTimer(elapsedTime)
+                kotlinx.coroutines.delay(100) // Update every 100ms
+            }
+        }
+        stateManager.startTimer()
+    }
+
+    fun endPatternRun(wasCatch: Boolean, catches: Int?) {
+        timerJob?.cancel()
+        viewModelScope.launch {
+            val currentRun = uiState.value.patternRun
+            if (currentRun != null) {
+                // Save run to pattern history
+                patternDao.addRun(
+                    patternId = currentRun.pattern.id,
+                    catches = catches,
+                    duration = if (currentRun.elapsedTime > 0) currentRun.elapsedTime / 1000 else null, // Convert to seconds if timer was used
+                    cleanEnd = wasCatch,
+                    date = System.currentTimeMillis()
+                )
+            }
+            stateManager.endPatternRun()
+        }
+    }
 }

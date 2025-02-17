@@ -8,6 +8,7 @@ import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ArrayAdapter
+import com.google.android.material.textfield.TextInputEditText
 import androidx.core.view.isVisible
 import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.Fragment
@@ -198,6 +199,26 @@ class ChatFragment : Fragment() {
     private fun updateUi(state: ChatUiState) {
         binding.apply {
             loadingIndicator.isVisible = state.isLoading
+
+            // Handle pattern run state
+            state.patternRun?.let { runState ->
+                patternRunView.visibility = View.VISIBLE
+                patternRunView.bind(
+                    state = runState,
+                    onStartTimer = { viewModel.startTimer() },
+                    onEndRun = { wasCatch -> showEndRunDialog(wasCatch) },
+                    onPatternClick = {
+                        findNavController().navigate(
+                            R.id.action_nav_chat_to_patternDetailsFragment,
+                            Bundle().apply {
+                                putString("patternId", runState.pattern.id)
+                            }
+                        )
+                    }
+                )
+            } ?: run {
+                patternRunView.visibility = View.GONE
+            }
             
             // Refresh options menu when current conversation changes
             requireActivity().invalidateOptionsMenu()
@@ -339,6 +360,22 @@ class ChatFragment : Fragment() {
                 .setNegativeButton(R.string.cancel, null)
                 .show()
         }
+    }
+
+    private fun showEndRunDialog(wasCatch: Boolean) {
+        val dialogView = LayoutInflater.from(requireContext())
+            .inflate(R.layout.dialog_end_run, null)
+        
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle(if (wasCatch) "End Run (Catch)" else "End Run (Drop)")
+            .setView(dialogView)
+            .setPositiveButton(R.string.save_run) { _, _ ->
+                val catchesInput = dialogView.findViewById<TextInputEditText>(R.id.catches_input)
+                val catches = catchesInput.text?.toString()?.toIntOrNull()
+                viewModel.endPatternRun(wasCatch, catches)
+            }
+            .setNegativeButton(R.string.cancel_run, null)
+            .show()
     }
 
     override fun onDestroyView() {

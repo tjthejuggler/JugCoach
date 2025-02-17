@@ -11,5 +11,6 @@ data class ChatUiState(
     val availableCoaches: List<Coach> = emptyList(),
     val currentConversation: Conversation? = null,
     val availableConversations: List<Conversation> = emptyList(),
-    val patternRecommendation: PatternRecommendationState = PatternRecommendationState()
+    val patternRecommendation: PatternRecommendationState = PatternRecommendationState(),
+    val patternRun: PatternRunState? = null
 )

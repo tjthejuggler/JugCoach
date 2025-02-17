@@ -2,6 +2,8 @@ package com.example.jugcoach.data.dao
 
 import androidx.room.*
 import com.example.jugcoach.data.entity.Pattern
+import com.example.jugcoach.data.entity.Run
+import com.example.jugcoach.data.entity.Record
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -114,4 +116,28 @@ interface PatternDao {
         LIMIT 1
     """)
     fun suggestNextPattern(coachId: Long): Flow<Pattern?>
+
+    @Transaction
+    suspend fun addRun(patternId: String, catches: Int?, duration: Long?, cleanEnd: Boolean, date: Long) {
+        val pattern = getPatternById(patternId, -1) ?: return // -1 to get any pattern regardless of coach
+        val newRun = Run(
+            catches = catches,
+            duration = duration,
+            isCleanEnd = cleanEnd,
+            date = date
+        )
+        
+        // Create new pattern with updated run history
+        val updatedPattern = pattern.copy(
+            runHistory = pattern.runHistory.copy(
+                runs = pattern.runHistory.runs + newRun
+            ),
+            // Update record if this run has more catches than current record
+            record = if (catches != null && (pattern.record == null || catches > pattern.record.catches)) {
+                Record(catches = catches, date = date)
+            } else pattern.record
+        )
+        
+        updatePattern(updatedPattern)
+    }
 }

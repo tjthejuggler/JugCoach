@@ -208,11 +208,8 @@ class PatternRecommendationBottomSheet : BottomSheetDialogFragment() {
 
         binding.startPatternButton.setOnClickListener {
             viewModel.uiState.value.patternRecommendation.recommendedPattern?.let { pattern ->
-                android.widget.Toast.makeText(
-                    requireContext(),
-                    "Starting pattern: ${pattern.name}",
-                    android.widget.Toast.LENGTH_SHORT
-                ).show()
+                viewModel.startPatternRun(pattern)
+                dismiss()
             }
         }
     }

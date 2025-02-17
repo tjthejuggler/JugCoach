@@ -57,13 +57,20 @@
 
     </LinearLayout>
 
+    <com.example.jugcoach.ui.chat.PatternRunView
+        android:id="@+id/patternRunView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        app:layout_constraintTop_toBottomOf="@id/conversationContainer"/>
+
     <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:background="?android:attr/colorBackground"
         android:padding="8dp"
         app:layout_constraintBottom_toTopOf="@id/inputContainer"
-        app:layout_constraintTop_toBottomOf="@id/conversationContainer">
+        app:layout_constraintTop_toBottomOf="@id/patternRunView">
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/messagesList"

@@ -137,6 +137,12 @@
     <string name="no_pattern_found">No pattern found matching your filters</string>
     <string name="record_catches_range">Record Catches Range</string>
     <string name="view_pattern">View Pattern</string>
-    <string name="start_pattern">Start Pattern</string>
+    <string name="start_pattern">Start Run</string>
     <string name="tap_to_view_details">Tap to view pattern details</string>
+    <string name="start_timer">Start Timer</string>
+    <string name="end_catch">End (Catch)</string>
+    <string name="end_drop">End (Drop)</string>
+    <string name="save_run">Save</string>
+    <string name="cancel_run">Cancel</string>
+    <string name="enter_catches">Number of catches (optional)</string>
 </resources>
