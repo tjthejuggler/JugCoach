@@ -33,8 +33,9 @@ class PatternDatabaseService @Inject constructor(
             pattern = patternDao.getPatternById(patternName, coachId)
         }
         
-        return pattern?.let { queryParser.formatPatternResponse(it) }
-            ?: """{"error": "Pattern not found with name: $patternName"}"""
+        return pattern?.let {
+            kotlinx.coroutines.runBlocking { queryParser.formatPatternResponse(it) }
+        } ?: """{"error": "Pattern not found with name: $patternName"}"""
     }
 
     /**
@@ -49,7 +50,9 @@ class PatternDatabaseService @Inject constructor(
         } else {
             buildJsonArray("results") {
                 patterns.forEach { pattern ->
-                    append(queryParser.formatPatternResponse(pattern))
+                    append(kotlinx.coroutines.runBlocking {
+                        queryParser.formatPatternResponse(pattern)
+                    })
                 }
             }
         }
@@ -67,7 +70,9 @@ class PatternDatabaseService @Inject constructor(
         } else {
             buildJsonArray("results") {
                 patterns.forEach { pattern ->
-                    append(queryParser.formatPatternResponse(pattern))
+                    append(kotlinx.coroutines.runBlocking {
+                        queryParser.formatPatternResponse(pattern)
+                    })
                 }
             }
         }
@@ -84,7 +89,9 @@ class PatternDatabaseService @Inject constructor(
         } else {
             buildJsonArray("results") {
                 patterns.forEach { pattern ->
-                    append(queryParser.formatPatternResponse(pattern))
+                    append(kotlinx.coroutines.runBlocking {
+                        queryParser.formatPatternResponse(pattern)
+                    })
                 }
             }
         }
@@ -112,7 +119,9 @@ class PatternDatabaseService @Inject constructor(
         } else {
             buildJsonArray("results") {
                 patterns.forEach { pattern ->
-                    append(queryParser.formatPatternResponse(pattern))
+                    append(kotlinx.coroutines.runBlocking {
+                        queryParser.formatPatternResponse(pattern)
+                    })
                 }
             }
         }

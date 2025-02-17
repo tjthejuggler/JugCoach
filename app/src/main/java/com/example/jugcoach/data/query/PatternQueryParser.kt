@@ -62,7 +62,17 @@ class PatternQueryParser(private val patternDao: PatternDao) {
     /**
      * Format a pattern into a JSON response suitable for LLM consumption
      */
-    fun formatPatternResponse(pattern: Pattern, concise: Boolean = false): String {
+    private fun getPatternNameById(id: String, patterns: List<Pattern>): String {
+        return patterns.find { it.id == id }?.name ?: id
+    }
+
+    private fun convertIdsToNames(ids: List<String>, patterns: List<Pattern>): List<String> {
+        return ids.map { id -> getPatternNameById(id, patterns) }
+    }
+
+    suspend fun formatPatternResponse(pattern: Pattern, concise: Boolean = false): String {
+        val allPatterns = patternDao.getAllPatternsSync(pattern.coachId ?: -1)
+        
         return if (concise) {
             JSONObject().apply {
                 put("name", pattern.name)
@@ -79,16 +89,15 @@ class PatternQueryParser(private val patternDao: PatternDao) {
             }.toString(2)
         } else {
             JSONObject().apply {
-                put("id", pattern.id)
                 put("name", pattern.name)
                 put("difficulty", pattern.difficulty)
                 put("siteswap", pattern.siteswap)
                 put("numberOfBalls", pattern.num)
                 put("explanation", pattern.explanation)
                 put("tags", pattern.tags)
-                put("prerequisites", pattern.prerequisites)
-                put("dependents", pattern.dependents)
-                put("related", pattern.related)
+                put("prerequisites", convertIdsToNames(pattern.prerequisites, allPatterns))
+                put("dependents", convertIdsToNames(pattern.dependents, allPatterns))
+                put("related", convertIdsToNames(pattern.related, allPatterns))
                 // Include URLs if available
                 pattern.gifUrl?.let { put("gifUrl", it) }
                 pattern.video?.let { put("videoUrl", it) }
@@ -108,19 +117,17 @@ class PatternQueryParser(private val patternDao: PatternDao) {
      * Get patterns related to a specific pattern
      */
     suspend fun getRelatedPatterns(patternName: String, coachId: Long): List<Pattern> {
-        // First try to find by name
         val allPatterns = patternDao.getAllPatternsSync(coachId)
         var pattern = allPatterns.find { it.name == patternName }
         
-        // If not found by name, try to find by ID (as fallback)
-        if (pattern == null) {
-            pattern = patternDao.getPatternById(patternName, coachId)
-        }
-        
         if (pattern == null) return emptyList()
         
-        val relatedIds = pattern.related + pattern.prerequisites + pattern.dependents
-        return allPatterns.filter { it.id in relatedIds }
+        // Convert IDs to names and then find patterns by names
+        val relatedNames = convertIdsToNames(
+            pattern.related + pattern.prerequisites + pattern.dependents,
+            allPatterns
+        )
+        return allPatterns.filter { it.name in relatedNames }
     }
 
     /**

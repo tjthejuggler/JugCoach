@@ -127,12 +127,14 @@ class ChatToolHandler @Inject constructor(
                         val pattern = allPatterns.find { it.name == patternName }
                         if (pattern != null) {
                             Log.d("TOOL_DEBUG", "Found matching pattern: ${pattern.name}")
-                            val response = queryParser.formatPatternResponse(pattern)
+                            val response = kotlinx.coroutines.runBlocking {
+                                queryParser.formatPatternResponse(pattern)
+                            }
                             results.add(response)
                             Log.d("TOOL_DEBUG", "Added formatted response for pattern: ${pattern.name}")
                         } else {
                             Log.d("TOOL_DEBUG", "No pattern found matching name: $patternName")
-                            results.add("Pattern not found: $patternName")
+                            results.add("I couldn't find a pattern called \"$patternName\"")
                         }
                     } else {
                         Log.e("TOOL_DEBUG", "Failed to extract pattern_id from arguments: ${toolCall.arguments}")
@@ -151,7 +153,9 @@ class ChatToolHandler @Inject constructor(
                             Log.d("TOOL_DEBUG", "Search returned ${patterns.size} patterns")
                             
                             val formattedPatterns = patterns.map { pattern ->
-                                queryParser.formatPatternResponse(pattern, concise = true)
+                                kotlinx.coroutines.runBlocking {
+                                    queryParser.formatPatternResponse(pattern, concise = true)
+                                }
                             }
                             Log.d("TOOL_DEBUG", "Formatted ${formattedPatterns.size} pattern responses")
                             
