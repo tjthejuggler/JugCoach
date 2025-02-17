@@ -341,6 +341,11 @@ class ChatViewModel @Inject constructor(
         }
     }
 
+    suspend fun findPatternByName(patternName: String): Pattern? {
+        return patternDao.getAllPatternsSync(uiState.value.currentCoach?.id ?: -1)
+            .find { it.name == patternName }
+    }
+
     fun startPatternRun(pattern: Pattern) {
         viewModelScope.launch {
             stateManager.startPatternRun(pattern)

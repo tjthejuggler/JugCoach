@@ -16,7 +16,8 @@ import java.time.format.FormatStyle
 
 class ChatAdapter(
     private var currentCoach: Coach? = null,
-    private val onAgainClick: (ChatMessage) -> Unit
+    private val onAgainClick: (ChatMessage) -> Unit,
+    private val onPatternClick: (String) -> Unit
 ) : ListAdapter<ChatMessage, ChatAdapter.MessageViewHolder>(MessageDiffCallback()) {
 
     fun updateCoach(coach: Coach?) {
@@ -58,14 +59,14 @@ class ChatAdapter(
     ) : RecyclerView.ViewHolder(binding.root) {
         init {
             binding.onAgainClick = this@ChatAdapter.onAgainClick
+            binding.onPatternClick = this@ChatAdapter.onPatternClick
         }
 
         fun bind(message: ChatMessage) {
             binding.apply {
                 this.message = message
                 executePendingBindings()
-                // Set message text and timestamp
-                messageText.text = message.text
+                // Set timestamp
                 timestampText.text = message.timestamp
                     .atZone(ZoneId.systemDefault())
                     .toLocalTime()

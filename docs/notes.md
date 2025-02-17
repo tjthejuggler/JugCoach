@@ -3,11 +3,6 @@
 
 immediate todo
 
-
-get rid of the id number in the patterns list
-
-dont show pattern id numbers in tools, always replace them with the pattern name and the number of balls in ()s
-
 make a search box in the random pattern that limits the random patterns that are shown
 
 get rid of the bug that shows an empty tag in the pattern details page

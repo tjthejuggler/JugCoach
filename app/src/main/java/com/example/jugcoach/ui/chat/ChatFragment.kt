@@ -120,7 +120,19 @@ class ChatFragment : Fragment() {
         android.util.Log.d("ChatFragment", "Setting up RecyclerView")
         chatAdapter = ChatAdapter(
             currentCoach = viewModel.uiState.value.currentCoach,
-            onAgainClick = { message -> viewModel.startRunFromMessage(message) }
+            onAgainClick = { message -> viewModel.startRunFromMessage(message) },
+            onPatternClick = { patternName ->
+                viewLifecycleOwner.lifecycleScope.launch {
+                    viewModel.findPatternByName(patternName)?.let { pattern ->
+                        findNavController().navigate(
+                            R.id.action_nav_chat_to_patternDetailsFragment,
+                            Bundle().apply {
+                                putString("patternId", pattern.id)
+                            }
+                        )
+                    }
+                }
+            }
         ).apply {
             setHasStableIds(true)  // Enable stable IDs for better performance
         }
