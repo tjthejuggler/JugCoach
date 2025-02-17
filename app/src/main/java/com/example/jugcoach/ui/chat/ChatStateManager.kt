@@ -16,6 +16,8 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.time.Instant
+import android.content.Context
+import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -24,8 +26,11 @@ class ChatStateManager @Inject constructor(
     private val settingsDao: SettingsDao,
     private val coachDao: CoachDao,
     private val conversationDao: ConversationDao,
-    private val messageRepository: ChatMessageRepository
+    private val messageRepository: ChatMessageRepository,
+    @ApplicationContext private val context: Context
 ) {
+
+    fun getContext(): Context = context
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     
     private val _uiState = MutableStateFlow(ChatUiState())

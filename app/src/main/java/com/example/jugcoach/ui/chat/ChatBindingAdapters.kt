@@ -9,6 +9,7 @@ fun setMessageBackground(view: MaterialCardView, message: ChatMessage?) {
     if (message == null) return
     val context = view.context
     val colorRes = when {
+        message.messageType == ChatMessage.MessageType.RUN_SUMMARY -> com.example.jugcoach.R.color.run_summary_background
         message.sender == ChatMessage.Sender.USER -> com.example.jugcoach.R.color.user_message_background
         message.messageType == ChatMessage.MessageType.ACTION -> com.example.jugcoach.R.color.action_message_background
         message.messageType == ChatMessage.MessageType.THINKING -> com.example.jugcoach.R.color.thinking_message_background

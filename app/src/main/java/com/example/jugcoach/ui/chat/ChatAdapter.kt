@@ -66,33 +66,36 @@ class ChatAdapter(
                     .format(DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT))
 
                 // Configure sender-specific UI
-                when (message.sender) {
-                    ChatMessage.Sender.USER -> {
-                        senderText.text = "You"
-                        messageCard.apply {
-                            setCardBackgroundColor(ContextCompat.getColor(context, R.color.user_message_background))
-                            strokeWidth = itemView.context.resources.getDimensionPixelSize(R.dimen.message_stroke_width)
-                            strokeColor = ContextCompat.getColor(context, R.color.message_border)
+                // Configure message layout
+                messageCard.apply {
+                    when {
+                        message.messageType == ChatMessage.MessageType.RUN_SUMMARY -> {
+                            senderText.text = context.getString(R.string.run_completed)
+                            setCardBackgroundColor(ContextCompat.getColor(context, R.color.run_summary_background))
                             (layoutParams as ConstraintLayout.LayoutParams).apply {
                                 marginStart = itemView.context.resources.getDimensionPixelSize(R.dimen.message_margin_large)
                                 marginEnd = itemView.context.resources.getDimensionPixelSize(R.dimen.message_margin_small)
                                 horizontalBias = 1.0f
                             }
                         }
-                    }
-                    ChatMessage.Sender.COACH -> {
-                        senderText.text = currentCoach?.name ?: "Coach"
-                        messageCard.apply {
-                            // Set background color based on message type
+                        message.sender == ChatMessage.Sender.USER -> {
+                            senderText.text = "You"
+                            setCardBackgroundColor(ContextCompat.getColor(context, R.color.user_message_background))
+                            (layoutParams as ConstraintLayout.LayoutParams).apply {
+                                marginStart = itemView.context.resources.getDimensionPixelSize(R.dimen.message_margin_large)
+                                marginEnd = itemView.context.resources.getDimensionPixelSize(R.dimen.message_margin_small)
+                                horizontalBias = 1.0f
+                            }
+                        }
+                        else -> {
+                            senderText.text = currentCoach?.name ?: "Coach"
                             val backgroundColor = when (message.messageType) {
                                 ChatMessage.MessageType.ACTION -> R.color.action_message_background
                                 ChatMessage.MessageType.THINKING -> R.color.thinking_message_background
                                 ChatMessage.MessageType.TALKING -> R.color.talking_message_background
+                                ChatMessage.MessageType.RUN_SUMMARY -> R.color.run_summary_background
                             }
                             setCardBackgroundColor(ContextCompat.getColor(context, backgroundColor))
-                            
-                            strokeWidth = itemView.context.resources.getDimensionPixelSize(R.dimen.message_stroke_width)
-                            strokeColor = ContextCompat.getColor(context, R.color.message_border)
                             (layoutParams as ConstraintLayout.LayoutParams).apply {
                                 marginStart = itemView.context.resources.getDimensionPixelSize(R.dimen.message_margin_small)
                                 marginEnd = itemView.context.resources.getDimensionPixelSize(R.dimen.message_margin_large)
@@ -100,6 +103,9 @@ class ChatAdapter(
                             }
                         }
                     }
+                    
+                    strokeWidth = itemView.context.resources.getDimensionPixelSize(R.dimen.message_stroke_width)
+                    strokeColor = ContextCompat.getColor(context, R.color.message_border)
                 }
 
                 // Handle error state

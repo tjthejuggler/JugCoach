@@ -3,6 +3,8 @@ package com.example.jugcoach.ui.chat
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.jugcoach.R
+import com.example.jugcoach.data.entity.ChatMessage as DbChatMessage
 import com.example.jugcoach.ui.chat.ChatMessage
 import com.example.jugcoach.data.entity.Coach
 import com.example.jugcoach.data.entity.Conversation
@@ -347,13 +349,48 @@ class ChatViewModel @Inject constructor(
         viewModelScope.launch {
             val currentRun = uiState.value.patternRun
             if (currentRun != null) {
+                val pattern = currentRun.pattern
+                val duration = if (currentRun.elapsedTime > 0) currentRun.elapsedTime / 1000 else null
+
                 // Save run to pattern history
                 patternDao.addRun(
-                    patternId = currentRun.pattern.id,
+                    patternId = pattern.id,
                     catches = catches,
-                    duration = if (currentRun.elapsedTime > 0) currentRun.elapsedTime / 1000 else null, // Convert to seconds if timer was used
+                    duration = duration,
                     cleanEnd = wasCatch,
                     date = System.currentTimeMillis()
+                )
+
+                // Create summary message
+                val context = stateManager.getContext()
+                val summaryParts = mutableListOf<String>()
+                
+                // Add pattern name
+                summaryParts.add(pattern.name)
+
+                // Add duration if timer was used
+                duration?.let {
+                    val minutes = it / 60
+                    val seconds = it % 60
+                    summaryParts.add(context.getString(R.string.run_summary_duration, minutes, seconds))
+                }
+
+                // Add catches if provided
+                catches?.let {
+                    summaryParts.add(context.getString(R.string.run_summary_catches, it))
+                }
+
+                // Add completion status
+                summaryParts.add(context.getString(
+                    if (wasCatch) R.string.run_summary_end_clean else R.string.run_summary_end_drop
+                ))
+
+                // Save summary message
+                messageRepository.saveMessage(
+                    conversationId = uiState.value.currentConversation?.id ?: return@launch,
+                    text = summaryParts.joinToString("\n"),
+                    isFromUser = true,
+                    messageType = DbChatMessage.MessageType.RUN_SUMMARY
                 )
             }
             stateManager.endPatternRun()

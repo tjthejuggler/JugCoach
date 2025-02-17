@@ -18,6 +18,6 @@ data class ChatMessage(
     }
 
     enum class MessageType {
-        TALKING, THINKING, ACTION
+        TALKING, THINKING, ACTION, RUN_SUMMARY
     }
 }

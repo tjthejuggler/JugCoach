@@ -145,4 +145,9 @@
     <string name="save_run">Save</string>
     <string name="cancel_run">Cancel</string>
     <string name="enter_catches">Number of catches (optional)</string>
+    <string name="run_completed">Run Completed</string>
+    <string name="run_summary_duration">Run time: %1$02d:%2$02d</string>
+    <string name="run_summary_catches">Catches: %1$d</string>
+    <string name="run_summary_end_clean">Ended: Clean</string>
+    <string name="run_summary_end_drop">Ended: Drop</string>
 </resources>

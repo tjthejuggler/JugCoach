@@ -37,6 +37,7 @@ data class ChatMessage(
     enum class MessageType {
         ACTION,    // When performing an action/tool use
         TALKING,   // When communicating with the user
-        THINKING   // Internal thoughts (shown in different color)
+        THINKING,  // Internal thoughts (shown in different color)
+        RUN_SUMMARY // Pattern run summaries
     }
 }

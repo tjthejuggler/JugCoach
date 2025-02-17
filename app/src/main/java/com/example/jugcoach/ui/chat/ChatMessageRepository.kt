@@ -35,10 +35,11 @@ class ChatMessageRepository @Inject constructor(
                         sender = if (msg.isFromUser) ChatMessage.Sender.USER else ChatMessage.Sender.COACH,
                         timestamp = Instant.ofEpochMilli(msg.timestamp),
                         isError = msg.isError,
-                        messageType = when {
-                            msg.text.startsWith("Tool Output:") -> ChatMessage.MessageType.ACTION
-                            msg.text.contains("analyzing tool output") -> ChatMessage.MessageType.THINKING
-                            else -> ChatMessage.MessageType.TALKING
+                        messageType = when (msg.messageType) {
+                            DbChatMessage.MessageType.RUN_SUMMARY -> ChatMessage.MessageType.RUN_SUMMARY
+                            DbChatMessage.MessageType.ACTION -> ChatMessage.MessageType.ACTION
+                            DbChatMessage.MessageType.THINKING -> ChatMessage.MessageType.THINKING
+                            DbChatMessage.MessageType.TALKING -> ChatMessage.MessageType.TALKING
                         },
                         isInternal = msg.isInternal,
                         model = msg.model,
@@ -55,7 +56,8 @@ class ChatMessageRepository @Inject constructor(
         isError: Boolean = false,
         isInternal: Boolean = false,
         model: String? = null,
-        apiKeyName: String? = null
+        apiKeyName: String? = null,
+        messageType: DbChatMessage.MessageType = DbChatMessage.MessageType.TALKING
     ) {
         val timestamp = System.currentTimeMillis()
         val message = DbChatMessage(
@@ -66,7 +68,8 @@ class ChatMessageRepository @Inject constructor(
             isError = isError,
             isInternal = isInternal,
             model = model,
-            apiKeyName = apiKeyName
+            apiKeyName = apiKeyName,
+            messageType = messageType
         )
         chatMessageDao.insertAndUpdateConversation(message, conversationId, timestamp)
     }
