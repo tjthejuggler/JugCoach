@@ -35,9 +35,9 @@ class PatternAdapter(
             binding.apply {
                 // If the name is a number (like "55500"), show it with a more descriptive format
                 patternName.text = if (pattern.name.matches(Regex("\\d+"))) {
-                    "Pattern ${pattern.name} (ID: ${pattern.id})"
+                    "Pattern ${pattern.name}"
                 } else {
-                    "${pattern.name} (ID: ${pattern.id})"
+                    pattern.name
                 }
                 patternDescription.text = pattern.explanation
                 
