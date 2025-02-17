@@ -2,11 +2,13 @@ package com.example.jugcoach.ui.chat
 
 import com.example.jugcoach.ui.chat.ChatMessage
 import com.example.jugcoach.ui.chat.ChatUiState
+import com.example.jugcoach.ui.chat.PatternFilters
 import com.example.jugcoach.data.dao.CoachDao
 import com.example.jugcoach.data.dao.ConversationDao
 import com.example.jugcoach.data.dao.SettingsDao
 import com.example.jugcoach.data.entity.Coach
 import com.example.jugcoach.data.entity.Conversation
+import com.example.jugcoach.data.entity.Pattern
 import com.example.jugcoach.data.entity.SettingCategory
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -173,5 +175,35 @@ class ChatStateManager @Inject constructor(
 
     fun setError(error: String?) {
         _uiState.update { it.copy(error = error) }
+    }
+
+    fun showPatternRecommendation() {
+        _uiState.update {
+            it.copy(patternRecommendation = it.patternRecommendation.copy(isVisible = true))
+        }
+    }
+
+    fun hidePatternRecommendation() {
+        _uiState.update {
+            it.copy(patternRecommendation = it.patternRecommendation.copy(isVisible = false))
+        }
+    }
+
+    fun updatePatternFilters(filters: PatternFilters) {
+        _uiState.update {
+            it.copy(patternRecommendation = it.patternRecommendation.copy(filters = filters))
+        }
+    }
+
+    fun updateRecommendedPattern(pattern: Pattern?) {
+        _uiState.update {
+            it.copy(patternRecommendation = it.patternRecommendation.copy(recommendedPattern = pattern))
+        }
+    }
+
+    fun selectPattern(pattern: Pattern?) {
+        _uiState.update {
+            it.copy(patternRecommendation = it.patternRecommendation.copy(selectedPattern = pattern))
+        }
     }
 }

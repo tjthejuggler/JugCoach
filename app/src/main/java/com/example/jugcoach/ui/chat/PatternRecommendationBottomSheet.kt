@@ -1,0 +1,231 @@
+package com.example.jugcoach.ui.chat
+
+import android.os.Bundle
+import android.text.Editable
+import android.text.TextWatcher
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import androidx.core.view.children
+import androidx.fragment.app.activityViewModels
+import androidx.lifecycle.lifecycleScope
+import androidx.navigation.fragment.findNavController
+import com.example.jugcoach.R
+import com.example.jugcoach.databinding.BottomSheetPatternRecommendationBinding
+import com.google.android.material.bottomsheet.BottomSheetDialogFragment
+import com.google.android.material.chip.Chip
+import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.launch
+import javax.inject.Inject
+import com.example.jugcoach.data.dao.PatternDao
+
+@AndroidEntryPoint
+class PatternRecommendationBottomSheet : BottomSheetDialogFragment() {
+    private var _binding: BottomSheetPatternRecommendationBinding? = null
+    private val binding get() = _binding!!
+    private val viewModel: ChatViewModel by activityViewModels()
+    
+    @Inject
+    lateinit var patternDao: PatternDao
+
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View {
+        _binding = BottomSheetPatternRecommendationBinding.inflate(inflater, container, false)
+        return binding.root
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
+        setupNumBallsChips()
+        setupDifficultySlider()
+        setupRecordCatches()
+        setupTags()
+        setupButtons()
+        setupPatternButtons()
+        observeState()
+    }
+
+    private fun setupNumBallsChips() {
+        val numBalls = (1..11).map { it.toString() }
+        numBalls.forEach { num ->
+            val chip = Chip(requireContext()).apply {
+                text = "$num balls"
+                isCheckable = true
+            }
+            binding.numBallsGroup.addView(chip)
+            
+            chip.setOnCheckedChangeListener { _, isChecked ->
+                val currentFilters = viewModel.uiState.value.patternRecommendation.filters
+                val newNumBalls = if (isChecked) {
+                    currentFilters.numBalls + num
+                } else {
+                    currentFilters.numBalls - num
+                }
+                viewModel.updatePatternFilters(currentFilters.copy(numBalls = newNumBalls))
+            }
+        }
+    }
+
+    private fun setupDifficultySlider() {
+        binding.difficultySlider.apply {
+            addOnChangeListener { _, _, _ ->
+                val currentFilters = viewModel.uiState.value.patternRecommendation.filters
+                viewModel.updatePatternFilters(currentFilters.copy(
+                    difficultyRange = values[0]..values[1]
+                ))
+            }
+        }
+    }
+
+    private fun setupRecordCatches() {
+        binding.minCatches.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+            override fun afterTextChanged(s: Editable?) {
+                val currentFilters = viewModel.uiState.value.patternRecommendation.filters
+                viewModel.updatePatternFilters(currentFilters.copy(
+                    minCatches = s?.toString()?.toIntOrNull()
+                ))
+            }
+        })
+
+        binding.maxCatches.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+            override fun afterTextChanged(s: Editable?) {
+                val currentFilters = viewModel.uiState.value.patternRecommendation.filters
+                viewModel.updatePatternFilters(currentFilters.copy(
+                    maxCatches = s?.toString()?.toIntOrNull()
+                ))
+            }
+        })
+    }
+
+    private fun setupTags() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            // Get all patterns and extract unique tags
+            val patterns = patternDao.getAllPatterns()
+            val allTags = patterns.flatMap { it.tags }.distinct().sorted()
+            
+            allTags.forEach { tag ->
+                val chip = Chip(requireContext()).apply {
+                    text = tag
+                    isCheckable = true
+                }
+                binding.tagsGroup.addView(chip)
+                
+                chip.setOnCheckedChangeListener { _, isChecked ->
+                    val currentFilters = viewModel.uiState.value.patternRecommendation.filters
+                    val newTags = if (isChecked) {
+                        currentFilters.tags + tag
+                    } else {
+                        currentFilters.tags - tag
+                    }
+                    viewModel.updatePatternFilters(currentFilters.copy(tags = newTags))
+                }
+            }
+        }
+    }
+
+    private fun setupButtons() {
+        binding.refreshRecommendation.setOnClickListener {
+            viewModel.getNewPatternRecommendation()
+        }
+    }
+
+    private fun observeState() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewModel.uiState.collect { state ->
+                val recommendationState = state.patternRecommendation
+                
+                // Update recommended pattern display
+                recommendationState.recommendedPattern?.let { pattern ->
+                    binding.recommendedPatternName.text = pattern.name
+                    binding.startPatternButton.isEnabled = true
+                } ?: run {
+                    binding.recommendedPatternName.text = getString(R.string.no_pattern_found)
+                    binding.startPatternButton.isEnabled = false
+                }
+
+                // Update filter UI to match current state
+                recommendationState.filters.let { filters ->
+                    // Update num balls chips
+                    binding.numBallsGroup.children.filterIsInstance<Chip>().forEach { chip ->
+                        val num = chip.text.toString().split(" ")[0]
+                        chip.isChecked = filters.numBalls.contains(num)
+                    }
+
+                    // Update difficulty slider
+                    binding.difficultySlider.values = listOf(
+                        filters.difficultyRange.start,
+                        filters.difficultyRange.endInclusive
+                    )
+
+                    // Update record catches inputs
+                    if (!binding.minCatches.hasFocus()) {
+                        binding.minCatches.setText(filters.minCatches?.toString() ?: "")
+                    }
+                    if (!binding.maxCatches.hasFocus()) {
+                        binding.maxCatches.setText(filters.maxCatches?.toString() ?: "")
+                    }
+
+                    // Update tags
+                    binding.tagsGroup.children.filterIsInstance<Chip>().forEach { chip ->
+                        chip.isChecked = filters.tags.contains(chip.text.toString())
+                    }
+                }
+
+                // Update selected pattern section
+                recommendationState.selectedPattern?.let { pattern ->
+                    binding.selectedPatternSection.visibility = View.VISIBLE
+                    binding.selectedPatternName.text = pattern.name
+                } ?: run {
+                    binding.selectedPatternSection.visibility = View.GONE
+                }
+            }
+        }
+    }
+
+    private fun setupPatternButtons() {
+        binding.recommendedPatternName.setOnClickListener {
+            viewModel.uiState.value.patternRecommendation.recommendedPattern?.let { pattern ->
+                findNavController().navigate(
+                    R.id.action_nav_chat_to_patternDetailsFragment,
+                    Bundle().apply {
+                        putString("patternId", pattern.id)
+                    }
+                )
+            }
+        }
+
+        binding.startPatternButton.setOnClickListener {
+            viewModel.uiState.value.patternRecommendation.recommendedPattern?.let { pattern ->
+                android.widget.Toast.makeText(
+                    requireContext(),
+                    "Starting pattern: ${pattern.name}",
+                    android.widget.Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
+    }
+
+    override fun dismiss() {
+        super.dismiss()
+        viewModel.hidePatternRecommendation()
+    }
+
+    companion object {
+        const val TAG = "PatternRecommendationBottomSheet"
+        
+        fun newInstance() = PatternRecommendationBottomSheet()
+    }
+}

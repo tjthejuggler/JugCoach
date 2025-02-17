@@ -18,7 +18,9 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.jugcoach.R
 import com.example.jugcoach.data.entity.Coach
+import com.example.jugcoach.data.entity.Pattern
 import com.example.jugcoach.databinding.FragmentChatBinding
+import com.example.jugcoach.ui.chat.PatternRecommendationBottomSheet
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
@@ -142,6 +144,12 @@ class ChatFragment : Fragment() {
         android.util.Log.d("ChatFragment", "RecyclerView setup complete")
     }
 
+    private fun showPatternRecommendation() {
+        PatternRecommendationBottomSheet.newInstance()
+            .show(childFragmentManager, PatternRecommendationBottomSheet.TAG)
+        viewModel.showPatternRecommendation()
+    }
+
     private fun setupMessageInput() {
         android.util.Log.d("ChatFragment", "Setting up message input")
         binding.apply {
@@ -156,6 +164,10 @@ class ChatFragment : Fragment() {
                     viewModel.sendMessage(message)
                     messageInput.text?.clear()
                 }
+            }
+
+            patternRecommendationButton.setOnClickListener {
+                showPatternRecommendation()
             }
         }
     }

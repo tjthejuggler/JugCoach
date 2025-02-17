@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.jugcoach.ui.chat.ChatMessage
 import com.example.jugcoach.data.entity.Coach
 import com.example.jugcoach.data.entity.Conversation
+import com.example.jugcoach.data.entity.Pattern
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -14,6 +15,7 @@ import java.util.UUID
 import retrofit2.HttpException
 import javax.inject.Inject
 import com.example.jugcoach.data.api.AnthropicResponse
+import com.example.jugcoach.data.dao.PatternDao
 import com.example.jugcoach.data.dao.SettingsDao
 import com.example.jugcoach.util.SettingsConstants
 
@@ -23,7 +25,8 @@ class ChatViewModel @Inject constructor(
     private val messageRepository: ChatMessageRepository,
     private val apiService: ChatApiService,
     private val toolHandler: ChatToolHandler,
-    private val settingsDao: SettingsDao
+    private val settingsDao: SettingsDao,
+    private val patternDao: PatternDao
 ) : ViewModel() {
 
     val uiState: StateFlow<ChatUiState> = stateManager.uiState
@@ -244,6 +247,76 @@ class ChatViewModel @Inject constructor(
             } finally {
                 stateManager.setLoading(false)
             }
+        }
+    }
+
+    fun showPatternRecommendation() {
+        stateManager.showPatternRecommendation()
+        getNewPatternRecommendation() // Get initial recommendation
+    }
+
+    fun hidePatternRecommendation() {
+        stateManager.hidePatternRecommendation()
+    }
+
+    fun updatePatternFilters(filters: PatternFilters) {
+        viewModelScope.launch {
+            stateManager.updatePatternFilters(filters)
+        }
+    }
+
+    fun getNewPatternRecommendation() {
+        viewModelScope.launch {
+            val filters = uiState.value.patternRecommendation.filters
+            
+            // Build query based on filters
+            val query = buildList {
+                if (filters.numBalls.isNotEmpty()) {
+                    add { pattern: Pattern ->
+                        pattern.num in filters.numBalls
+                    }
+                }
+                
+                add { pattern: Pattern ->
+                    val difficulty = pattern.difficulty?.toFloatOrNull() ?: return@add false
+                    difficulty in filters.difficultyRange
+                }
+                
+                if (filters.tags.isNotEmpty()) {
+                    add { pattern: Pattern ->
+                        pattern.tags.any { it in filters.tags }
+                    }
+                }
+
+                filters.minCatches?.let { min ->
+                    add { pattern: Pattern ->
+                        pattern.record?.catches?.let { it >= min } ?: false
+                    }
+                }
+
+                filters.maxCatches?.let { max ->
+                    add { pattern: Pattern ->
+                        pattern.record?.catches?.let { it <= max } ?: true
+                    }
+                }
+            }
+
+            // Get all patterns matching filters
+            val currentCoach = uiState.value.currentCoach
+            val matchingPatterns = patternDao.getAllPatternsSync(currentCoach?.id ?: -1)
+                .filter { pattern ->
+                    query.all { it(pattern) }
+                }
+
+            // Get random pattern from matches
+            val recommendedPattern = matchingPatterns.randomOrNull()
+            stateManager.updateRecommendedPattern(recommendedPattern)
+        }
+    }
+
+    fun selectPattern(pattern: Pattern?) {
+        viewModelScope.launch {
+            stateManager.selectPattern(pattern)
         }
     }
 }

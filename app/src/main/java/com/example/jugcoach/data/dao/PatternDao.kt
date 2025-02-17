@@ -77,6 +77,9 @@ interface PatternDao {
     @Query("DELETE FROM patterns")
     suspend fun deleteAllPatterns()
 
+    @Query("SELECT * FROM patterns")
+    suspend fun getAllPatterns(): List<Pattern>
+
     @Query("SELECT * FROM patterns WHERE coachId = :coachId OR coachId IS NULL")
     suspend fun getAllPatternsSync(coachId: Long): List<Pattern>
 

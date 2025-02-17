@@ -55,6 +55,9 @@
         <action
             android:id="@+id/action_nav_chat_to_createCoachFragment"
             app:destination="@id/createCoachFragment" />
+        <action
+            android:id="@+id/action_nav_chat_to_patternDetailsFragment"
+            app:destination="@id/patternDetailsFragment" />
     </fragment>
 
     <fragment

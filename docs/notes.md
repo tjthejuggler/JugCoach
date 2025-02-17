@@ -43,3 +43,14 @@ I should be able to scrape my data from skilldex and somehow use it to bootstrap
 -coaches could have meetings with each other as well, there could be meets of a bunch of them, or just two together that are working on similar things. There could be message boards or group chats or something that some coaches pay more attention to than others so that some coaches have more continuity between practice sessions than others.
 -it would be really cool to have coaches eventually watch me juggle and then tell me how to adjust patterns while I'm doing them to settle into a different pattern that it tracks and records records from.
 -coaches could eventually go through entire skilldex database and make more connections between patterns and tag things that are not yet tagged.
+
+JugCoach
+-would be nice to have a description of each throw for each pattern. Ideally this could be automated or partially automated
+-a report that tells me what records I broke each day (once we get a convenient way to add runs with app)
+-a no-llm coach would be good. It could even be a type of coach that is just governed by db lookups and random choices. There can be different weighting for different no-llm coaches
+
+Juggling coach
+-A general list of definitions would be good that they can look up
+-maybe eventually fine-tuning
+-look into hooking up a simpler tool using llm for initial message, maybe it sends a request over for a stronger llm
+-they should often be able to create new prereqs for tennis patterns because we can just do "every fifths"

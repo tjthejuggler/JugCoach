@@ -128,4 +128,15 @@
     <string name="no_pending_changes">No pending changes</string>
     <string name="changes_approved">Changes approved</string>
     <string name="changes_rejected">Changes rejected</string>
+
+    <!-- Pattern Recommendation -->
+    <string name="get_pattern_recommendation">Get Pattern Recommendation</string>
+    <string name="recommended_pattern">Recommended Pattern</string>
+    <string name="current_recommendation">Current Recommendation</string>
+    <string name="refresh_recommendation">Next</string>
+    <string name="no_pattern_found">No pattern found matching your filters</string>
+    <string name="record_catches_range">Record Catches Range</string>
+    <string name="view_pattern">View Pattern</string>
+    <string name="start_pattern">Start Pattern</string>
+    <string name="tap_to_view_details">Tap to view pattern details</string>
 </resources>
