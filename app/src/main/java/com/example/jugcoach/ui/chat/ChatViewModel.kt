@@ -262,6 +262,7 @@ class ChatViewModel @Inject constructor(
     fun updatePatternFilters(filters: PatternFilters) {
         viewModelScope.launch {
             stateManager.updatePatternFilters(filters)
+            getNewPatternRecommendation() // Get new recommendation whenever filters change
         }
     }
 

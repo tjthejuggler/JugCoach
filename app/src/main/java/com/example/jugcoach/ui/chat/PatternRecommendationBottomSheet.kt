@@ -6,6 +6,7 @@ import android.text.TextWatcher
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import com.google.android.material.slider.RangeSlider
 import androidx.core.view.children
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
@@ -72,37 +73,40 @@ class PatternRecommendationBottomSheet : BottomSheetDialogFragment() {
 
     private fun setupDifficultySlider() {
         binding.difficultySlider.apply {
-            addOnChangeListener { _, _, _ ->
-                val currentFilters = viewModel.uiState.value.patternRecommendation.filters
-                viewModel.updatePatternFilters(currentFilters.copy(
-                    difficultyRange = values[0]..values[1]
-                ))
-            }
+            addOnSliderTouchListener(object : RangeSlider.OnSliderTouchListener {
+                override fun onStartTrackingTouch(slider: RangeSlider) {
+                    // Do nothing when touch starts
+                }
+
+                override fun onStopTrackingTouch(slider: RangeSlider) {
+                    // Update only when user finishes sliding
+                    val currentFilters = viewModel.uiState.value.patternRecommendation.filters
+                    viewModel.updatePatternFilters(currentFilters.copy(
+                        difficultyRange = slider.values[0]..slider.values[1]
+                    ))
+                }
+            })
         }
     }
 
     private fun setupRecordCatches() {
-        binding.minCatches.addTextChangedListener(object : TextWatcher {
-            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
-            override fun afterTextChanged(s: Editable?) {
+        binding.minCatches.setOnFocusChangeListener { _, hasFocus ->
+            if (!hasFocus) {
                 val currentFilters = viewModel.uiState.value.patternRecommendation.filters
                 viewModel.updatePatternFilters(currentFilters.copy(
-                    minCatches = s?.toString()?.toIntOrNull()
+                    minCatches = binding.minCatches.text?.toString()?.toIntOrNull()
                 ))
             }
-        })
+        }
 
-        binding.maxCatches.addTextChangedListener(object : TextWatcher {
-            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
-            override fun afterTextChanged(s: Editable?) {
+        binding.maxCatches.setOnFocusChangeListener { _, hasFocus ->
+            if (!hasFocus) {
                 val currentFilters = viewModel.uiState.value.patternRecommendation.filters
                 viewModel.updatePatternFilters(currentFilters.copy(
-                    maxCatches = s?.toString()?.toIntOrNull()
+                    maxCatches = binding.maxCatches.text?.toString()?.toIntOrNull()
                 ))
             }
-        })
+        }
     }
 
     private fun setupTags() {
