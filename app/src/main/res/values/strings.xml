@@ -150,4 +150,6 @@
     <string name="run_summary_catches">Catches: %1$d</string>
     <string name="run_summary_end_clean">Ended: Clean</string>
     <string name="run_summary_end_drop">Ended: Drop</string>
+    <string name="run_again">Again</string>
+    <string name="close">Close</string>
 </resources>

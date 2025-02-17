@@ -118,7 +118,10 @@ class ChatFragment : Fragment() {
 
     private fun setupRecyclerView() {
         android.util.Log.d("ChatFragment", "Setting up RecyclerView")
-        chatAdapter = ChatAdapter(viewModel.uiState.value.currentCoach).apply {
+        chatAdapter = ChatAdapter(
+            currentCoach = viewModel.uiState.value.currentCoach,
+            onAgainClick = { message -> viewModel.startRunFromMessage(message) }
+        ).apply {
             setHasStableIds(true)  // Enable stable IDs for better performance
         }
         layoutManager = LinearLayoutManager(requireContext()).apply {
@@ -214,7 +217,8 @@ class ChatFragment : Fragment() {
                                 putString("patternId", runState.pattern.id)
                             }
                         )
-                    }
+                    },
+                    onClose = { viewModel.cancelPatternRun() }
                 )
             } ?: run {
                 patternRunView.visibility = View.GONE

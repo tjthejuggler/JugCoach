@@ -226,19 +226,45 @@ class ChatStateManager @Inject constructor(
             it.copy(
                 patternRun = it.patternRun?.copy(
                     isTimerRunning = true,
-                    showEndButtons = true
+                    showEndButtons = true,
+                    isCountingDown = true,
+                    countdownTime = -5000L // Start with 5 second countdown
                 )
             )
         }
     }
 
     fun updateTimer(elapsedTime: Long) {
-        _uiState.update {
-            it.copy(
-                patternRun = it.patternRun?.copy(
-                    elapsedTime = elapsedTime
+        _uiState.update { state ->
+            val patternRun = state.patternRun ?: return@update state
+            
+            if (patternRun.isCountingDown) {
+                val newCountdownTime = patternRun.countdownTime + elapsedTime
+                if (newCountdownTime >= 0) {
+                    // Countdown finished, start the actual timer
+                    state.copy(
+                        patternRun = patternRun.copy(
+                            isCountingDown = false,
+                            countdownTime = 0L,
+                            elapsedTime = 0L
+                        )
+                    )
+                } else {
+                    // Still counting down
+                    state.copy(
+                        patternRun = patternRun.copy(
+                            countdownTime = newCountdownTime
+                        )
+                    )
+                }
+            } else {
+                // Normal timer update
+                state.copy(
+                    patternRun = patternRun.copy(
+                        elapsedTime = patternRun.elapsedTime + elapsedTime
+                    )
                 )
-            )
+            }
         }
     }
 
@@ -246,5 +272,9 @@ class ChatStateManager @Inject constructor(
         _uiState.update {
             it.copy(patternRun = null)
         }
+    }
+
+    fun cancelPatternRun() {
+        endPatternRun()
     }
 }

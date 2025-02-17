@@ -15,7 +15,8 @@ import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 
 class ChatAdapter(
-    private var currentCoach: Coach? = null
+    private var currentCoach: Coach? = null,
+    private val onAgainClick: (ChatMessage) -> Unit
 ) : ListAdapter<ChatMessage, ChatAdapter.MessageViewHolder>(MessageDiffCallback()) {
 
     fun updateCoach(coach: Coach?) {
@@ -55,9 +56,14 @@ class ChatAdapter(
     inner class MessageViewHolder(
         private val binding: ItemChatMessageBinding
     ) : RecyclerView.ViewHolder(binding.root) {
+        init {
+            binding.onAgainClick = this@ChatAdapter.onAgainClick
+        }
 
         fun bind(message: ChatMessage) {
             binding.apply {
+                this.message = message
+                executePendingBindings()
                 // Set message text and timestamp
                 messageText.text = message.text
                 timestampText.text = message.timestamp

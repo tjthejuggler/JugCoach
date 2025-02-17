@@ -3,7 +3,6 @@
 
 immediate todo
 
-make the run added from inside a chat go into a chat bubble
 
 get rid of the id number in the patterns list
 

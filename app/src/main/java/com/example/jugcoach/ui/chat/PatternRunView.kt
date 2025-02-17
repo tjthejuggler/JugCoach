@@ -21,7 +21,8 @@ class PatternRunView @JvmOverloads constructor(
         state: PatternRunState,
         onStartTimer: () -> Unit,
         onEndRun: (Boolean) -> Unit,
-        onPatternClick: () -> Unit
+        onPatternClick: () -> Unit,
+        onClose: () -> Unit
     ) {
         // Set pattern name and click listener
         binding.patternName.text = state.pattern.name
@@ -33,9 +34,16 @@ class PatternRunView @JvmOverloads constructor(
         }
 
         // Format and display timer
-        val minutes = TimeUnit.MILLISECONDS.toMinutes(state.elapsedTime)
-        val seconds = TimeUnit.MILLISECONDS.toSeconds(state.elapsedTime) % 60
-        binding.timerDisplay.text = String.format("%02d:%02d", minutes, seconds)
+        val timeToDisplay = if (state.isCountingDown) state.countdownTime else state.elapsedTime
+        val isNegative = timeToDisplay < 0
+        val absoluteTime = Math.abs(timeToDisplay)
+        val minutes = TimeUnit.MILLISECONDS.toMinutes(absoluteTime)
+        val seconds = TimeUnit.MILLISECONDS.toSeconds(absoluteTime) % 60
+        binding.timerDisplay.text = String.format("%s%02d:%02d",
+            if (isNegative) "-" else "",
+            minutes,
+            seconds
+        )
 
         // Show/hide appropriate buttons based on state
         binding.startTimerButton.visibility = if (state.isTimerRunning) GONE else VISIBLE
@@ -45,5 +53,6 @@ class PatternRunView @JvmOverloads constructor(
         binding.startTimerButton.setOnClickListener { onStartTimer() }
         binding.endCatchButton.setOnClickListener { onEndRun(true) }
         binding.endDropButton.setOnClickListener { onEndRun(false) }
+        binding.closeButton.setOnClickListener { onClose() }
     }
 }

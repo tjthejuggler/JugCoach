@@ -323,6 +323,24 @@ class ChatViewModel @Inject constructor(
         }
     }
 
+    fun startRunFromMessage(message: ChatMessage) {
+        if (message.messageType == ChatMessage.MessageType.RUN_SUMMARY) {
+            // Extract pattern name from first line of message
+            val patternName = message.text.lines().first()
+            viewModelScope.launch {
+                // Find pattern by name
+                val pattern = patternDao.getAllPatternsSync(uiState.value.currentCoach?.id ?: -1)
+                    .find { it.name == patternName }
+                
+                pattern?.let {
+                    // Start new run with this pattern
+                    stateManager.startPatternRun(it)
+                    showPatternRecommendation()
+                }
+            }
+        }
+    }
+
     fun startPatternRun(pattern: Pattern) {
         viewModelScope.launch {
             stateManager.startPatternRun(pattern)
@@ -335,13 +353,23 @@ class ChatViewModel @Inject constructor(
         timerJob?.cancel()
         timerJob = viewModelScope.launch {
             val startTime = System.currentTimeMillis()
+            var lastUpdateTime = startTime
             while (true) {
-                val elapsedTime = System.currentTimeMillis() - startTime
-                stateManager.updateTimer(elapsedTime)
+                val currentTime = System.currentTimeMillis()
+                val timeDiff = currentTime - lastUpdateTime
+                lastUpdateTime = currentTime
+                stateManager.updateTimer(timeDiff)
                 kotlinx.coroutines.delay(100) // Update every 100ms
             }
         }
         stateManager.startTimer()
+    }
+
+    fun cancelPatternRun() {
+        timerJob?.cancel()
+        viewModelScope.launch {
+            stateManager.cancelPatternRun()
+        }
     }
 
     fun endPatternRun(wasCatch: Boolean, catches: Int?) {

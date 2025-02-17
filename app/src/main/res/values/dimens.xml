@@ -11,4 +11,8 @@
     <dimen name="message_margin_large">64dp</dimen>
     <dimen name="error_stroke_width">2dp</dimen>
     <dimen name="message_stroke_width">1dp</dimen>
+    
+    <!-- Message Padding -->
+    <dimen name="padding_normal">12dp</dimen>
+    <dimen name="padding_large">20dp</dimen>
 </resources>
