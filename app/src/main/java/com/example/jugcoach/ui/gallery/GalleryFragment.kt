@@ -42,6 +42,7 @@ class GalleryFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         setupRecyclerView()
         setupSearch()
+        setupFab()
         observeUiState()
     }
 
@@ -145,6 +146,15 @@ class GalleryFragment : Fragment() {
         val action = GalleryFragmentDirections
             .actionNavGalleryToPatternDetailsFragment(pattern.id)
         findNavController().navigate(action)
+    }
+
+    private fun setupFab() {
+        binding.fabAddPattern.setOnClickListener {
+            CreatePatternBottomSheetFragment().show(
+                childFragmentManager,
+                CreatePatternBottomSheetFragment.TAG
+            )
+        }
     }
 
     override fun onDestroyView() {

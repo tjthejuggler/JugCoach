@@ -3,8 +3,6 @@
 
 immediate todo
 
-make a search box in the random pattern that limits the random patterns that are shown
-
 get rid of the bug that shows an empty tag in the pattern details page
 
 in addition to search, or maybe instead of search there should be a way for the coach to query the 

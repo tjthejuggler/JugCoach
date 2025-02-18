@@ -173,7 +173,7 @@ class EditPatternFragment : Fragment() {
                     val currentDialog = dialog
                     val currentBinding = dialogBinding
                     if (currentDialog?.isShowing == true && currentBinding != null) {
-                        val searchText = currentBinding.searchEdit.text?.toString()?.lowercase() ?: ""
+                        val searchText = currentBinding.searchInput.text?.toString()?.lowercase() ?: ""
                         val filteredPatterns = patterns.filter { pattern ->
                             pattern.name.lowercase().contains(searchText) ||
                             pattern.tags.any { it.lowercase().contains(searchText) }
@@ -269,7 +269,7 @@ class EditPatternFragment : Fragment() {
         }
 
         // Setup search functionality
-        dialogBinding.searchEdit.addTextChangedListener(object : TextWatcher {
+        dialogBinding.searchInput.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
             override fun afterTextChanged(s: Editable?) {
