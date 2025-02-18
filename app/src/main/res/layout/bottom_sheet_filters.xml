@@ -29,7 +29,10 @@
             android:id="@+id/num_balls_group"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:singleSelection="false"/>
+            app:singleSelection="false"
+            app:selectionRequired="false"
+            app:chipSpacingHorizontal="8dp"
+            app:chipSpacingVertical="8dp"/>
 
         <View
             android:layout_width="match_parent"
@@ -279,13 +282,6 @@
 
         </RadioGroup>
 
-        <!-- Apply Button -->
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/apply_filters"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/apply"
-            android:layout_marginTop="24dp"/>
 
     </LinearLayout>
 

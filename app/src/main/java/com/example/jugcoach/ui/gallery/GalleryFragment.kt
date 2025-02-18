@@ -1,6 +1,7 @@
 package com.example.jugcoach.ui.gallery
 
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -21,6 +22,7 @@ import kotlinx.coroutines.launch
 class GalleryFragment : Fragment() {
     companion object {
         private const val TAG = "GalleryFragment"
+        private const val DEBUG_TAG = "FilterDebug"
     }
     private var _binding: FragmentGalleryBinding? = null
     private val binding get() = _binding!!
@@ -70,11 +72,25 @@ class GalleryFragment : Fragment() {
     }
 
     private fun showFilterBottomSheet(showSortTab: Boolean) {
+        Log.d(DEBUG_TAG, "Opening filter sheet with current filters: ${viewModel.uiState.value.filterOptions}")
+        
         filterBottomSheet = FilterBottomSheetFragment().apply {
             setFilterListener(object : FilterBottomSheetFragment.FilterListener {
                 override fun onFiltersApplied(filters: FilterOptions, sortOrder: SortOrder) {
+                    Log.d(DEBUG_TAG, "Applying new filters: $filters")
+                    Log.d(DEBUG_TAG, "Previous filters were: ${viewModel.uiState.value.filterOptions}")
                     viewModel.updateFilters(filters)
                     viewModel.updateSortOrder(sortOrder)
+                }
+                
+                override fun getCurrentFilters(): FilterOptions {
+                    val currentFilters = viewModel.uiState.value.filterOptions
+                    Log.d(DEBUG_TAG, "Providing current filters: $currentFilters")
+                    return currentFilters
+                }
+                
+                override fun getCurrentSortOrder(): SortOrder {
+                    return viewModel.uiState.value.sortOrder
                 }
             })
             arguments = Bundle().apply {
@@ -82,7 +98,10 @@ class GalleryFragment : Fragment() {
                 putString("current_sort_order", viewModel.uiState.value.sortOrder.name)
             }
         }
+
+        // Show the bottom sheet
         filterBottomSheet.show(childFragmentManager, FilterBottomSheetFragment.TAG)
+        
         // Set available tags after showing the fragment to ensure view is created
         filterBottomSheet.setAvailableTags(viewModel.uiState.value.availableTags)
     }

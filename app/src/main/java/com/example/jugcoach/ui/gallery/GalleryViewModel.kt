@@ -1,5 +1,6 @@
 package com.example.jugcoach.ui.gallery
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.jugcoach.data.dao.PatternDao
@@ -30,6 +31,9 @@ class GalleryViewModel @Inject constructor(
     private val patternDao: PatternDao,
     private val coachDao: CoachDao
 ) : ViewModel() {
+    companion object {
+        private const val DEBUG_TAG = "FilterDebug"
+    }
     private val _uiState = MutableStateFlow(GalleryUiState())
     val uiState: StateFlow<GalleryUiState> = _uiState
     private var patternsJob: Job? = null
@@ -43,16 +47,20 @@ class GalleryViewModel @Inject constructor(
     }
 
     private fun loadPatterns() {
+        Log.d(DEBUG_TAG, "Loading patterns with filters: ${_uiState.value.filterOptions}")
         patternsJob?.cancel()
         patternsJob = viewModelScope.launch {
             val coachId = getCurrentCoachId()
             val query = _uiState.value.searchQuery
+            Log.d(DEBUG_TAG, "Query: '$query', Filters: ${_uiState.value.filterOptions}")
             if (query.isEmpty()) {
                 patternDao.getAllPatterns(coachId).collectLatest { patterns ->
+                    Log.d(DEBUG_TAG, "Got ${patterns.size} patterns from DAO")
                     updatePatterns(patterns)
                 }
             } else {
                 patternDao.searchPatterns(query, coachId).collectLatest { patterns ->
+                    Log.d(DEBUG_TAG, "Got ${patterns.size} patterns from search")
                     updatePatterns(patterns)
                 }
             }
@@ -60,9 +68,12 @@ class GalleryViewModel @Inject constructor(
     }
 
     private fun updatePatterns(patterns: List<Pattern>) {
+        Log.d(DEBUG_TAG, "Updating patterns with current filters: ${_uiState.value.filterOptions}")
         val tags = patterns.flatMap { it.tags }.toSet()
+        val filteredPatterns = filterPatterns(patterns, _uiState.value.filterOptions)
+        Log.d(DEBUG_TAG, "After filtering: ${filteredPatterns.size} patterns (from ${patterns.size})")
         val filteredAndSortedPatterns = sortPatterns(
-            filterPatterns(patterns, _uiState.value.filterOptions),
+            filteredPatterns,
             _uiState.value.sortOrder
         )
         _uiState.value = _uiState.value.copy(
@@ -70,6 +81,7 @@ class GalleryViewModel @Inject constructor(
             isLoading = false,
             availableTags = tags
         )
+        Log.d(DEBUG_TAG, "UI state updated with ${filteredAndSortedPatterns.size} patterns")
     }
 
     private fun filterPatterns(patterns: List<Pattern>, options: FilterOptions): List<Pattern> = patterns.filter { pattern ->
@@ -129,10 +141,21 @@ class GalleryViewModel @Inject constructor(
     }
 
     fun updateFilters(options: FilterOptions) {
-        _uiState.value = _uiState.value.copy(
+        Log.d(DEBUG_TAG, "Updating filters to: $options")
+        Log.d(DEBUG_TAG, "Previous filters were: ${_uiState.value.filterOptions}")
+        
+        // Create new state with updated filters
+        val newState = _uiState.value.copy(
             filterOptions = options,
             shouldScrollToTop = true
         )
+        
+        // Update state
+        _uiState.value = newState
+        Log.d(DEBUG_TAG, "New UI state filters: ${_uiState.value.filterOptions}")
+        
+        // Load patterns with new filters
+        Log.d(DEBUG_TAG, "Loading patterns with new filters")
         loadPatterns()
     }
 
