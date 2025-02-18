@@ -1,5 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- Pattern Run Actions -->
+    <string name="again">Again</string>
+    <string name="different">Different</string>
+    <string name="create">Create</string>
+    
+    <!-- Pattern Relationships -->
+    <string name="menu_prerequisites">Prerequisites</string>
+    <string name="menu_related">Related</string>
+    <string name="menu_dependent">Dependent</string>
+    <string name="no_patterns_available">No patterns available</string>
+    
     <string name="app_name">JugCoach</string>
     <string name="navigation_drawer_open">Open navigation drawer</string>
     <string name="navigation_drawer_close">Close navigation drawer</string>

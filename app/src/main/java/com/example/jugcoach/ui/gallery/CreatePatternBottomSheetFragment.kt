@@ -293,5 +293,30 @@ class CreatePatternBottomSheetFragment : BottomSheetDialogFragment() {
 
     companion object {
         const val TAG = "CreatePatternBottomSheetFragment"
+        private const val ARG_SOURCE_PATTERN_ID = "sourcePatternId"
+        private const val ARG_RELATIONSHIP_TYPE = "relationshipType"
+
+        fun newInstance(sourcePatternId: String, relationshipType: String): CreatePatternBottomSheetFragment {
+            return CreatePatternBottomSheetFragment().apply {
+                arguments = Bundle().apply {
+                    putString(ARG_SOURCE_PATTERN_ID, sourcePatternId)
+                    putString(ARG_RELATIONSHIP_TYPE, relationshipType)
+                }
+            }
+        }
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        
+        // Get source pattern ID and relationship type from arguments
+        arguments?.let { args ->
+            val sourcePatternId = args.getString(ARG_SOURCE_PATTERN_ID)
+            val relationshipType = args.getString(ARG_RELATIONSHIP_TYPE)
+            
+            if (sourcePatternId != null && relationshipType != null) {
+                viewModel.initializeFromSourcePattern(sourcePatternId, relationshipType)
+            }
+        }
     }
 }

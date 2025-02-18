@@ -100,6 +100,44 @@
                         android:text="@string/end_drop"/>
 
                 </LinearLayout>
+
+                <!-- Pattern Action Buttons -->
+                <LinearLayout
+                    android:id="@+id/pattern_action_buttons"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginTop="8dp">
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/again_button"
+                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:layout_marginEnd="4dp"
+                        android:text="@string/again"/>
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/different_button"
+                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:layout_marginStart="4dp"
+                        android:layout_marginEnd="4dp"
+                        android:text="@string/different"/>
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/create_button"
+                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:layout_marginStart="4dp"
+                        android:text="@string/create"/>
+
+                </LinearLayout>
             </LinearLayout>
         </LinearLayout>
     </FrameLayout>

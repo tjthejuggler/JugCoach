@@ -9,6 +9,72 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface PatternDao {
     @Query("""
+        SELECT p.* FROM patterns p
+        WHERE p.id IN (
+            SELECT value FROM json_each(
+                (SELECT prerequisites FROM patterns WHERE id = :patternId)
+            )
+        )
+        ORDER BY RANDOM()
+        LIMIT 1
+    """)
+    suspend fun getRandomPrerequisite(patternId: String): Pattern?
+
+    @Query("""
+        SELECT p.* FROM patterns p
+        WHERE p.id IN (
+            SELECT value FROM json_each(
+                (SELECT related FROM patterns WHERE id = :patternId)
+            )
+        )
+        ORDER BY RANDOM()
+        LIMIT 1
+    """)
+    suspend fun getRandomRelated(patternId: String): Pattern?
+
+    @Query("""
+        SELECT p.* FROM patterns p
+        WHERE p.id IN (
+            SELECT value FROM json_each(
+                (SELECT dependents FROM patterns WHERE id = :patternId)
+            )
+        )
+        ORDER BY RANDOM()
+        LIMIT 1
+    """)
+    suspend fun getRandomDependent(patternId: String): Pattern?
+
+    @Query("""
+        SELECT CASE
+            WHEN json_array_length(prerequisites) > 0 THEN 1
+            ELSE 0
+        END
+        FROM patterns
+        WHERE id = :patternId
+    """)
+    suspend fun hasPrerequisites(patternId: String): Boolean
+
+    @Query("""
+        SELECT CASE
+            WHEN json_array_length(related) > 0 THEN 1
+            ELSE 0
+        END
+        FROM patterns
+        WHERE id = :patternId
+    """)
+    suspend fun hasRelated(patternId: String): Boolean
+
+    @Query("""
+        SELECT CASE
+            WHEN json_array_length(dependents) > 0 THEN 1
+            ELSE 0
+        END
+        FROM patterns
+        WHERE id = :patternId
+    """)
+    suspend fun hasDependents(patternId: String): Boolean
+
+    @Query("""
         SELECT * FROM patterns 
         WHERE coachId = :coachId OR coachId IS NULL
         ORDER BY name ASC

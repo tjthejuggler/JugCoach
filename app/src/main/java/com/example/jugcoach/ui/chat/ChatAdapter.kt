@@ -17,6 +17,8 @@ import java.time.format.FormatStyle
 class ChatAdapter(
     private var currentCoach: Coach? = null,
     private val onAgainClick: (ChatMessage) -> Unit,
+    private val onDifferentClick: (ChatMessage) -> Unit,
+    private val onCreateClick: (ChatMessage) -> Unit,
     private val onPatternClick: (String) -> Unit
 ) : ListAdapter<ChatMessage, ChatAdapter.MessageViewHolder>(MessageDiffCallback()) {
 
@@ -58,8 +60,12 @@ class ChatAdapter(
         private val binding: ItemChatMessageBinding
     ) : RecyclerView.ViewHolder(binding.root) {
         init {
-            binding.onAgainClick = this@ChatAdapter.onAgainClick
-            binding.onPatternClick = this@ChatAdapter.onPatternClick
+            binding.apply {
+                onAgainClick = this@ChatAdapter.onAgainClick
+                onDifferentClick = this@ChatAdapter.onDifferentClick
+                onCreateClick = this@ChatAdapter.onCreateClick
+                onPatternClick = this@ChatAdapter.onPatternClick
+            }
         }
 
         fun bind(message: ChatMessage) {

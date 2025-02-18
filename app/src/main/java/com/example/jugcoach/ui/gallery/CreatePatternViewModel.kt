@@ -17,6 +17,68 @@ class CreatePatternViewModel @Inject constructor(
     private val patternDao: PatternDao
 ) : ViewModel() {
 
+    companion object {
+        const val RELATIONSHIP_PREREQUISITE = "prerequisite"
+        const val RELATIONSHIP_RELATED = "related"
+        const val RELATIONSHIP_DEPENDENT = "dependent"
+    }
+
+    private var sourcePatternId: String? = null
+    private var relationshipType: String? = null
+
+    fun initializeFromSourcePattern(patternId: String, relationship: String) {
+        viewModelScope.launch {
+            sourcePatternId = patternId
+            relationshipType = relationship
+
+            // Load the source pattern
+            val sourcePattern = patternDao.getPatternById(patternId, -1) // -1 to get any pattern
+            sourcePattern?.let { pattern ->
+                // Copy tags from source pattern
+                pattern.tags.forEach { tag ->
+                    updateTagInput(tag)
+                }
+
+                // Set up relationships based on type
+                when (relationship) {
+                    RELATIONSHIP_PREREQUISITE -> {
+                        // New pattern will be a prerequisite of source pattern
+                        _uiState.update { it.copy(
+                            dependentPatterns = it.dependentPatterns + patternId
+                        )}
+                    }
+                    RELATIONSHIP_RELATED -> {
+                        // New pattern will be related to source pattern
+                        _uiState.update { it.copy(
+                            relatedPatterns = it.relatedPatterns + patternId
+                        )}
+                    }
+                    RELATIONSHIP_DEPENDENT -> {
+                        // New pattern will have source pattern as prerequisite
+                        _uiState.update { it.copy(
+                            prerequisites = it.prerequisites + patternId
+                        )}
+                    }
+                }
+
+                // Copy difficulty (optionally decrease/increase based on relationship)
+                pattern.difficulty?.let { diff ->
+                    val newDifficulty = when (relationship) {
+                        RELATIONSHIP_PREREQUISITE -> (diff.toIntOrNull()?.minus(1) ?: diff).toString()
+                        RELATIONSHIP_DEPENDENT -> (diff.toIntOrNull()?.plus(1) ?: diff).toString()
+                        else -> diff
+                    }
+                    updateDifficulty(newDifficulty)
+                }
+
+                // Copy number of balls if it's a related pattern
+                if (relationship == RELATIONSHIP_RELATED) {
+                    pattern.num?.let { updateNumBalls(it) }
+                }
+            }
+        }
+    }
+
     private val _uiState = MutableStateFlow(CreatePatternUiState())
     val uiState: StateFlow<CreatePatternUiState> = _uiState
 

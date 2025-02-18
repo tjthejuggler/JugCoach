@@ -8,6 +8,7 @@ import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ArrayAdapter
+import android.widget.PopupMenu
 import com.google.android.material.textfield.TextInputEditText
 import androidx.core.view.isVisible
 import androidx.core.widget.doAfterTextChanged
@@ -22,6 +23,8 @@ import com.example.jugcoach.data.entity.Coach
 import com.example.jugcoach.data.entity.Pattern
 import com.example.jugcoach.databinding.FragmentChatBinding
 import com.example.jugcoach.ui.chat.PatternRecommendationBottomSheet
+import com.example.jugcoach.ui.gallery.CreatePatternBottomSheetFragment
+import com.example.jugcoach.ui.gallery.CreatePatternViewModel
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
@@ -121,6 +124,20 @@ class ChatFragment : Fragment() {
         chatAdapter = ChatAdapter(
             currentCoach = viewModel.uiState.value.currentCoach,
             onAgainClick = { message -> viewModel.startRunFromMessage(message) },
+            onDifferentClick = { message ->
+                viewLifecycleOwner.lifecycleScope.launch {
+                    val pattern = viewModel.findPatternByName(message.text.lines().first())?.let { pattern ->
+                        showDifferentPatternMenu(pattern)
+                    }
+                }
+            },
+            onCreateClick = { message ->
+                viewLifecycleOwner.lifecycleScope.launch {
+                    val pattern = viewModel.findPatternByName(message.text.lines().first())?.let { pattern ->
+                        showCreatePatternMenu(pattern)
+                    }
+                }
+            },
             onPatternClick = { patternName ->
                 viewLifecycleOwner.lifecycleScope.launch {
                     viewModel.findPatternByName(patternName)?.let { pattern ->
@@ -392,6 +409,61 @@ class ChatFragment : Fragment() {
             }
             .setNegativeButton(R.string.cancel_run, null)
             .show()
+    }
+
+    private fun showDifferentPatternMenu(pattern: Pattern) {
+        // When clicking "Different" from a run summary, directly get a random related pattern
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewModel.getRandomPatternFromRelationship(
+                pattern.id,
+                CreatePatternViewModel.RELATIONSHIP_RELATED
+            )?.let { randomPattern ->
+                viewModel.startPatternRun(randomPattern)
+            } ?: run {
+                Snackbar.make(binding.root, R.string.no_patterns_available, Snackbar.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    private fun showCreatePatternMenu(pattern: Pattern) {
+        val popupMenu = PopupMenu(requireContext(), binding.root)
+        popupMenu.menuInflater.inflate(R.menu.pattern_relationship_menu, popupMenu.menu)
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            // Show all options for creating new patterns
+            val menu = popupMenu.menu
+            menu.findItem(R.id.menu_prerequisites)?.isVisible = true
+            menu.findItem(R.id.menu_related)?.isVisible = true
+            menu.findItem(R.id.menu_dependent)?.isVisible = true
+
+            popupMenu.setOnMenuItemClickListener { menuItem ->
+                when (menuItem.itemId) {
+                    R.id.menu_prerequisites -> {
+                        CreatePatternBottomSheetFragment.newInstance(
+                            sourcePatternId = pattern.id,
+                            relationshipType = CreatePatternViewModel.RELATIONSHIP_PREREQUISITE
+                        ).show(childFragmentManager, CreatePatternBottomSheetFragment.TAG)
+                        true
+                    }
+                    R.id.menu_related -> {
+                        CreatePatternBottomSheetFragment.newInstance(
+                            sourcePatternId = pattern.id,
+                            relationshipType = CreatePatternViewModel.RELATIONSHIP_RELATED
+                        ).show(childFragmentManager, CreatePatternBottomSheetFragment.TAG)
+                        true
+                    }
+                    R.id.menu_dependent -> {
+                        CreatePatternBottomSheetFragment.newInstance(
+                            sourcePatternId = pattern.id,
+                            relationshipType = CreatePatternViewModel.RELATIONSHIP_DEPENDENT
+                        ).show(childFragmentManager, CreatePatternBottomSheetFragment.TAG)
+                        true
+                    }
+                    else -> false
+                }
+            }
+            popupMenu.show()
+        }
     }
 
     override fun onDestroyView() {

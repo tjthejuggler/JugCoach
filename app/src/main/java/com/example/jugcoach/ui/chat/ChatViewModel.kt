@@ -20,6 +20,7 @@ import com.example.jugcoach.data.api.AnthropicResponse
 import com.example.jugcoach.data.dao.PatternDao
 import com.example.jugcoach.data.dao.SettingsDao
 import com.example.jugcoach.util.SettingsConstants
+import com.example.jugcoach.ui.gallery.CreatePatternViewModel
 
 @HiltViewModel
 class ChatViewModel @Inject constructor(
@@ -377,9 +378,27 @@ class ChatViewModel @Inject constructor(
             .find { it.name == patternName }
     }
 
+    suspend fun getRandomPatternFromRelationship(patternId: String, relationshipType: String): Pattern? {
+        return when (relationshipType) {
+            CreatePatternViewModel.RELATIONSHIP_PREREQUISITE -> patternDao.getRandomPrerequisite(patternId)
+            CreatePatternViewModel.RELATIONSHIP_RELATED -> patternDao.getRandomRelated(patternId)
+            CreatePatternViewModel.RELATIONSHIP_DEPENDENT -> patternDao.getRandomDependent(patternId)
+            else -> null
+        }
+    }
+
     fun startPatternRun(pattern: Pattern) {
         viewModelScope.launch {
             stateManager.startPatternRun(pattern)
+        }
+    }
+
+    suspend fun hasPatternRelationship(patternId: String, relationshipType: String): Boolean {
+        return when (relationshipType) {
+            CreatePatternViewModel.RELATIONSHIP_PREREQUISITE -> patternDao.hasPrerequisites(patternId)
+            CreatePatternViewModel.RELATIONSHIP_RELATED -> patternDao.hasRelated(patternId)
+            CreatePatternViewModel.RELATIONSHIP_DEPENDENT -> patternDao.hasDependents(patternId)
+            else -> false
         }
     }
 
