@@ -380,15 +380,17 @@ class ChatViewModel @Inject constructor(
 
     suspend fun getRandomPatternFromRelationship(patternId: String, relationshipType: String): Pattern? {
         return when (relationshipType) {
-            CreatePatternViewModel.RELATIONSHIP_PREREQUISITE -> patternDao.getRandomPrerequisite(patternId)
-            CreatePatternViewModel.RELATIONSHIP_RELATED -> patternDao.getRandomRelated(patternId)
-            CreatePatternViewModel.RELATIONSHIP_DEPENDENT -> patternDao.getRandomDependent(patternId)
+            PatternRelationships.PREREQS -> patternDao.getRandomPrerequisite(patternId)
+            PatternRelationships.RELATED -> patternDao.getRandomRelated(patternId)
+            PatternRelationships.DEPENDENTS -> patternDao.getRandomDependent(patternId)
             else -> null
         }
     }
 
     fun startPatternRun(pattern: Pattern) {
+        android.util.Log.d("TimerDebug", "ChatViewModel.startPatternRun() called with pattern: ${pattern.name}")
         viewModelScope.launch {
+            android.util.Log.d("TimerDebug", "Calling stateManager.startPatternRun()")
             stateManager.startPatternRun(pattern)
         }
     }
@@ -405,18 +407,25 @@ class ChatViewModel @Inject constructor(
     private var timerJob: kotlinx.coroutines.Job? = null
 
     fun startTimer() {
-        timerJob?.cancel()
+        android.util.Log.d("TimerDebug", "ChatViewModel.startTimer() called")
+        timerJob?.let {
+            android.util.Log.d("TimerDebug", "Cancelling existing timer job")
+            it.cancel()
+        }
         timerJob = viewModelScope.launch {
+            android.util.Log.d("TimerDebug", "Starting new timer job")
             val startTime = System.currentTimeMillis()
             var lastUpdateTime = startTime
             while (true) {
                 val currentTime = System.currentTimeMillis()
                 val timeDiff = currentTime - lastUpdateTime
                 lastUpdateTime = currentTime
+                android.util.Log.d("TimerDebug", "Updating timer with diff: $timeDiff")
                 stateManager.updateTimer(timeDiff)
                 kotlinx.coroutines.delay(100) // Update every 100ms
             }
         }
+        android.util.Log.d("TimerDebug", "Calling stateManager.startTimer()")
         stateManager.startTimer()
     }
 

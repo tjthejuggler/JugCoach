@@ -2,16 +2,11 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <item
         android:id="@+id/menu_prerequisites"
-        android:title="@string/menu_prerequisites"
-        android:visible="false"/>
-    
+        android:title="Prerequisites" />
     <item
         android:id="@+id/menu_related"
-        android:title="@string/menu_related"
-        android:visible="false"/>
-    
+        android:title="Related" />
     <item
         android:id="@+id/menu_dependent"
-        android:title="@string/menu_dependent"
-        android:visible="false"/>
+        android:title="Dependents" />
 </menu>

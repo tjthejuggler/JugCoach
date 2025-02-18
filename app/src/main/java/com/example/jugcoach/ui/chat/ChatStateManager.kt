@@ -213,23 +213,33 @@ class ChatStateManager @Inject constructor(
     }
 
     fun startPatternRun(pattern: Pattern) {
-        _uiState.update {
-            it.copy(
-                patternRun = PatternRunState(pattern = pattern),
-                patternRecommendation = it.patternRecommendation.copy(isVisible = false)
-            )
+        android.util.Log.d("TimerDebug", "ChatStateManager.startPatternRun() called with pattern: ${pattern.name}")
+        _uiState.update { state ->
+            android.util.Log.d("TimerDebug", "Current patternRun: ${state.patternRun}")
+            state.copy(
+                patternRun = PatternRunState(pattern = pattern).also {
+                    android.util.Log.d("TimerDebug", "Created new PatternRunState: $it")
+                },
+                patternRecommendation = state.patternRecommendation.copy(isVisible = false)
+            ).also {
+                android.util.Log.d("TimerDebug", "Updated state with new patternRun")
+            }
         }
     }
 
     fun startTimer() {
-        _uiState.update {
-            it.copy(
-                patternRun = it.patternRun?.copy(
+        android.util.Log.d("TimerDebug", "ChatStateManager.startTimer() called")
+        _uiState.update { state ->
+            android.util.Log.d("TimerDebug", "Current patternRun: ${state.patternRun}")
+            state.copy(
+                patternRun = state.patternRun?.copy(
                     isTimerRunning = true,
                     showEndButtons = true,
                     isCountingDown = true,
                     countdownTime = -5000L // Start with 5 second countdown
-                )
+                ).also {
+                    android.util.Log.d("TimerDebug", "Updated patternRun: $it")
+                }
             )
         }
     }

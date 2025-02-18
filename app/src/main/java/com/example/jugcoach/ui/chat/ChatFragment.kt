@@ -24,7 +24,8 @@ import com.example.jugcoach.data.entity.Pattern
 import com.example.jugcoach.databinding.FragmentChatBinding
 import com.example.jugcoach.ui.chat.PatternRecommendationBottomSheet
 import com.example.jugcoach.ui.gallery.CreatePatternBottomSheetFragment
-import com.example.jugcoach.ui.gallery.CreatePatternViewModel
+import com.example.jugcoach.ui.adapters.PatternRunAdapter
+import com.example.jugcoach.ui.chat.PatternRelationships
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
@@ -38,6 +39,7 @@ class ChatFragment : Fragment() {
     private val viewModel: ChatViewModel by viewModels()
     private lateinit var chatAdapter: ChatAdapter
     private lateinit var layoutManager: LinearLayoutManager
+    private var patternRunAdapter: PatternRunAdapter? = null
     
     // Flags to prevent spinner selection callbacks during UI updates
     private var isUpdatingCoachSpinner = false
@@ -234,21 +236,40 @@ class ChatFragment : Fragment() {
 
             // Handle pattern run state
             state.patternRun?.let { runState ->
+                android.util.Log.d("TimerDebug", "Setting up pattern run view")
                 patternRunView.visibility = View.VISIBLE
-                patternRunView.bind(
-                    state = runState,
-                    onStartTimer = { viewModel.startTimer() },
-                    onEndRun = { wasCatch -> showEndRunDialog(wasCatch) },
-                    onPatternClick = {
-                        findNavController().navigate(
-                            R.id.action_nav_chat_to_patternDetailsFragment,
-                            Bundle().apply {
-                                putString("patternId", runState.pattern.id)
-                            }
-                        )
-                    },
-                    onClose = { viewModel.cancelPatternRun() }
-                )
+                android.util.Log.d("TimerDebug", "Pattern run view visibility set to VISIBLE")
+                
+                // Set layout manager if not already set
+                if (patternRunView.layoutManager == null) {
+                    android.util.Log.d("TimerDebug", "Setting LinearLayoutManager for pattern run view")
+                    patternRunView.layoutManager = LinearLayoutManager(requireContext())
+                }
+                
+                // Create pattern run adapter if it doesn't exist
+                if (patternRunAdapter == null) {
+                    android.util.Log.d("TimerDebug", "Creating new pattern run adapter")
+                    android.util.Log.d("PatternDebug", "Creating new PatternRunAdapter")
+                    patternRunAdapter = PatternRunAdapter.create(
+                        onStartTimer = {
+                            android.util.Log.d("PatternDebug", "Start timer clicked")
+                            viewModel.startTimer()
+                        },
+                        onEndRun = { wasCatch -> showEndRunDialog(wasCatch) },
+                        onPatternClick = { pattern ->
+                            findNavController().navigate(
+                                R.id.action_nav_chat_to_patternDetailsFragment,
+                                Bundle().apply {
+                                    putString("patternId", pattern.id)
+                                }
+                            )
+                        },
+                        onClose = { viewModel.cancelPatternRun() }
+                    )
+                }
+                // Always ensure adapter is set and bind the current state
+                patternRunView.adapter = patternRunAdapter
+                patternRunAdapter?.bind(runState)
             } ?: run {
                 patternRunView.visibility = View.GONE
             }
@@ -412,17 +433,33 @@ class ChatFragment : Fragment() {
     }
 
     private fun showDifferentPatternMenu(pattern: Pattern) {
-        // When clicking "Different" from a run summary, directly get a random related pattern
-        viewLifecycleOwner.lifecycleScope.launch {
-            viewModel.getRandomPatternFromRelationship(
-                pattern.id,
-                CreatePatternViewModel.RELATIONSHIP_RELATED
-            )?.let { randomPattern ->
-                viewModel.startPatternRun(randomPattern)
-            } ?: run {
-                Snackbar.make(binding.root, R.string.no_patterns_available, Snackbar.LENGTH_SHORT).show()
+        val popupMenu = PopupMenu(requireContext(), binding.patternRunView)
+        popupMenu.menuInflater.inflate(R.menu.pattern_relationship_menu, popupMenu.menu)
+
+        popupMenu.setOnMenuItemClickListener { menuItem ->
+            viewLifecycleOwner.lifecycleScope.launch {
+                val relationType = when (menuItem.itemId) {
+                    R.id.menu_prerequisites -> PatternRelationships.PREREQS
+                    R.id.menu_related -> PatternRelationships.RELATED
+                    R.id.menu_dependent -> PatternRelationships.DEPENDENTS
+                    else -> return@launch
+                }
+
+                android.util.Log.d("PatternDebug", "Getting random pattern for relationship: $relationType")
+                viewModel.getRandomPatternFromRelationship(
+                    pattern.id,
+                    relationType
+                )?.let { randomPattern ->
+                    android.util.Log.d("PatternDebug", "Starting pattern run for: ${randomPattern.name}")
+                    viewModel.startPatternRun(randomPattern)
+                } ?: run {
+                    android.util.Log.d("PatternDebug", "No patterns available, showing snackbar")
+                    Snackbar.make(binding.root, R.string.no_patterns_available, Snackbar.LENGTH_SHORT).show()
+                }
             }
+            true
         }
+        popupMenu.show()
     }
 
     private fun showCreatePatternMenu(pattern: Pattern) {
@@ -441,21 +478,21 @@ class ChatFragment : Fragment() {
                     R.id.menu_prerequisites -> {
                         CreatePatternBottomSheetFragment.newInstance(
                             sourcePatternId = pattern.id,
-                            relationshipType = CreatePatternViewModel.RELATIONSHIP_PREREQUISITE
+                            relationshipType = PatternRelationships.PREREQS
                         ).show(childFragmentManager, CreatePatternBottomSheetFragment.TAG)
                         true
                     }
                     R.id.menu_related -> {
                         CreatePatternBottomSheetFragment.newInstance(
                             sourcePatternId = pattern.id,
-                            relationshipType = CreatePatternViewModel.RELATIONSHIP_RELATED
+                            relationshipType = PatternRelationships.RELATED
                         ).show(childFragmentManager, CreatePatternBottomSheetFragment.TAG)
                         true
                     }
                     R.id.menu_dependent -> {
                         CreatePatternBottomSheetFragment.newInstance(
                             sourcePatternId = pattern.id,
-                            relationshipType = CreatePatternViewModel.RELATIONSHIP_DEPENDENT
+                            relationshipType = PatternRelationships.DEPENDENTS
                         ).show(childFragmentManager, CreatePatternBottomSheetFragment.TAG)
                         true
                     }
