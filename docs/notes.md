@@ -25,12 +25,15 @@ Jugcoach
 -when I set a new record of any kind it should be really recorded in a master list
 -I should re-record videos whenever possible, it would be nice to automate this process with a coach that can pull videos out for me.
 
-we should make a way to make new coaches(Head Coach should be the default)
+
 we need to try uploading the json of patterns into the app
 the home screen should default to coach interaction
+   or maybe a history list of patterns that I've done recently and color coded for runs and new records and other things
 test chatting functionality
+   after the coach used a tool it was unable to talk
 make a way for chatting to happen directly into headphones
 hook up watch to have automatic responses that are generated based on what the coach has said so that i can just tap start/stop when it suggests i do a certain pattern
+   -the watch should also be able to start timers and stop them and click the again button
 
 I should be able to scrape my data from skilldex and somehow use it to bootstrap an ai juggling trainer that encourages me to try new kinds of patterns.
 -I need a convenient way to input exactly what i do, eventually this could just be done with it watching me in a video.

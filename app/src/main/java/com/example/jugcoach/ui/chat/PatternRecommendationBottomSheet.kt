@@ -41,6 +41,7 @@ class PatternRecommendationBottomSheet : BottomSheetDialogFragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        setupNameFilter()
         setupNumBallsChips()
         setupDifficultySlider()
         setupRecordCatches()
@@ -48,6 +49,23 @@ class PatternRecommendationBottomSheet : BottomSheetDialogFragment() {
         setupButtons()
         setupPatternButtons()
         observeState()
+    }
+
+    private var nameFilterJob: kotlinx.coroutines.Job? = null
+
+    private fun setupNameFilter() {
+        binding.patternNameFilter.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+            override fun afterTextChanged(s: Editable?) {
+                nameFilterJob?.cancel()
+                nameFilterJob = viewLifecycleOwner.lifecycleScope.launch {
+                    kotlinx.coroutines.delay(300) // Add 300ms delay
+                    val currentFilters = viewModel.uiState.value.patternRecommendation.filters
+                    viewModel.updatePatternFilters(currentFilters.copy(nameFilter = s?.toString() ?: ""))
+                }
+            }
+        })
     }
 
     private fun setupNumBallsChips() {
@@ -175,6 +193,11 @@ class PatternRecommendationBottomSheet : BottomSheetDialogFragment() {
                     }
                     if (!binding.maxCatches.hasFocus()) {
                         binding.maxCatches.setText(filters.maxCatches?.toString() ?: "")
+                    }
+
+                    // Update name filter
+                    if (!binding.patternNameFilter.hasFocus()) {
+                        binding.patternNameFilter.setText(filters.nameFilter)
                     }
 
                     // Update tags

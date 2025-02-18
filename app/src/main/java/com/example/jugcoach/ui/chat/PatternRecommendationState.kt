@@ -7,7 +7,8 @@ data class PatternFilters(
     val difficultyRange: ClosedFloatingPointRange<Float> = 1f..10f,
     val minCatches: Int? = null,
     val maxCatches: Int? = null,
-    val tags: Set<String> = emptySet()
+    val tags: Set<String> = emptySet(),
+    val nameFilter: String = ""
 )
 
 data class PatternRecommendationState(

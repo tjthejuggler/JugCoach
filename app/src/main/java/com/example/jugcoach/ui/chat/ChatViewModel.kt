@@ -254,7 +254,10 @@ class ChatViewModel @Inject constructor(
 
     fun showPatternRecommendation() {
         stateManager.showPatternRecommendation()
-        getNewPatternRecommendation() // Get initial recommendation
+        // Only get a new recommendation if we don't already have one
+        if (uiState.value.patternRecommendation.recommendedPattern == null) {
+            getNewPatternRecommendation()
+        }
     }
 
     fun hidePatternRecommendation() {
@@ -263,17 +266,28 @@ class ChatViewModel @Inject constructor(
 
     fun updatePatternFilters(filters: PatternFilters) {
         viewModelScope.launch {
-            stateManager.updatePatternFilters(filters)
-            getNewPatternRecommendation() // Get new recommendation whenever filters change
+            val currentFilters = uiState.value.patternRecommendation.filters
+            // Only update and get new recommendation if filters actually changed
+            if (currentFilters != filters) {
+                stateManager.updatePatternFilters(filters)
+                getNewPatternRecommendation()
+            }
         }
     }
 
     fun getNewPatternRecommendation() {
         viewModelScope.launch {
             val filters = uiState.value.patternRecommendation.filters
+            val currentPattern = uiState.value.patternRecommendation.recommendedPattern
             
             // Build query based on filters
             val query = buildList {
+                if (filters.nameFilter.isNotEmpty()) {
+                    add { pattern: Pattern ->
+                        pattern.name.contains(filters.nameFilter, ignoreCase = true)
+                    }
+                }
+
                 if (filters.numBalls.isNotEmpty()) {
                     add { pattern: Pattern ->
                         pattern.num in filters.numBalls
@@ -302,6 +316,13 @@ class ChatViewModel @Inject constructor(
                         pattern.record?.catches?.let { it <= max } ?: true
                     }
                 }
+
+                // Exclude current pattern if one exists
+                currentPattern?.let { current ->
+                    add { pattern: Pattern ->
+                        pattern.id != current.id
+                    }
+                }
             }
 
             // Get all patterns matching filters
@@ -311,8 +332,18 @@ class ChatViewModel @Inject constructor(
                     query.all { it(pattern) }
                 }
 
-            // Get random pattern from matches
-            val recommendedPattern = matchingPatterns.randomOrNull()
+            // Get random pattern from matches, falling back to including current pattern if no other matches
+            val recommendedPattern = if (matchingPatterns.isNotEmpty()) {
+                matchingPatterns.random()
+            } else {
+                // If no patterns match without current pattern, try including it
+                patternDao.getAllPatternsSync(currentCoach?.id ?: -1)
+                    .filter { pattern ->
+                        query.dropLast(1).all { it(pattern) } // Drop the "exclude current" predicate
+                    }
+                    .randomOrNull()
+            }
+            
             stateManager.updateRecommendedPattern(recommendedPattern)
         }
     }
