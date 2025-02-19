@@ -163,4 +163,6 @@
     <string name="run_summary_end_drop">Ended: Drop</string>
     <string name="run_again">Again</string>
     <string name="close">Close</string>
+    <string name="add_time_range">Add Time Range</string>
+    <string name="remove_time_range">Remove Time Range</string>
 </resources>

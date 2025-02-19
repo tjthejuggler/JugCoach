@@ -24,6 +24,7 @@ import com.example.jugcoach.data.entity.Pattern
 import com.example.jugcoach.databinding.FragmentChatBinding
 import com.example.jugcoach.ui.chat.PatternRecommendationBottomSheet
 import com.example.jugcoach.ui.gallery.CreatePatternBottomSheetFragment
+import com.example.jugcoach.ui.gallery.CreatePatternViewModel
 import com.example.jugcoach.ui.adapters.PatternRunAdapter
 import com.example.jugcoach.ui.chat.PatternRelationships
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -133,10 +134,10 @@ class ChatFragment : Fragment() {
                     }
                 }
             },
-            onCreateClick = { message ->
+            onCreateClick = { message, view ->
                 viewLifecycleOwner.lifecycleScope.launch {
                     val pattern = viewModel.findPatternByName(message.text.lines().first())?.let { pattern ->
-                        showCreatePatternMenu(pattern)
+                        showCreatePatternMenu(pattern, view)
                     }
                 }
             },
@@ -462,45 +463,28 @@ class ChatFragment : Fragment() {
         popupMenu.show()
     }
 
-    private fun showCreatePatternMenu(pattern: Pattern) {
-        val popupMenu = PopupMenu(requireContext(), binding.root)
+    private fun showCreatePatternMenu(pattern: Pattern, anchor: View) {
+        val popupMenu = PopupMenu(requireContext(), anchor)
         popupMenu.menuInflater.inflate(R.menu.pattern_relationship_menu, popupMenu.menu)
 
-        viewLifecycleOwner.lifecycleScope.launch {
-            // Show all options for creating new patterns
-            val menu = popupMenu.menu
-            menu.findItem(R.id.menu_prerequisites)?.isVisible = true
-            menu.findItem(R.id.menu_related)?.isVisible = true
-            menu.findItem(R.id.menu_dependent)?.isVisible = true
-
-            popupMenu.setOnMenuItemClickListener { menuItem ->
-                when (menuItem.itemId) {
-                    R.id.menu_prerequisites -> {
-                        CreatePatternBottomSheetFragment.newInstance(
-                            sourcePatternId = pattern.id,
-                            relationshipType = PatternRelationships.PREREQS
-                        ).show(childFragmentManager, CreatePatternBottomSheetFragment.TAG)
-                        true
-                    }
-                    R.id.menu_related -> {
-                        CreatePatternBottomSheetFragment.newInstance(
-                            sourcePatternId = pattern.id,
-                            relationshipType = PatternRelationships.RELATED
-                        ).show(childFragmentManager, CreatePatternBottomSheetFragment.TAG)
-                        true
-                    }
-                    R.id.menu_dependent -> {
-                        CreatePatternBottomSheetFragment.newInstance(
-                            sourcePatternId = pattern.id,
-                            relationshipType = PatternRelationships.DEPENDENTS
-                        ).show(childFragmentManager, CreatePatternBottomSheetFragment.TAG)
-                        true
-                    }
-                    else -> false
-                }
+        popupMenu.setOnMenuItemClickListener { menuItem ->
+            val relationshipType = when (menuItem.itemId) {
+                R.id.menu_prerequisites -> CreatePatternViewModel.RELATIONSHIP_PREREQUISITE
+                R.id.menu_related -> CreatePatternViewModel.RELATIONSHIP_RELATED
+                R.id.menu_dependent -> CreatePatternViewModel.RELATIONSHIP_DEPENDENT
+                else -> return@setOnMenuItemClickListener false
             }
-            popupMenu.show()
+
+            findNavController().navigate(
+                R.id.action_global_createPatternFragment,
+                Bundle().apply {
+                    putString("sourcePatternId", pattern.id)
+                    putString("relationshipType", relationshipType)
+                }
+            )
+            true
         }
+        popupMenu.show()
     }
 
     override fun onDestroyView() {

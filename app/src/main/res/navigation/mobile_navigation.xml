@@ -71,4 +71,25 @@
         android:name="com.example.jugcoach.ui.settings.SettingsFragment"
         android:label="@string/menu_settings"
         tools:layout="@layout/fragment_settings" />
+
+    <fragment
+        android:id="@+id/createPatternFragment"
+        android:name="com.example.jugcoach.ui.gallery.CreatePatternFragment"
+        android:label="Create Pattern"
+        tools:layout="@layout/fragment_create_pattern">
+        <argument
+            android:name="sourcePatternId"
+            app:argType="string"
+            app:nullable="true"
+            android:defaultValue="@null" />
+        <argument
+            android:name="relationshipType"
+            app:argType="string"
+            app:nullable="true"
+            android:defaultValue="@null" />
+    </fragment>
+
+    <action
+        android:id="@+id/action_global_createPatternFragment"
+        app:destination="@id/createPatternFragment" />
 </navigation>

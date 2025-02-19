@@ -2,11 +2,14 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <item
         android:id="@+id/menu_prerequisites"
-        android:title="Prerequisites" />
+        android:title="Create Prerequisite Pattern"
+        android:visible="true" />
     <item
         android:id="@+id/menu_related"
-        android:title="Related" />
+        android:title="Create Related Pattern"
+        android:visible="true" />
     <item
         android:id="@+id/menu_dependent"
-        android:title="Dependents" />
+        android:title="Create Dependent Pattern"
+        android:visible="true" />
 </menu>

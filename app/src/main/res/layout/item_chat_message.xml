@@ -17,7 +17,7 @@
             type="kotlin.jvm.functions.Function1&lt;com.example.jugcoach.ui.chat.ChatMessage, kotlin.Unit&gt;" />
         <variable
             name="onCreateClick"
-            type="kotlin.jvm.functions.Function1&lt;com.example.jugcoach.ui.chat.ChatMessage, kotlin.Unit&gt;" />
+            type="kotlin.jvm.functions.Function2&lt;com.example.jugcoach.ui.chat.ChatMessage, android.view.View, kotlin.Unit&gt;" />
         <variable
             name="onPatternClick"
             type="kotlin.jvm.functions.Function1&lt;String, kotlin.Unit&gt;" />
@@ -189,7 +189,7 @@
                         style="@style/Widget.MaterialComponents.Button.OutlinedButton"
                         app:strokeColor="@color/white"
                         app:strokeWidth="1dp"
-                        android:onClick="@{() -> onCreateClick.invoke(message)}"/>
+                        android:onClick="@{(view) -> onCreateClick.invoke(message, view)}"/>
 
                 </LinearLayout>
 

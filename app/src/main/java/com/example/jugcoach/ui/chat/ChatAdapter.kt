@@ -1,8 +1,9 @@
 package com.example.jugcoach.ui.chat
 
 import android.view.LayoutInflater
-import com.example.jugcoach.data.entity.Coach
+import android.view.View
 import android.view.ViewGroup
+import com.example.jugcoach.data.entity.Coach
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.DiffUtil
@@ -18,7 +19,7 @@ class ChatAdapter(
     private var currentCoach: Coach? = null,
     private val onAgainClick: (ChatMessage) -> Unit,
     private val onDifferentClick: (ChatMessage) -> Unit,
-    private val onCreateClick: (ChatMessage) -> Unit,
+    private val onCreateClick: (ChatMessage, View) -> Unit,
     private val onPatternClick: (String) -> Unit
 ) : ListAdapter<ChatMessage, ChatAdapter.MessageViewHolder>(MessageDiffCallback()) {
 
