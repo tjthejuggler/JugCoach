@@ -418,6 +418,9 @@ class ChatFragment : Fragment() {
     }
 
     private fun showEndRunDialog(wasCatch: Boolean) {
+        // Stop the timer immediately when dialog is shown
+        viewModel.stopTimer()
+        
         val dialogView = LayoutInflater.from(requireContext())
             .inflate(R.layout.dialog_end_run, null)
         

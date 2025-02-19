@@ -406,6 +406,10 @@ class ChatViewModel @Inject constructor(
 
     private var timerJob: kotlinx.coroutines.Job? = null
 
+    fun stopTimer() {
+        timerJob?.cancel()
+    }
+
     fun startTimer() {
         timerJob?.cancel()
         timerJob = viewModelScope.launch {
