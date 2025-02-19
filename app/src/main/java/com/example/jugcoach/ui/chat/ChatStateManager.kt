@@ -213,47 +213,35 @@ class ChatStateManager @Inject constructor(
     }
 
     fun startPatternRun(pattern: Pattern) {
-        android.util.Log.d("TimerDebug", "ChatStateManager.startPatternRun() called with pattern: ${pattern.name}")
         _uiState.update { state ->
-            android.util.Log.d("TimerDebug", "Current patternRun: ${state.patternRun}")
             state.copy(
-                patternRun = PatternRunState(pattern = pattern).also {
-                    android.util.Log.d("TimerDebug", "Created new PatternRunState: $it")
-                },
+                patternRun = PatternRunState(pattern = pattern),
                 patternRecommendation = state.patternRecommendation.copy(isVisible = false)
-            ).also {
-                android.util.Log.d("TimerDebug", "Updated state with new patternRun")
-            }
+            )
         }
     }
 
     fun startTimer() {
-        android.util.Log.d("TimerDebug", "ChatStateManager.startTimer() called")
         _uiState.update { state ->
-            android.util.Log.d("TimerDebug", "Current patternRun: ${state.patternRun}")
             state.copy(
                 patternRun = state.patternRun?.copy(
                     isTimerRunning = true,
                     showEndButtons = true,
                     isCountingDown = true,
                     countdownTime = -5000L // Start with 5 second countdown
-                ).also {
-                    android.util.Log.d("TimerDebug", "Updated patternRun: $it")
-                }
+                )
             )
         }
     }
 
     fun updateTimer(elapsedTime: Long) {
-        _uiState.update { state ->
-            val patternRun = state.patternRun ?: return@update state
-            
-            if (patternRun.isCountingDown) {
-                val newCountdownTime = patternRun.countdownTime + elapsedTime
+        _uiState.value.patternRun?.let { currentRun ->
+            if (currentRun.isCountingDown) {
+                val newCountdownTime = currentRun.countdownTime + elapsedTime
                 if (newCountdownTime >= 0) {
                     // Countdown finished, start the actual timer
-                    state.copy(
-                        patternRun = patternRun.copy(
+                    _uiState.value = _uiState.value.copy(
+                        patternRun = currentRun.copy(
                             isCountingDown = false,
                             countdownTime = 0L,
                             elapsedTime = 0L
@@ -261,17 +249,17 @@ class ChatStateManager @Inject constructor(
                     )
                 } else {
                     // Still counting down
-                    state.copy(
-                        patternRun = patternRun.copy(
+                    _uiState.value = _uiState.value.copy(
+                        patternRun = currentRun.copy(
                             countdownTime = newCountdownTime
                         )
                     )
                 }
             } else {
                 // Normal timer update
-                state.copy(
-                    patternRun = patternRun.copy(
-                        elapsedTime = patternRun.elapsedTime + elapsedTime
+                _uiState.value = _uiState.value.copy(
+                    patternRun = currentRun.copy(
+                        elapsedTime = currentRun.elapsedTime + elapsedTime
                     )
                 )
             }

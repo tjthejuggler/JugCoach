@@ -407,25 +407,18 @@ class ChatViewModel @Inject constructor(
     private var timerJob: kotlinx.coroutines.Job? = null
 
     fun startTimer() {
-        android.util.Log.d("TimerDebug", "ChatViewModel.startTimer() called")
-        timerJob?.let {
-            android.util.Log.d("TimerDebug", "Cancelling existing timer job")
-            it.cancel()
-        }
+        timerJob?.cancel()
         timerJob = viewModelScope.launch {
-            android.util.Log.d("TimerDebug", "Starting new timer job")
             val startTime = System.currentTimeMillis()
             var lastUpdateTime = startTime
             while (true) {
                 val currentTime = System.currentTimeMillis()
                 val timeDiff = currentTime - lastUpdateTime
                 lastUpdateTime = currentTime
-                android.util.Log.d("TimerDebug", "Updating timer with diff: $timeDiff")
                 stateManager.updateTimer(timeDiff)
-                kotlinx.coroutines.delay(100) // Update every 100ms
+                kotlinx.coroutines.delay(1000) // Update every 1000ms
             }
         }
-        android.util.Log.d("TimerDebug", "Calling stateManager.startTimer()")
         stateManager.startTimer()
     }
 

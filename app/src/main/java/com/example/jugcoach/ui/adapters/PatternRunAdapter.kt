@@ -24,34 +24,21 @@ class PatternRunAdapter(
     ) : RecyclerView.ViewHolder(binding.root)
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): PatternRunViewHolder {
-        android.util.Log.d("TimerDebug", "onCreateViewHolder called")
         val binding = ItemPatternRunBinding.inflate(
             LayoutInflater.from(parent.context),
             parent,
             false
         )
         binding.root.visibility = View.VISIBLE
-        android.util.Log.d("TimerDebug", "Created view holder with root visibility: ${binding.root.visibility}")
         return PatternRunViewHolder(binding)
     }
 
     override fun onBindViewHolder(holder: PatternRunViewHolder, position: Int) {
-        android.util.Log.d("TimerDebug", "onBindViewHolder called for position: $position")
         if (currentState == null) {
-            android.util.Log.d("TimerDebug", "currentState is null in onBindViewHolder")
             return
         }
         
         currentState?.let { state ->
-            android.util.Log.d("TimerDebug", """
-                PatternRunAdapter.onBindViewHolder:
-                Pattern: ${state.pattern.name}
-                isTimerRunning: ${state.isTimerRunning}
-                isCountingDown: ${state.isCountingDown}
-                countdownTime: ${state.countdownTime}
-                showEndButtons: ${state.showEndButtons}
-                holder.binding.root.visibility: ${holder.binding.root.visibility}
-            """.trimIndent())
             
             with(holder.binding) {
                 patternName.apply {
@@ -67,22 +54,18 @@ class PatternRunAdapter(
                     val seconds = (state.elapsedTime / 1000).toInt()
                     String.format("%02d:%02d", seconds / 60, seconds % 60)
                 }
-                android.util.Log.d("TimerDebug", "Timer display set to: ${timerDisplay.text}")
 
                 // Start timer button
-                startTimerButton.setOnClickListener {
-                    android.util.Log.d("TimerDebug", "Start timer button clicked")
-                    onStartTimer()
+                startTimerButton.apply {
+                    setOnClickListener { onStartTimer() }
+                    isEnabled = !state.isTimerRunning
+                    visibility = if (state.isTimerRunning) View.GONE else View.VISIBLE
                 }
-                startTimerButton.isEnabled = !state.isTimerRunning
-                startTimerButton.visibility = if (state.isTimerRunning) View.GONE else View.VISIBLE
-                android.util.Log.d("TimerDebug", "Start timer button - enabled: ${startTimerButton.isEnabled}, visible: ${startTimerButton.visibility == View.VISIBLE}")
 
                 // End run buttons
                 endRunButtons.visibility = if (state.showEndButtons) View.VISIBLE else View.GONE
                 endCatchButton.setOnClickListener { onEndRun(true) }
                 endDropButton.setOnClickListener { onEndRun(false) }
-                android.util.Log.d("TimerDebug", "End run buttons visible: ${endRunButtons.visibility == View.VISIBLE}")
 
                 // Close button
                 closeButton.setOnClickListener { onClose() }
@@ -91,15 +74,11 @@ class PatternRunAdapter(
     }
 
     override fun getItemCount(): Int {
-        val count = if (currentState != null) 1 else 0
-        android.util.Log.d("TimerDebug", "getItemCount() returning: $count (currentState: ${currentState != null})")
-        return count
+        return if (currentState != null) 1 else 0
     }
 
     fun bind(state: PatternRunState?) {
-        android.util.Log.d("TimerDebug", "PatternRunAdapter.bind() called with state: $state")
         currentState = state
-        android.util.Log.d("TimerDebug", "Calling notifyDataSetChanged()")
         notifyDataSetChanged()
     }
 
