@@ -13,6 +13,40 @@ import com.example.jugcoach.ui.chat.ChatMessage
 
 object ChatBindingAdapters {
     @JvmStatic
+    @BindingAdapter(value = ["patternNameText", "onPatternNameClick"], requireAll = true)
+    fun setPatternNameText(textView: TextView, text: String?, onPatternClick: ((String) -> Unit)?) {
+        if (text == null || onPatternClick == null) {
+            textView.text = text
+            return
+        }
+
+        val spannableString = SpannableString(text)
+        val clickableSpan = object : ClickableSpan() {
+            override fun onClick(widget: View) {
+                onPatternClick.invoke(text)
+            }
+
+            override fun updateDrawState(ds: TextPaint) {
+                super.updateDrawState(ds)
+                ds.isUnderlineText = true
+                ds.color = textView.currentTextColor
+                ds.strokeWidth = 2f
+                ds.bgColor = android.graphics.Color.parseColor("#33FFFFFF")
+            }
+        }
+
+        spannableString.setSpan(
+            clickableSpan,
+            0,
+            text.length,
+            Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+        )
+
+        textView.movementMethod = LinkMovementMethod.getInstance()
+        textView.text = spannableString
+    }
+
+    @JvmStatic
     @BindingAdapter("messageBackground")
     fun setMessageBackground(view: MaterialCardView, message: ChatMessage?) {
         if (message == null) return
