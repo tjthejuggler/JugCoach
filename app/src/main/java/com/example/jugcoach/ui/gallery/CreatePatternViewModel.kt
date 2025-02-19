@@ -48,9 +48,12 @@ class CreatePatternViewModel @Inject constructor(
                         )}
                     }
                     RELATIONSHIP_RELATED -> {
-                        // New pattern will be related to source pattern
+                        // New pattern will be related to source pattern and inherit all its relationships
                         _uiState.update { it.copy(
-                            relatedPatterns = it.relatedPatterns + patternId
+                            // Add source pattern and all its related patterns (except itself)
+                            relatedPatterns = it.relatedPatterns + patternId + (pattern.related - patternId),
+                            prerequisites = it.prerequisites + pattern.prerequisites,
+                            dependentPatterns = it.dependentPatterns + pattern.dependents
                         )}
                     }
                     RELATIONSHIP_DEPENDENT -> {
@@ -61,19 +64,27 @@ class CreatePatternViewModel @Inject constructor(
                     }
                 }
 
+                // Copy name and number of balls
+                updateName(pattern.name)
+                pattern.num?.let { updateNumBalls(it) }
+
                 // Copy difficulty (optionally decrease/increase based on relationship)
                 pattern.difficulty?.let { diff ->
                     val newDifficulty = when (relationship) {
-                        RELATIONSHIP_PREREQUISITE -> (diff.toIntOrNull()?.minus(1) ?: diff).toString()
-                        RELATIONSHIP_DEPENDENT -> (diff.toIntOrNull()?.plus(1) ?: diff).toString()
+                        RELATIONSHIP_PREREQUISITE -> (diff.toFloatOrNull()?.minus(1) ?: diff).toString()
+                        RELATIONSHIP_DEPENDENT -> (diff.toFloatOrNull()?.plus(1) ?: diff).toString()
                         else -> diff
                     }
                     updateDifficulty(newDifficulty)
                 }
 
-                // Copy number of balls if it's a related pattern
-                if (relationship == RELATIONSHIP_RELATED) {
-                    pattern.num?.let { updateNumBalls(it) }
+                // For dependent patterns, copy source pattern's related patterns as prerequisites
+                if (relationship == RELATIONSHIP_DEPENDENT) {
+                    pattern.related.forEach { relatedId ->
+                        _uiState.update { it.copy(
+                            prerequisites = it.prerequisites + relatedId
+                        )}
+                    }
                 }
             }
         }
