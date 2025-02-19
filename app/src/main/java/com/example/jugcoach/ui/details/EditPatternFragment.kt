@@ -65,7 +65,6 @@ class EditPatternFragment : Fragment() {
         setupToolbar()
         setupRunAdapter()
         setupDatePickers()
-        setupTagInput()
         setupPatternSelectionButtons()
         observePattern()
         observeCoachStatus()
@@ -133,15 +132,6 @@ class EditPatternFragment : Fragment() {
         }
     }
 
-    private fun setupTagInput() {
-        binding.addTagLayout.setEndIconOnClickListener {
-            val tagText = binding.addTagEdit.text?.toString()?.trim()
-            if (!tagText.isNullOrEmpty()) {
-                addTag(tagText)
-                binding.addTagEdit.text?.clear()
-            }
-        }
-    }
 
     private fun setupPatternSelectionButtons() {
         binding.addPrerequisiteButton.setOnClickListener {
@@ -166,6 +156,7 @@ class EditPatternFragment : Fragment() {
             pattern?.let { updateUI(it) }
         }
 
+        // Observe available patterns for dialog
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.availablePatterns.collect { patterns ->
@@ -179,6 +170,31 @@ class EditPatternFragment : Fragment() {
                             pattern.tags.any { it.lowercase().contains(searchText) }
                         }
                         (currentBinding.patternsList.adapter as? PatternAdapter)?.submitList(filteredPatterns)
+                    }
+                }
+            }
+        }
+
+        // Observe available tags
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.availableTags.collect { tags ->
+                    // Update available tags in UI
+                    binding.availableTagsGroup.removeAllViews()
+                    tags.forEach { tag ->
+                        Chip(requireContext()).apply {
+                            text = tag
+                            isCheckable = true
+                            isChecked = tag in (viewModel.pattern.value?.tags ?: emptyList())
+                            setOnCheckedChangeListener { _, isChecked ->
+                                if (isChecked) {
+                                    viewModel.addTag(tag)
+                                } else {
+                                    viewModel.removeTag(tag)
+                                }
+                            }
+                            binding.availableTagsGroup.addView(this)
+                        }
                     }
                 }
             }
@@ -199,8 +215,26 @@ class EditPatternFragment : Fragment() {
             videoUrlEdit.setText(pattern.video)
             externalUrlEdit.setText(pattern.url)
 
-            // Update tags
-            tagsGroup.removeAllViews()
+            // Update available tags
+            availableTagsGroup.removeAllViews()
+            viewModel.availablePatterns.value.flatMap { it.tags }.toSet().forEach { tag ->
+                Chip(requireContext()).apply {
+                    text = tag
+                    isCheckable = true
+                    isChecked = tag in pattern.tags
+                    setOnCheckedChangeListener { _, isChecked ->
+                        if (isChecked) {
+                            addTag(tag)
+                        } else {
+                            removeTag(tag)
+                        }
+                    }
+                    availableTagsGroup.addView(this)
+                }
+            }
+
+            // Update selected tags
+            selectedTagsGroup.removeAllViews()
             pattern.tags.forEach { addTag(it) }
 
             // Update record
@@ -218,13 +252,39 @@ class EditPatternFragment : Fragment() {
     }
 
     private fun addTag(tag: String) {
-        Chip(requireContext()).apply {
-            text = tag
-            isCloseIconVisible = true
-            setOnCloseIconClickListener {
-                binding.tagsGroup.removeView(this)
+        // Update available tag chip state
+        binding.availableTagsGroup.children.forEach { view ->
+            if (view is Chip && view.text == tag) {
+                view.isChecked = true
             }
-            binding.tagsGroup.addView(this)
+        }
+
+        // Add to selected tags if not already there
+        if (binding.selectedTagsGroup.children.none { (it as Chip).text == tag }) {
+            Chip(requireContext()).apply {
+                text = tag
+                isCloseIconVisible = true
+                setOnCloseIconClickListener {
+                    removeTag(tag)
+                }
+                binding.selectedTagsGroup.addView(this)
+            }
+        }
+    }
+
+    private fun removeTag(tag: String) {
+        // Update available tag chip state
+        binding.availableTagsGroup.children.forEach { view ->
+            if (view is Chip && view.text == tag) {
+                view.isChecked = false
+            }
+        }
+
+        // Remove from selected tags
+        binding.selectedTagsGroup.children.forEach { view ->
+            if (view is Chip && view.text == tag) {
+                binding.selectedTagsGroup.removeView(view)
+            }
         }
     }
 
@@ -364,7 +424,7 @@ class EditPatternFragment : Fragment() {
             gifUrl = binding.gifUrlEdit.text.toString().trim(),
             video = binding.videoUrlEdit.text.toString().trim(),
             url = binding.externalUrlEdit.text.toString().trim(),
-            tags = binding.tagsGroup.children.map { (it as Chip).text.toString() }.toList(),
+            tags = binding.selectedTagsGroup.children.map { (it as Chip).text.toString() }.toList(),
             record = if (binding.recordCatchesEdit.text.toString().isNotEmpty()) {
                 val catches = try {
                     binding.recordCatchesEdit.text.toString().toInt()

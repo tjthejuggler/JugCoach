@@ -38,6 +38,9 @@ class EditPatternViewModel @Inject constructor(
     private val _availablePatterns = MutableStateFlow<List<Pattern>>(emptyList())
     val availablePatterns: StateFlow<List<Pattern>> = _availablePatterns
 
+    private val _availableTags = MutableStateFlow<Set<String>>(emptySet())
+    val availableTags: StateFlow<Set<String>> = _availableTags
+
     init {
         savedStateHandle.get<String>("pattern_id")?.let { patternId ->
             loadPattern(patternId)
@@ -72,8 +75,27 @@ class EditPatternViewModel @Inject constructor(
         viewModelScope.launch {
             patternDao.getAllPatterns(currentCoachId).collect { patterns ->
                 _availablePatterns.value = patterns
+                // Extract all unique tags from patterns
+                val tags = patterns.flatMap { it.tags }.toSet()
+                _availableTags.value = tags
             }
         }
+    }
+
+    fun addTag(tag: String) {
+        val currentPattern = _pattern.value ?: return
+        val updatedPattern = currentPattern.copy(
+            tags = currentPattern.tags + tag
+        )
+        _pattern.value = updatedPattern
+    }
+
+    fun removeTag(tag: String) {
+        val currentPattern = _pattern.value ?: return
+        val updatedPattern = currentPattern.copy(
+            tags = currentPattern.tags - tag
+        )
+        _pattern.value = updatedPattern
     }
 
     fun updatePattern(pattern: Pattern) {

@@ -71,7 +71,25 @@ class CreatePatternBottomSheetFragment : BottomSheetDialogFragment() {
             binding.endTimeLayout.error = state.videoTimeError
         }
 
-        // Update tags
+        // Update available tags
+        binding.availableTagsGroup.removeAllViews()
+        state.availableTags.forEach { tag ->
+            val chip = Chip(requireContext()).apply {
+                text = tag
+                isCheckable = true
+                isChecked = tag in state.tags
+                setOnCheckedChangeListener { _, isChecked ->
+                    if (isChecked) {
+                        viewModel.addTag(tag)
+                    } else {
+                        viewModel.removeTag(tag)
+                    }
+                }
+            }
+            binding.availableTagsGroup.addView(chip)
+        }
+
+        // Update selected tags
         binding.selectedTagsGroup.removeAllViews()
         state.tags.forEach { tag ->
             val chip = Chip(requireContext()).apply {
@@ -195,11 +213,6 @@ class CreatePatternBottomSheetFragment : BottomSheetDialogFragment() {
         // Tutorial URL input
         binding.tutorialUrlInput.doAfterTextChanged { text ->
             viewModel.updateTutorialUrl(text?.toString() ?: "")
-        }
-
-        // Tag input
-        binding.tagInput.doAfterTextChanged { text ->
-            viewModel.updateTagInput(text?.toString() ?: "")
         }
 
         // Explanation input

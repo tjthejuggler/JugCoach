@@ -36,7 +36,7 @@ class CreatePatternViewModel @Inject constructor(
             sourcePattern?.let { pattern ->
                 // Copy tags from source pattern
                 pattern.tags.forEach { tag ->
-                    updateTagInput(tag)
+                    addTag(tag)
                 }
 
                 // Set up relationships based on type
@@ -89,6 +89,9 @@ class CreatePatternViewModel @Inject constructor(
         viewModelScope.launch {
             patternDao.getSharedPatterns().collect { patterns ->
                 _availablePatterns.value = patterns
+                // Extract all unique tags from patterns
+                val tags = patterns.flatMap { it.tags }.toSet()
+                _uiState.update { it.copy(availableTags = tags) }
             }
         }
     }
@@ -180,19 +183,10 @@ class CreatePatternViewModel @Inject constructor(
         }
     }
 
-    fun updateTagInput(tag: String) {
-        _uiState.update { state ->
-            state.copy(tagInput = tag)
-        }
-    }
-
     fun addTag(tag: String) {
         if (tag.isNotBlank() && !_uiState.value.tags.contains(tag)) {
             _uiState.update { state ->
-                state.copy(
-                    tags = state.tags + tag,
-                    tagInput = ""
-                )
+                state.copy(tags = state.tags + tag)
             }
             inferRelatedTags(tag)
         }
@@ -414,8 +408,8 @@ data class CreatePatternUiState(
     val gifUrlError: String? = null,
     val tutorialUrl: String = "",
     val tutorialUrlError: String? = null,
-    val tagInput: String = "",
     val tags: Set<String> = emptySet(),
+    val availableTags: Set<String> = emptySet(),
     val explanation: String = "",
     val prerequisites: Set<String> = emptySet(),
     val relatedPatterns: Set<String> = emptySet(),

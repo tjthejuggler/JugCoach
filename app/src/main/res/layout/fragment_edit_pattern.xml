@@ -207,27 +207,19 @@
                 android:textAppearance="?attr/textAppearanceSubtitle1" />
 
             <com.google.android.material.chip.ChipGroup
-                android:id="@+id/tags_group"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp" />
-
-            <com.google.android.material.textfield.TextInputLayout
-                android:id="@+id/add_tag_layout"
+                android:id="@+id/available_tags_group"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
-                android:hint="Add Tag"
-                app:endIconDrawable="@android:drawable/ic_menu_add"
-                app:endIconMode="custom">
+                app:chipSpacingHorizontal="8dp"
+                app:chipSpacingVertical="8dp"/>
 
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/add_tag_edit"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:inputType="text" />
 
-            </com.google.android.material.textfield.TextInputLayout>
+            <com.google.android.material.chip.ChipGroup
+                android:id="@+id/selected_tags_group"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp" />
 
             <!-- Prerequisites Section -->
             <TextView
