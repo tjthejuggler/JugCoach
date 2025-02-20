@@ -23,3 +23,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "JugCoach"
 include(":app")
+include(":wear")
