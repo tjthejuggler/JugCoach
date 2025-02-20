@@ -76,6 +76,7 @@
     <string name="personal_record">Personal Record</string>
     <string name="catches_format">%d catches</string>
     <string name="pattern_animation">Pattern animation</string>
+    <string name="no_siteswap">no siteswap</string>
 
     <!-- Run Management -->
     <string name="add_run">Add Run</string>

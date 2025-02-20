@@ -327,11 +327,9 @@ class PatternDetailsFragment : Fragment() {
             }
 
             // Set siteswap chip
-            pattern.siteswap?.let { siteswap ->
-                siteswapChip.text = siteswap
-                siteswapChip.isVisible = true
-            } ?: run {
-                siteswapChip.isVisible = false
+            siteswapChip.apply {
+                text = pattern.siteswap?.takeIf { it.isNotEmpty() } ?: getString(R.string.no_siteswap)
+                isVisible = true
             }
 
             // Set video button
