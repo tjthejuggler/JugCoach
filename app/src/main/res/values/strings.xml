@@ -68,7 +68,7 @@
     <string name="tool_use_model_key">Tool use model key</string>
 
     <!-- Chat and Runs -->
-    <string name="run_again">Run again</string>
+    <string name="run_again">Again</string>
     <string name="different">Different</string>
     <string name="create">Create</string>
     <string name="close">Close</string>
