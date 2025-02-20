@@ -20,7 +20,7 @@ import com.example.jugcoach.data.entity.*
         ChatMessage::class,
         CoachProposal::class
     ],
-    version = 12,
+    version = 13,
     exportSchema = true
 )
 @TypeConverters(
@@ -199,6 +199,13 @@ abstract class JugCoachDatabase : RoomDatabase() {
             }
         }
 
+        private val MIGRATION_12_13 = object : androidx.room.migration.Migration(12, 13) {
+            override fun migrate(db: androidx.sqlite.db.SupportSQLiteDatabase) {
+                // Add catchesPerMinute column to patterns table
+                db.execSQL("ALTER TABLE patterns ADD COLUMN catchesPerMinute REAL DEFAULT NULL")
+            }
+        }
+
         fun getDatabase(context: Context): JugCoachDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -217,7 +224,8 @@ abstract class JugCoachDatabase : RoomDatabase() {
                         MIGRATION_8_9,
                         MIGRATION_9_10,
                         MIGRATION_10_11,
-                        MIGRATION_11_12
+                        MIGRATION_11_12,
+                        MIGRATION_12_13
                     )
                     .build()
                 INSTANCE = instance

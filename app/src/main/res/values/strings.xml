@@ -1,169 +1,130 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Pattern Run Actions -->
-    <string name="again">Again</string>
-    <string name="different">Different</string>
-    <string name="create">Create</string>
-    
-    <!-- Pattern Relationships -->
-    <string name="menu_prerequisites">Prerequisites</string>
-    <string name="menu_related">Related</string>
-    <string name="menu_dependent">Dependent</string>
-    <string name="no_patterns_available">No patterns available</string>
-    
     <string name="app_name">JugCoach</string>
     <string name="navigation_drawer_open">Open navigation drawer</string>
     <string name="navigation_drawer_close">Close navigation drawer</string>
-    <string name="nav_header_title">JugCoach</string>
-    <string name="nav_header_subtitle">Your juggling practice companion</string>
+    <string name="nav_header_title">Android Studio</string>
+    <string name="nav_header_subtitle">android.studio@android.com</string>
     <string name="nav_header_desc">Navigation header</string>
     <string name="action_settings">Settings</string>
-    <string name="action_tool_test">Tool Test</string>
-
     <string name="menu_home">Home</string>
     <string name="menu_gallery">Gallery</string>
-    
-    <!-- Model Settings -->
-    <string name="routing_model_name">Routing Model Name</string>
-    <string name="routing_model_key">Routing Model API Key</string>
-    <string name="tool_use_model_name">Tool Use Model Name</string>
-    <string name="tool_use_model_key">Tool Use Model API Key</string>
-    <string name="menu_settings">Settings</string>
-    <string name="create_coach">Create Coach</string>
-    <string name="select_coach">Select Coach</string>
-    <string name="menu_chat">Chat with Coach</string>
+    <string name="menu_slideshow">Slideshow</string>
+    <string name="menu_chat">Chat</string>
 
-    <!-- Chat Management -->
-    <string name="new_conversation">New</string>
-    <string name="rename_conversation">Rename Conversation</string>
-    <string name="enter_conversation_title">Enter conversation title</string>
-    <string name="favorite_conversation">Favorite</string>
-    <string name="unfavorite_conversation">Unfavorite</string>
-
-    <!-- Coach Management -->
-    <string name="coach_name">Coach Name</string>
-    <string name="coach_description">Coach Description</string>
-    <string name="coach_specialties">Specialties</string>
-    <string name="coach_system_prompt">System Prompt</string>
-    <string name="add_api_key">Add API Key</string>
-    <string name="api_key_name">API Key Name</string>
-    <string name="api_key_value">API Key</string>
-    <string name="delete_api_key">Delete API Key</string>
-    <string name="save_api_key">Save API Key</string>
-    <string name="change_api_key">Change API Key</string>
-    <string name="select_api_key">Select API Key</string>
-    
-    <!-- Pattern Details -->
-    <string name="difficulty_format">Difficulty: %s</string>
-    <string name="delete_pattern_title">Delete Pattern</string>
-    <string name="delete_pattern_message">Are you sure you want to delete this pattern? This action cannot be undone.</string>
-    <string name="delete">Delete</string>
+    <!-- Run tracking -->
+    <string name="enter_catches">Number of catches</string>
+    <string name="enter_duration_seconds">Duration (seconds)</string>
+    <string name="catches_per_minute_format">Catches/min: %.2f</string>
+    <string name="enter_catches_or_time">Enter number of catches or duration</string>
+    <string name="time_in_seconds">Time in seconds</string>
+    <string name="add_new_run">Add New Run</string>
+    <string name="add_run">Add Run</string>
     <string name="cancel">Cancel</string>
-    <string name="edit_pattern">Edit Pattern</string>
-    <string name="pattern_name">Pattern Name</string>
-    <string name="pattern_description">Description</string>
-    <string name="pattern_difficulty">Difficulty</string>
-    <string name="pattern_tags">Tags (comma separated)</string>
-    <string name="save">Save</string>
+    <string name="clean_end">Clean end</string>
+    <string name="number_of_catches">Number of catches</string>
+    <string name="record_catches">Record catches: %d</string>
 
-    <!-- Pattern Details Additional -->
-    <string name="balls_format">%s balls</string>
-    <string name="watch_video">Watch Video</string>
-    <string name="learn_more">Learn More</string>
+    <!-- Pattern recommendation -->
+    <string name="get_pattern_recommendation">Get pattern recommendation</string>
+    <string name="no_pattern_found">No pattern found</string>
+    <string name="start_pattern">Start pattern</string>
+    <string name="refresh_recommendation">Refresh recommendation</string>
+    <string name="number_of_balls">Number of balls</string>
+    <string name="pattern_difficulty">Pattern difficulty</string>
+    <string name="pattern_tags">Pattern tags</string>
+
+    <!-- Sort options -->
+    <string name="sort_by_relevance">Sort by relevance</string>
+    <string name="sort_by_name_asc">Sort by name (A-Z)</string>
+    <string name="sort_by_name_desc">Sort by name (Z-A)</string>
+    <string name="sort_by_difficulty_asc">Sort by difficulty (Easy-Hard)</string>
+    <string name="sort_by_difficulty_desc">Sort by difficulty (Hard-Easy)</string>
+    <string name="sort_by_catches_asc">Sort by catches (Low-High)</string>
+    <string name="sort_by_catches_desc">Sort by catches (High-Low)</string>
+
+    <!-- Coach -->
+    <string name="coach_name">Coach name</string>
+    <string name="api_key_name">API key name</string>
+    <string name="coach_description">Coach description</string>
+    <string name="coach_specialties">Coach specialties</string>
+    <string name="coach_system_prompt">System prompt</string>
+    <string name="create_coach">Create Coach</string>
+    <string name="coach_edit_notice">Editing a pattern that belongs to a coach</string>
+
+    <!-- Pattern details -->
+    <string name="watch_video">Watch video</string>
+    <string name="learn_more">Learn more</string>
+    <string name="personal_record">Personal Record</string>
+    <string name="run_history">Run History</string>
     <string name="prerequisites">Prerequisites</string>
     <string name="dependent_patterns">Dependent Patterns</string>
     <string name="related_patterns">Related Patterns</string>
-    <string name="personal_record">Personal Record</string>
-    <string name="catches_format">%d catches</string>
-    <string name="pattern_animation">Pattern animation</string>
-    <string name="no_siteswap">no siteswap</string>
 
-    <!-- Run Management -->
-    <string name="add_run">Add Run</string>
-    <string name="add_new_run">Add New Run</string>
-    <string name="run_history">Run History</string>
-    <string name="number_of_catches">Number of catches</string>
-    <string name="time_in_seconds">Time in seconds</string>
-    <string name="clean_end">Clean End</string>
-    <string name="or">OR</string>
+    <!-- Settings -->
+    <string name="routing_model_name">Routing model name</string>
+    <string name="routing_model_key">Routing model key</string>
+    <string name="tool_use_model_name">Tool use model name</string>
+    <string name="tool_use_model_key">Tool use model key</string>
 
-    <!-- Sort Options -->
-    <string name="sort_by_name_asc">Name (A to Z)</string>
-    <string name="sort_by_name_desc">Name (Z to A)</string>
-    <string name="sort_by_difficulty_asc">Difficulty (Easy to Hard)</string>
-    <string name="sort_by_difficulty_desc">Difficulty (Hard to Easy)</string>
-    <string name="sort_by_catches_asc">Catches (Low to High)</string>
-    <string name="sort_by_catches_desc">Catches (High to Low)</string>
-    <string name="sort_by_relevance">Search Relevance</string>
-    <string name="apply">Apply</string>
-    <string name="apply_filters">Apply Filters</string>
-    <string name="apply_sort">Apply Sort</string>
+    <!-- Chat and Runs -->
+    <string name="run_again">Run again</string>
+    <string name="different">Different</string>
+    <string name="create">Create</string>
+    <string name="close">Close</string>
+    <string name="start_timer">Start Timer</string>
+    <string name="end_catch">End - Clean</string>
+    <string name="end_drop">End - Drop</string>
+    <string name="run_completed">Run completed!</string>
+    <string name="save_run">Save run</string>
+    <string name="cancel_run">Cancel run</string>
+    <string name="no_patterns_available">No patterns available</string>
+    <string name="select_api_key">Select API Key</string>
+    <string name="unfavorite_conversation">Unfavorite conversation</string>
+    <string name="end_run_catch">End Run (Catch)</string>
+    <string name="end_run_drop">End Run (Drop)</string>
+    
+    <!-- Run summary -->
+    <string name="run_time_format">Run time: %02d:%02d</string>
+    <string name="run_summary_catches">Number of catches: %d</string>
+    <string name="run_summary_end_clean">Clean</string>
+    <string name="run_summary_end_drop">Drop</string>
+    <string name="pattern_catches_per_minute">Average: %.1f catches/min</string>
 
-    <!-- Edit Pattern -->
-    <string name="edit_pattern_title">Edit Pattern</string>
-    <string name="number_of_balls">Number of Balls</string>
-    <string name="siteswap">Siteswap</string>
-    <string name="gif_url">GIF URL</string>
-    <string name="video_url">Video URL</string>
-    <string name="external_url">External URL</string>
-    <string name="add_tag">Add Tag</string>
-    <string name="add_prerequisite">Add Prerequisite</string>
-    <string name="add_dependent">Add Dependent</string>
-    <string name="add_related">Add Related Pattern</string>
-    <string name="search_patterns">Search Patterns</string>
-    <string name="select_pattern">Select Pattern</string>
-    <string name="record_catches">Catches</string>
-    <string name="record_date">Date</string>
-    <string name="edit_run">Edit Run</string>
-    <string name="delete_run">Delete Run</string>
-
-    <!-- Error Messages -->
+    <!-- Pattern editing -->
+    <string name="submit_for_approval">Submit for approval</string>
     <string name="error">Error</string>
+    <string name="error_loading_patterns">Error loading patterns</string>
     <string name="ok">OK</string>
     <string name="required_field">This field is required</string>
-    <string name="invalid_number">Please enter a valid number</string>
     <string name="difficulty_range_error">Difficulty must be between 1 and 10</string>
-    <string name="invalid_number_of_balls">Number of balls must be greater than 0</string>
-    <string name="error_loading_patterns">Failed to load patterns</string>
-    <string name="error_saving_pattern">Failed to save pattern</string>
-
-    <!-- Coach Pattern Editing -->
-    <string name="submit_for_approval">Submit for Approval</string>
-    <string name="coach_edit_notice">As a coach, your changes will be submitted for approval</string>
-    <string name="confirm_submit_changes">Submit Changes?</string>
-    <string name="confirm_submit_message">Your changes will be submitted for approval by the head coach. Would you like to proceed?</string>
-    <string name="changes_submitted">Changes submitted for approval</string>
+    <string name="invalid_number">Must be a valid number</string>
+    <string name="invalid_number_of_balls">Must be a valid number of balls</string>
+    <string name="confirm_submit_changes">Confirm submission</string>
+    <string name="confirm_submit_message">Are you sure you want to submit these changes?</string>
     <string name="submit">Submit</string>
-    <string name="approve">Approve</string>
-    <string name="reject">Reject</string>
-    <string name="pending_changes">Pending Changes</string>
-    <string name="no_pending_changes">No pending changes</string>
-    <string name="changes_approved">Changes approved</string>
-    <string name="changes_rejected">Changes rejected</string>
+    <string name="changes_submitted">Changes submitted successfully</string>
+    <string name="error_saving_pattern">Error saving pattern</string>
 
-    <!-- Pattern Recommendation -->
-    <string name="get_pattern_recommendation">Get Pattern Recommendation</string>
-    <string name="recommended_pattern">Recommended Pattern</string>
-    <string name="current_recommendation">Current Recommendation</string>
-    <string name="refresh_recommendation">Next</string>
-    <string name="no_pattern_found">No pattern found matching your filters</string>
-    <string name="record_catches_range">Record Catches Range</string>
-    <string name="view_pattern">View Pattern</string>
-    <string name="start_pattern">Start Run</string>
-    <string name="tap_to_view_details">Tap to view pattern details</string>
-    <string name="start_timer">Start Timer</string>
-    <string name="end_catch">End (Catch)</string>
-    <string name="end_drop">End (Drop)</string>
-    <string name="save_run">Save</string>
-    <string name="cancel_run">Cancel</string>
-    <string name="enter_catches">Number of catches (optional)</string>
-    <string name="run_completed">Run Completed</string>
-    <string name="run_summary_duration">Run time: %1$02d:%2$02d</string>
-    <string name="run_summary_catches">Catches: %1$d</string>
-    <string name="run_summary_end_clean">Ended: Clean</string>
-    <string name="run_summary_end_drop">Ended: Drop</string>
-    <string name="run_again">Again</string>
-    <string name="close">Close</string>
-    <string name="add_time_range">Add Time Range</string>
-    <string name="remove_time_range">Remove Time Range</string>
+    <!-- Pattern details -->
+    <string name="difficulty_format">Difficulty: %s</string>
+    <string name="balls_format">Number of balls: %s</string>
+    <string name="catches_format">Record: %d catches</string>
+    <string name="no_siteswap">No siteswap available</string>
+
+    <!-- Pattern creation -->
+    <string name="add_time_range">Add time range</string>
+    <string name="remove_time_range">Remove time range</string>
+
+    <!-- Menu items -->
+    <string name="menu_settings">Settings</string>
+    <string name="change_api_key">Change API key</string>
+    <string name="rename_conversation">Rename conversation</string>
+    <string name="favorite_conversation">Favorite conversation</string>
+    <string name="save">Save</string>
+    <string name="action_tool_test">Tool Test</string>
+
+    <!-- Proposals -->
+    <string name="reject">Reject</string>
+    <string name="approve">Approve</string>
 </resources>

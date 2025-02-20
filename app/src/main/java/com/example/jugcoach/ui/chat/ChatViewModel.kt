@@ -433,19 +433,49 @@ class ChatViewModel @Inject constructor(
         }
     }
 
-    fun endPatternRun(wasCatch: Boolean, catches: Int?) {
+    fun getElapsedSeconds(): Long {
+        return (uiState.value.patternRun?.elapsedTime ?: 0L) / 1000L
+    }
+
+    private suspend fun calculatePatternCatchesPerMinute(patternId: String) {
+        val pattern = patternDao.getPattern(patternId) ?: return
+        var totalCatches = 0
+        var totalSeconds = 0L
+        
+        // Sum up catches and duration from all runs that have both values
+        pattern.runHistory.runs.forEach { run ->
+            if (run.catches != null && run.duration != null) {
+                totalCatches += run.catches
+                totalSeconds += run.duration
+            }
+        }
+        
+        // Only update if we have valid data
+        if (totalCatches > 0 && totalSeconds > 0) {
+            val catchesPerMinute = (totalCatches.toDouble() / totalSeconds.toDouble()) * 60
+            patternDao.updateCatchesPerMinute(patternId, catchesPerMinute)
+        } else {
+            // Clear catches per minute if we don't have valid data
+            patternDao.updateCatchesPerMinute(patternId, null)
+        }
+    }
+
+    fun endPatternRun(wasCatch: Boolean, catches: Int?, duration: Int? = null) {
         timerJob?.cancel()
         viewModelScope.launch {
             val currentRun = uiState.value.patternRun
             if (currentRun != null) {
                 val pattern = currentRun.pattern
-                val duration = if (currentRun.elapsedTime > 0) currentRun.elapsedTime / 1000 else null
+                // Use provided duration if available, otherwise use timer duration
+                val finalDuration = duration?.toLong() ?: if (currentRun.elapsedTime > 0) {
+                    currentRun.elapsedTime / 1000L
+                } else null
 
                 // Save run to pattern history
                 patternDao.addRun(
                     patternId = pattern.id,
                     catches = catches,
-                    duration = duration,
+                    duration = finalDuration,
                     cleanEnd = wasCatch,
                     date = System.currentTimeMillis()
                 )
@@ -461,7 +491,7 @@ class ChatViewModel @Inject constructor(
                 duration?.let {
                     val minutes = it / 60
                     val seconds = it % 60
-                    summaryParts.add(context.getString(R.string.run_summary_duration, minutes, seconds))
+                    summaryParts.add(context.getString(R.string.run_time_format, minutes, seconds))
                 }
 
                 // Add catches if provided
@@ -469,10 +499,13 @@ class ChatViewModel @Inject constructor(
                     summaryParts.add(context.getString(R.string.run_summary_catches, it))
                 }
 
-                // Add completion status
+                // Add shorter completion status
                 summaryParts.add(context.getString(
                     if (wasCatch) R.string.run_summary_end_clean else R.string.run_summary_end_drop
                 ))
+
+                // Calculate and update pattern's overall catches per minute
+                calculatePatternCatchesPerMinute(pattern.id)
 
                 // Save summary message
                 messageRepository.saveMessage(

@@ -424,13 +424,18 @@ class ChatFragment : Fragment() {
         val dialogView = LayoutInflater.from(requireContext())
             .inflate(R.layout.dialog_end_run, null)
         
+        // Pre-fill duration field with timer value
+        val durationInput = dialogView.findViewById<TextInputEditText>(R.id.duration_input)
+        durationInput.setText(viewModel.getElapsedSeconds().toString())
+        
         MaterialAlertDialogBuilder(requireContext())
-            .setTitle(if (wasCatch) "End Run (Catch)" else "End Run (Drop)")
+            .setTitle(if (wasCatch) R.string.end_run_catch else R.string.end_run_drop)
             .setView(dialogView)
             .setPositiveButton(R.string.save_run) { _, _ ->
                 val catchesInput = dialogView.findViewById<TextInputEditText>(R.id.catches_input)
                 val catches = catchesInput.text?.toString()?.toIntOrNull()
-                viewModel.endPatternRun(wasCatch, catches)
+                val duration = durationInput.text?.toString()?.toIntOrNull()
+                viewModel.endPatternRun(wasCatch, catches, duration)
             }
             .setNegativeButton(R.string.cancel_run, null)
             .show()

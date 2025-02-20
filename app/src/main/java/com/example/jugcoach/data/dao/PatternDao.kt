@@ -183,12 +183,20 @@ interface PatternDao {
     """)
     fun suggestNextPattern(coachId: Long): Flow<Pattern?>
 
+    @Query("UPDATE patterns SET catchesPerMinute = :rate WHERE id = :patternId")
+    suspend fun updateCatchesPerMinute(patternId: String, rate: Double?)
+
+    @Query("SELECT * FROM patterns WHERE id = :patternId")
+    suspend fun getPattern(patternId: String): Pattern?
+
     @Transaction
     suspend fun addRun(patternId: String, catches: Int?, duration: Long?, cleanEnd: Boolean, date: Long) {
         val pattern = getPatternById(patternId, -1) ?: return // -1 to get any pattern regardless of coach
+        val catchesPerMinute = com.example.jugcoach.util.RunUtils.calculateCatchesPerMinute(catches, duration)
         val newRun = Run(
             catches = catches,
             duration = duration,
+            catchesPerMinute = catchesPerMinute,
             isCleanEnd = cleanEnd,
             date = date
         )

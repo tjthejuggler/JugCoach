@@ -123,29 +123,29 @@ class PatternDetailsFragment : Fragment() {
 
     private fun showAddRunDialog() {
         val dialogBinding = DialogAddRunBinding.inflate(LayoutInflater.from(context))
-        
-        // Only allow one input type at a time
-        dialogBinding.catchesInput.setOnFocusChangeListener { _, hasFocus ->
-            if (hasFocus) dialogBinding.timeInput.text?.clear()
-        }
-        dialogBinding.timeInput.setOnFocusChangeListener { _, hasFocus ->
-            if (hasFocus) dialogBinding.catchesInput.text?.clear()
-        }
 
         MaterialAlertDialogBuilder(requireContext())
             .setTitle(R.string.add_new_run)
             .setView(dialogBinding.root)
             .setPositiveButton(R.string.add_run) { _, _ ->
                 val catches = dialogBinding.catchesInput.text?.toString()?.toIntOrNull()
-                val time = dialogBinding.timeInput.text?.toString()?.toLongOrNull()
+                val duration = dialogBinding.timeInput.text?.toString()?.toLongOrNull()
                 val isCleanEnd = dialogBinding.cleanEndCheckbox.isChecked
 
-                if (catches == null && time == null) {
-                    Snackbar.make(binding.root, getString(R.string.number_of_catches), Snackbar.LENGTH_SHORT).show()
-                    return@setPositiveButton
+                when {
+                    catches == null && duration == null -> {
+                        Snackbar.make(binding.root, getString(R.string.enter_catches_or_time), Snackbar.LENGTH_SHORT).show()
+                        return@setPositiveButton
+                    }
+                    catches != null && duration != null -> {
+                        // Both provided - calculate catches per minute
+                        viewModel.addRun(catches, duration, isCleanEnd)
+                    }
+                    else -> {
+                        // Only one provided - that's okay too
+                        viewModel.addRun(catches, duration, isCleanEnd)
+                    }
                 }
-
-                viewModel.addRun(catches, time, isCleanEnd)
             }
             .setNegativeButton(R.string.cancel, null)
             .show()
@@ -366,6 +366,20 @@ class PatternDetailsFragment : Fragment() {
 
             // Show buttons container only if video or url exists
             buttonsContainer.isVisible = pattern.video != null || pattern.url != null
+
+            // Calculate and show overall catches per minute
+            val runsWithCatchesAndTime = runHistory.filter { it.catches != null && it.duration != null }
+            if (runsWithCatchesAndTime.isNotEmpty()) {
+                val totalCatches = runsWithCatchesAndTime.sumOf { it.catches!! }
+                val totalSeconds = runsWithCatchesAndTime.sumOf { it.duration!! }
+                val overallCpm = (totalCatches.toDouble() / totalSeconds.toDouble()) * 60
+                binding.patternCatchesPerMinute.apply {
+                    text = getString(R.string.pattern_catches_per_minute, overallCpm)
+                    isVisible = true
+                }
+            } else {
+                binding.patternCatchesPerMinute.isVisible = false
+            }
 
             // Update run history
             runHistoryAdapter.submitList(runHistory)

@@ -43,7 +43,8 @@ data class Pattern(
     @Embedded(prefix = "record_")
     val record: Record? = null,
     @Embedded(prefix = "history_")
-    val runHistory: RunHistory = RunHistory()
+    val runHistory: RunHistory = RunHistory(),
+    val catchesPerMinute: Double? = null // average catches per minute across all timed runs
 )
 
 data class Record(
@@ -54,6 +55,7 @@ data class Record(
 data class Run(
     val catches: Int? = null,
     val duration: Long? = null, // duration in seconds if time-based
+    val catchesPerMinute: Double? = null, // calculated field for catches/minute rate
     val isCleanEnd: Boolean,
     val date: Long // timestamp
 )

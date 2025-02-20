@@ -162,7 +162,17 @@
                         android:textAppearance="?attr/textAppearanceBody2"
                         tools:text="March 21, 2020" />
 
-                </LinearLayout>
+                    <TextView
+                        android:id="@+id/record_catches_per_minute"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:textAppearance="?attr/textAppearanceBody1"
+                        android:visibility="gone"
+                        tools:text="Catches/min: 120.50"
+                        tools:visibility="visible" />
+
+            </LinearLayout>
 
             </com.google.android.material.card.MaterialCardView>
 
@@ -190,12 +200,29 @@
                         android:orientation="horizontal"
                         android:padding="16dp">
 
-                        <TextView
+                        <LinearLayout
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:text="@string/run_history"
-                            android:textAppearance="?attr/textAppearanceSubtitle1" />
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/run_history"
+                                android:textAppearance="?attr/textAppearanceSubtitle1" />
+
+                            <TextView
+                                android:id="@+id/pattern_catches_per_minute"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="4dp"
+                                android:visibility="gone"
+                                android:textAppearance="?attr/textAppearanceBody2"
+                                tools:text="Average: 120.5 catches/min"
+                                tools:visibility="visible" />
+
+                        </LinearLayout>
 
                         <ImageView
                             android:id="@+id/history_expand_icon"
