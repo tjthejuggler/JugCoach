@@ -61,31 +61,15 @@ class JugCoachApplication : Application() {
 
             // Import patterns if not imported or if database is empty
             if (!patternsImported || patternCount == 0) {
-                android.util.Log.d(TAG, "Starting pattern import")
-                val patternImporter = PatternImporter(this@JugCoachApplication, patternDao)
-                try {
-                    val count = patternImporter.importLegacyPatterns()
-                    android.util.Log.d(TAG, "Successfully imported $count patterns")
-                    
-                    // Update settings to mark patterns as imported
-                    settingsDao.setSettingValue(
-                        key = "patterns_imported",
-                        value = "true",
-                        type = SettingType.BOOLEAN,
-                        category = SettingCategory.SYSTEM,
-                        description = "Flag indicating if patterns have been imported"
-                    )
-                } catch (e: Exception) {
-                    android.util.Log.e(TAG, "Failed to import patterns", e)
-                    // Clear the imported flag so we'll try again next time
-                    settingsDao.setSettingValue(
-                        key = "patterns_imported",
-                        value = "false",
-                        type = SettingType.BOOLEAN,
-                        category = SettingCategory.SYSTEM,
-                        description = "Flag indicating if patterns have been imported"
-                    )
-                }
+                // Remove automatic pattern import since we only want user-supplied patterns
+                android.util.Log.d(TAG, "No automatic pattern import - waiting for user to import patterns")
+                settingsDao.setSettingValue(
+                    key = "patterns_imported",
+                    value = "true", // Set to true to prevent further import attempts
+                    type = SettingType.BOOLEAN,
+                    category = SettingCategory.SYSTEM,
+                    description = "Flag indicating if patterns have been imported"
+                )
             }
 
             // Verify pattern count after import

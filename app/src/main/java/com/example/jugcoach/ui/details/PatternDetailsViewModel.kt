@@ -181,7 +181,7 @@ class PatternDetailsViewModel @Inject constructor(
                 _uiState.value = PatternDetailsUiState.Loading
                 
                 android.util.Log.d("PatternDetails", "Querying database for pattern ID: $currentId")
-                val pattern = patternDao.getPatternById(currentId, coachId)
+                val pattern = patternDao.getPatternById(currentId)
                 
                 if (pattern != null) {
                     android.util.Log.d("PatternDetails", "Pattern loaded successfully: ${pattern.name}")
@@ -218,7 +218,7 @@ class PatternDetailsViewModel @Inject constructor(
 
         // Load prerequisites
         val prerequisites = pattern.prerequisites.mapNotNull { id ->
-            patternDao.getPatternById(id, coachId)?.also {
+            patternDao.getPatternById(id)?.also {
                 android.util.Log.d("PatternDetails", "Found prerequisite: ${it.name}")
             }
         }
@@ -227,7 +227,7 @@ class PatternDetailsViewModel @Inject constructor(
 
         // Load dependent patterns
         val dependents = pattern.dependents.mapNotNull { id ->
-            patternDao.getPatternById(id, coachId)?.also {
+            patternDao.getPatternById(id)?.also {
                 android.util.Log.d("PatternDetails", "Found dependent: ${it.name}")
             }
         }
@@ -236,7 +236,7 @@ class PatternDetailsViewModel @Inject constructor(
 
         // Load related patterns
         val related = pattern.related.mapNotNull { id ->
-            patternDao.getPatternById(id, coachId)?.also {
+            patternDao.getPatternById(id)?.also {
                 android.util.Log.d("PatternDetails", "Found related: ${it.name}")
             }
         }

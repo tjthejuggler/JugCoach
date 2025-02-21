@@ -30,7 +30,7 @@ class PatternDatabaseService @Inject constructor(
         
         // If not found by name, try to find by ID (as fallback)
         if (pattern == null) {
-            pattern = patternDao.getPatternById(patternName, coachId)
+            pattern = patternDao.getPatternById(patternName)
         }
         
         return pattern?.let {

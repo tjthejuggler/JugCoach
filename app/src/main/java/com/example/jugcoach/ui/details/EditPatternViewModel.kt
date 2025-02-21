@@ -65,7 +65,8 @@ class EditPatternViewModel @Inject constructor(
     private fun loadPattern(id: String) {
         viewModelScope.launch {
             initializeCoachInfo()
-            patternDao.getPatternById(id, currentCoachId)?.let { pattern ->
+            patternDao.getPatternById(id)?.let { pattern ->
+                android.util.Log.d("VideoTimeDebug", "Load - Pattern: ${pattern.name}, Start: ${pattern.videoStartTime}, End: ${pattern.videoEndTime}")
                 _pattern.value = pattern
             }
         }
@@ -101,6 +102,7 @@ class EditPatternViewModel @Inject constructor(
     fun updatePattern(pattern: Pattern) {
         viewModelScope.launch {
             if (isHeadCoach.value == true) {
+                android.util.Log.d("VideoTimeDebug", "Save - Pattern: ${pattern.name}, Start: ${pattern.videoStartTime}, End: ${pattern.videoEndTime}")
                 patternDao.updatePattern(pattern)
             } else {
                 // Create a proposal for the changes

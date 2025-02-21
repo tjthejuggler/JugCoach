@@ -15,10 +15,10 @@ object PatternConverter {
     private val gson = Gson()
     private val nameToIdMap = mutableMapOf<String, String>()
 
-    fun toEntity(dto: PatternDTO): Pattern {
-        // Generate or retrieve ID for this pattern
-        // Use the pattern name as the ID since that's what's used in lookupPattern
-        val id = dto.name
+    fun toEntity(dto: PatternDTO, key: String? = null): Pattern {
+        // Use the provided key or name as ID
+        val id = key ?: dto.name
+        android.util.Log.d("VideoTimeDebug", "Converting - Name: ${dto.name}, ID: $id, Start: ${dto.videoStartTime}, End: ${dto.videoEndTime}")
         return Pattern(
             id = id,
             name = dto.name,

@@ -90,9 +90,10 @@ interface PatternDao {
     @Query("SELECT COUNT(*) FROM patterns WHERE coachId = :coachId OR coachId IS NULL")
     fun getCount(coachId: Long): Flow<Int>
 
+    @RewriteQueriesToDropUnusedColumns
     @Query("""
-        SELECT *, 
-        CASE 
+        SELECT *,
+        CASE
             WHEN name = :query THEN 100
             WHEN name LIKE :query || '%' THEN 90
             WHEN name LIKE '%' || :query || '%' THEN 80
@@ -104,7 +105,7 @@ interface PatternDao {
             WHEN LOWER(tags) LIKE '%' || LOWER(:query) || '%' THEN 30
             ELSE 0
         END as relevance
-        FROM patterns 
+        FROM patterns
         WHERE (coachId = :coachId OR coachId IS NULL)
         AND (
             name LIKE '%' || :query || '%'
@@ -120,8 +121,8 @@ interface PatternDao {
     """)
     fun searchPatterns(query: String, coachId: Long): Flow<List<Pattern>>
 
-    @Query("SELECT * FROM patterns WHERE id = :id AND (coachId = :coachId OR coachId IS NULL)")
-    suspend fun getPatternById(id: String, coachId: Long): Pattern?
+    @Query("SELECT * FROM patterns WHERE id = :id")
+    suspend fun getPatternById(id: String): Pattern?
 
     @Query("""
         SELECT * FROM patterns
@@ -198,7 +199,7 @@ interface PatternDao {
 
     @Transaction
     suspend fun addRun(patternId: String, catches: Int?, duration: Long?, cleanEnd: Boolean, date: Long) {
-        val pattern = getPatternById(patternId, -1) ?: return // -1 to get any pattern regardless of coach
+        val pattern = getPatternById(patternId) ?: return
         val catchesPerMinute = com.example.jugcoach.util.RunUtils.calculateCatchesPerMinute(catches, duration)
         val newRun = Run(
             catches = catches,

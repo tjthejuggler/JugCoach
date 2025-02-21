@@ -31,7 +31,7 @@ class CreatePatternFragment : Fragment() {
     lateinit var patternDao: PatternDao
 
     private suspend fun getPatternById(patternId: String): Pattern? {
-        return patternDao.getPatternById(patternId, -1)
+        return patternDao.getPatternById(patternId)
     }
 
     override fun onCreateView(
@@ -232,7 +232,7 @@ class CreatePatternFragment : Fragment() {
         chipGroup.removeAllViews()
         viewLifecycleOwner.lifecycleScope.launch {
             patterns.forEach { patternId ->
-                patternDao.getPatternById(patternId, -1)?.let { pattern ->
+                patternDao.getPatternById(patternId)?.let { pattern ->
                     chipGroup.addView(
                         Chip(requireContext()).apply {
                             text = pattern.name

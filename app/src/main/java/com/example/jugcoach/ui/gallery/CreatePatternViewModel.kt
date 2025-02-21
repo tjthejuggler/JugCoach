@@ -32,7 +32,7 @@ class CreatePatternViewModel @Inject constructor(
             relationshipType = relationship
 
             // Load the source pattern
-            val sourcePattern = patternDao.getPatternById(patternId, -1) // -1 to get any pattern
+            val sourcePattern = patternDao.getPatternById(patternId)
             sourcePattern?.let { pattern ->
                 // Copy tags from source pattern
                 pattern.tags.forEach { tag ->
