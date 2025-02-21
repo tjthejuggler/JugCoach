@@ -6,7 +6,10 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ArrayAdapter
 import android.widget.AutoCompleteTextView
+import android.widget.Button
 import androidx.activity.result.contract.ActivityResultContracts
+import com.example.jugcoach.R
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import dagger.hilt.android.AndroidEntryPoint
@@ -60,6 +63,10 @@ class SettingsFragment : Fragment() {
 
             importButton.setOnClickListener {
                 getContent.launch("application/json")
+            }
+
+            deleteAllPatternsButton.setOnClickListener {
+                showDeleteConfirmationDialog()
             }
 
             // Set up model settings save functionality
@@ -176,6 +183,24 @@ class SettingsFragment : Fragment() {
                 viewModel.clearMessage()
             }
         }
+    }
+
+    private fun showDeleteConfirmationDialog() {
+        val dialogView = layoutInflater.inflate(R.layout.dialog_delete_patterns, null)
+        val dialog = MaterialAlertDialogBuilder(requireContext())
+            .setView(dialogView)
+            .create()
+
+        dialogView.findViewById<Button>(R.id.cancelButton).setOnClickListener {
+            dialog.dismiss()
+        }
+
+        dialogView.findViewById<Button>(R.id.deleteButton).setOnClickListener {
+            viewModel.deleteAllPatterns()
+            dialog.dismiss()
+        }
+
+        dialog.show()
     }
 
     override fun onDestroyView() {

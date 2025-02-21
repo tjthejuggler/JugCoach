@@ -51,15 +51,12 @@ class PatternImporter(
                         val entities = batch.map { dto ->
                             PatternConverter.toEntity(dto).copy(coachId = coachId)
                         }
-                        if (replaceExisting) {
-                            patternDao.insertPatterns(entities)
-                        } else {
-                            // Only insert patterns that don't exist
-                            entities.forEach { pattern ->
-                                if (patternDao.getPatternById(pattern.id, coachId ?: -1) == null) {
-                                    patternDao.insertPattern(pattern)
-                                }
+                        entities.forEach { pattern ->
+                            // Delete any existing patterns with the same name
+                            patternDao.getPatternsByName(pattern.name, coachId ?: -1).forEach { existingPattern ->
+                                patternDao.deletePattern(existingPattern)
                             }
+                            patternDao.insertPattern(pattern)
                         }
                         patternsImported += batch.size
                     }
@@ -70,14 +67,12 @@ class PatternImporter(
                         val entities = batch.map { dto ->
                             PatternConverter.toEntity(dto).copy(coachId = coachId)
                         }
-                        if (replaceExisting) {
-                            patternDao.insertPatterns(entities)
-                        } else {
-                            entities.forEach { pattern ->
-                                if (patternDao.getPatternById(pattern.id, coachId ?: -1) == null) {
-                                    patternDao.insertPattern(pattern)
-                                }
+                        entities.forEach { pattern ->
+                            // Delete any existing patterns with the same name
+                            patternDao.getPatternsByName(pattern.name, coachId ?: -1).forEach { existingPattern ->
+                                patternDao.deletePattern(existingPattern)
                             }
+                            patternDao.insertPattern(pattern)
                         }
                         patternsImported += batch.size
                     }

@@ -151,9 +151,16 @@ interface PatternDao {
     @Query("SELECT * FROM patterns WHERE coachId = :coachId OR coachId IS NULL")
     suspend fun getAllPatternsSync(coachId: Long): List<Pattern>
 
+    @Query("""
+        SELECT * FROM patterns
+        WHERE name = :name
+        AND (coachId = :coachId OR coachId IS NULL)
+    """)
+    suspend fun getPatternsByName(name: String, coachId: Long): List<Pattern>
+
     @Transaction
     @Query("""
-        SELECT p.* FROM patterns p 
+        SELECT p.* FROM patterns p
         INNER JOIN sessions s ON p.id = s.patternId
         WHERE (p.coachId = :coachId OR p.coachId IS NULL)
         GROUP BY p.id

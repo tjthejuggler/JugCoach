@@ -136,7 +136,7 @@ class SettingsViewModel @Inject constructor(
             try {
                 android.util.Log.d("SettingsViewModel", "Starting pattern import from URI: $uri")
                 val coachId = if (asShared) null else 1L
-                patternImporter.importFromUri(uri, coachId)
+                patternImporter.importFromUri(uri, coachId, replaceExisting = true)
                 android.util.Log.d("SettingsViewModel", "Patterns imported successfully")
                 showMessage("Patterns imported successfully")
             } catch (e: Exception) {
@@ -154,6 +154,18 @@ class SettingsViewModel @Inject constructor(
 
     fun clearMessage() {
         _uiState.update { it.copy(message = null) }
+    }
+
+    fun deleteAllPatterns() {
+        viewModelScope.launch {
+            try {
+                patternDao.deleteAllPatterns()
+                showMessage("All patterns deleted successfully")
+            } catch (e: Exception) {
+                android.util.Log.e("SettingsViewModel", "Failed to delete patterns", e)
+                showMessage("Failed to delete patterns: ${e.message}")
+            }
+        }
     }
 
     private fun loadModelSettings() {
