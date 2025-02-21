@@ -55,19 +55,6 @@
 
         </LinearLayout>
 
-        <TextView
-            android:id="@+id/pattern_description"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:ellipsize="end"
-            android:maxLines="2"
-            android:textAppearance="?attr/textAppearanceBody2"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/pattern_name"
-            tools:text="The basic three ball juggling pattern..." />
-
     </androidx.constraintlayout.widget.ConstraintLayout>
 
 </com.google.android.material.card.MaterialCardView>

@@ -39,7 +39,6 @@ class PatternAdapter(
                 } else {
                     pattern.name
                 }
-                patternDescription.text = pattern.explanation
                 
                 // Show pattern info
                 patternDifficulty.text = pattern.difficulty?.let { "Difficulty: $it" } ?: "Difficulty: -"
