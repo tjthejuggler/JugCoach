@@ -15,6 +15,10 @@ data class PatternDTO(
     val explanation: String?,
     val gifUrl: String?,
     val video: String?,
+    @SerializedName("videoStartTime")
+    val videoStartTime: Int?,
+    @SerializedName("videoEndTime")
+    val videoEndTime: Int?,
     val url: String?,
     val tags: List<String>?,
     @SerializedName("prereqs")

@@ -20,7 +20,7 @@ import com.example.jugcoach.data.entity.*
         ChatMessage::class,
         CoachProposal::class
     ],
-    version = 13,
+    version = 14,
     exportSchema = true
 )
 @TypeConverters(
@@ -206,6 +206,14 @@ abstract class JugCoachDatabase : RoomDatabase() {
             }
         }
 
+        private val MIGRATION_13_14 = object : androidx.room.migration.Migration(13, 14) {
+            override fun migrate(db: androidx.sqlite.db.SupportSQLiteDatabase) {
+                // Add video time columns to patterns table
+                db.execSQL("ALTER TABLE patterns ADD COLUMN videoStartTime INTEGER DEFAULT NULL")
+                db.execSQL("ALTER TABLE patterns ADD COLUMN videoEndTime INTEGER DEFAULT NULL")
+            }
+        }
+
         fun getDatabase(context: Context): JugCoachDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -225,7 +233,8 @@ abstract class JugCoachDatabase : RoomDatabase() {
                         MIGRATION_9_10,
                         MIGRATION_10_11,
                         MIGRATION_11_12,
-                        MIGRATION_12_13
+                        MIGRATION_12_13,
+                        MIGRATION_13_14
                     )
                     .build()
                 INSTANCE = instance

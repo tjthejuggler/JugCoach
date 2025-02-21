@@ -147,10 +147,14 @@ class EditPatternViewModel @Inject constructor(
             changes["related"] = newPattern.related
         if (oldPattern.tags != newPattern.tags) 
             changes["tags"] = newPattern.tags
-        if (oldPattern.runHistory != newPattern.runHistory) 
+        if (oldPattern.runHistory != newPattern.runHistory)
             changes["runHistory"] = gson.toJson(newPattern.runHistory)
-        if (oldPattern.record != newPattern.record) 
+        if (oldPattern.record != newPattern.record)
             changes["record"] = gson.toJson(newPattern.record)
+        if (oldPattern.videoStartTime != newPattern.videoStartTime)
+            changes["videoStartTime"] = newPattern.videoStartTime?.toString() ?: ""
+        if (oldPattern.videoEndTime != newPattern.videoEndTime)
+            changes["videoEndTime"] = newPattern.videoEndTime?.toString() ?: ""
         
         return changes
     }

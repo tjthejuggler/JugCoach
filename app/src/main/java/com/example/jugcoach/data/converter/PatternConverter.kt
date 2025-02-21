@@ -28,6 +28,8 @@ object PatternConverter {
             explanation = dto.explanation,
             gifUrl = dto.gifUrl,
             video = dto.video,
+            videoStartTime = dto.videoStartTime,
+            videoEndTime = dto.videoEndTime,
             url = dto.url,
             tags = dto.tags ?: emptyList(),
             prerequisites = (dto.prerequisites ?: emptyList()).mapNotNull { name ->
@@ -77,6 +79,8 @@ object PatternConverter {
                 explanation = pattern.explanation,
                 gifUrl = pattern.gifUrl,
                 video = pattern.video,
+                videoStartTime = pattern.videoStartTime,
+                videoEndTime = pattern.videoEndTime,
                 url = pattern.url,
                 tags = pattern.tags,
                 prerequisites = pattern.prerequisites,

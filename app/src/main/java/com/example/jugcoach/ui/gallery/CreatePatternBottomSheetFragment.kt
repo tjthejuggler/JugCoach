@@ -42,7 +42,6 @@ class CreatePatternBottomSheetFragment : BottomSheetDialogFragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         setupNumBallsChips()
-        setupVideoTimeInputs()
         setupFormListeners()
         setupButtons()
         observeState()
@@ -65,11 +64,9 @@ class CreatePatternBottomSheetFragment : BottomSheetDialogFragment() {
         binding.gifUrlLayout.error = state.gifUrlError
         binding.tutorialUrlLayout.error = state.tutorialUrlError
 
-        // Update video time error if visible
-        if (binding.videoTimeLayout.isVisible) {
-            binding.startTimeLayout.error = state.videoTimeError
-            binding.endTimeLayout.error = state.videoTimeError
-        }
+        // Update video time error
+        binding.startTimeLayout.error = state.videoTimeError
+        binding.endTimeLayout.error = state.videoTimeError
 
         // Update available tags
         binding.availableTagsGroup.removeAllViews()
@@ -162,17 +159,6 @@ class CreatePatternBottomSheetFragment : BottomSheetDialogFragment() {
                 }
             }
             binding.numBallsGroup.addView(chip)
-        }
-    }
-
-    private fun setupVideoTimeInputs() {
-        binding.toggleTimeButton.setOnClickListener {
-            binding.videoTimeLayout.isVisible = !binding.videoTimeLayout.isVisible
-            binding.toggleTimeButton.text = if (binding.videoTimeLayout.isVisible) {
-                "Hide Time Range"
-            } else {
-                "Add Time Range"
-            }
         }
     }
 

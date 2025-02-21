@@ -132,7 +132,6 @@ class EditPatternFragment : Fragment() {
         }
     }
 
-
     private fun setupPatternSelectionButtons() {
         binding.addPrerequisiteButton.setOnClickListener {
             showPatternSelectionDialog("Select Prerequisite") { pattern ->
@@ -213,6 +212,8 @@ class EditPatternFragment : Fragment() {
             explanationEdit.setText(pattern.explanation)
             gifUrlEdit.setText(pattern.gifUrl)
             videoUrlEdit.setText(pattern.video)
+            videoStartTimeEdit.setText(pattern.videoStartTime?.toString() ?: "")
+            videoEndTimeEdit.setText(pattern.videoEndTime?.toString() ?: "")
             externalUrlEdit.setText(pattern.url)
 
             // Update available tags
@@ -423,6 +424,22 @@ class EditPatternFragment : Fragment() {
             explanation = binding.explanationEdit.text.toString().trim(),
             gifUrl = binding.gifUrlEdit.text.toString().trim(),
             video = binding.videoUrlEdit.text.toString().trim(),
+            videoStartTime = binding.videoStartTimeEdit.text?.toString()?.trim()?.let { startTime ->
+                try {
+                    startTime.toInt()
+                } catch (e: NumberFormatException) {
+                    binding.videoStartTimeEdit.error = getString(R.string.invalid_number)
+                    return null
+                }
+            },
+            videoEndTime = binding.videoEndTimeEdit.text?.toString()?.trim()?.let { endTime ->
+                try {
+                    endTime.toInt()
+                } catch (e: NumberFormatException) {
+                    binding.videoEndTimeEdit.error = getString(R.string.invalid_number)
+                    return null
+                }
+            },
             url = binding.externalUrlEdit.text.toString().trim(),
             tags = binding.selectedTagsGroup.children.map { (it as Chip).text.toString() }.toList(),
             record = if (binding.recordCatchesEdit.text.toString().isNotEmpty()) {

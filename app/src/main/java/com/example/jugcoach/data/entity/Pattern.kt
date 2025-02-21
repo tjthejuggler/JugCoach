@@ -35,6 +35,8 @@ data class Pattern(
     val explanation: String? = null,
     val gifUrl: String? = null,
     val video: String? = null,
+    val videoStartTime: Int? = null,
+    val videoEndTime: Int? = null,
     val url: String? = null,
     val tags: List<String> = emptyList(),
     val prerequisites: List<String> = emptyList(),

@@ -297,13 +297,14 @@ class CreatePatternViewModel @Inject constructor(
     private fun validateVideoTimes(startTime: String, endTime: String): String? {
         if (startTime.isBlank() || endTime.isBlank()) return null
         
-        val start = parseTimeToSeconds(startTime)
-        val end = parseTimeToSeconds(endTime)
+        val start = startTime.toIntOrNull()
+        val end = endTime.toIntOrNull()
         
         return when {
-            start == null -> "Invalid start time format (use mm:ss)"
-            end == null -> "Invalid end time format (use mm:ss)"
+            start == null -> "Start time must be a number"
+            end == null -> "End time must be a number"
             start >= end -> "End time must be after start time"
+            start < 0 -> "Start time must be positive"
             else -> null
         }
     }
@@ -352,18 +353,6 @@ class CreatePatternViewModel @Inject constructor(
         return url.startsWith("http://") || url.startsWith("https://")
     }
 
-    private fun parseTimeToSeconds(time: String): Int? {
-        val parts = time.split(":")
-        if (parts.size != 2) return null
-        
-        val minutes = parts[0].toIntOrNull() ?: return null
-        val seconds = parts[1].toIntOrNull() ?: return null
-        
-        if (minutes < 0 || seconds !in 0..59) return null
-        
-        return minutes * 60 + seconds
-    }
-
     // Save pattern
     fun savePattern() {
         if (!isFormValid()) return
@@ -378,6 +367,8 @@ class CreatePatternViewModel @Inject constructor(
                 explanation = _uiState.value.explanation.takeIf { it.isNotBlank() },
                 gifUrl = _uiState.value.gifUrl.takeIf { it.isNotBlank() },
                 video = _uiState.value.videoUrl.takeIf { it.isNotBlank() },
+                videoStartTime = _uiState.value.videoStartTime.takeIf { it.isNotBlank() }?.toIntOrNull(),
+                videoEndTime = _uiState.value.videoEndTime.takeIf { it.isNotBlank() }?.toIntOrNull(),
                 url = _uiState.value.tutorialUrl.takeIf { it.isNotBlank() },
                 tags = _uiState.value.tags.toList(),
                 prerequisites = _uiState.value.prerequisites.toList(),
