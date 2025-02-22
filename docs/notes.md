@@ -3,6 +3,14 @@
 
 immediate todo
 
+organize, consolidate the notes
+
+JugCoach
+It will be great to have a camera set up and I can easily just have a button to make it record and take a note of what i say and store it with whatever tags or whatever for later review
+For jahvorsky's videos I have to go through and get the new url for them all - can this be automated?
+-get it to update the skilldex record of a pattern if broken.
+-make an easy way for me to rip Instagram or other videos and input them on local device
+
 get rid of the bug that shows an empty tag in the pattern details page
 
 in addition to search, or maybe instead of search there should be a way for the coach to query the 
