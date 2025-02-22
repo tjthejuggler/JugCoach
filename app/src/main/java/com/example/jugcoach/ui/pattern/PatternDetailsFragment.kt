@@ -396,6 +396,20 @@ class PatternDetailsFragment : Fragment() {
                 urlButton.isVisible = false
             }
 
+            // Set external video button
+            pattern.video?.let { video ->
+                externalVideoButton.isVisible = true
+                externalVideoButton.setOnClickListener {
+                    // Open video URL in browser
+                    startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(video)))
+                }
+            } ?: run {
+                externalVideoButton.isVisible = false
+            }
+
+            // Show buttons container if either URL or video exists
+            buttonsContainer.isVisible = pattern.url != null || pattern.video != null
+
             // Show personal record
             pattern.record?.let { record ->
                 recordCard.isVisible = true

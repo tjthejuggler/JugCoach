@@ -123,6 +123,15 @@
                 app:layout_goneMarginTop="0dp">
 
                 <com.google.android.material.button.MaterialButton
+                    android:id="@+id/external_video_button"
+                    style="@style/Widget.MaterialComponents.Button.TextButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/watch_video"
+                    android:visibility="gone"
+                    app:icon="@android:drawable/ic_media_play" />
+
+                <com.google.android.material.button.MaterialButton
                     android:id="@+id/url_button"
                     style="@style/Widget.MaterialComponents.Button.TextButton"
                     android:layout_width="wrap_content"
