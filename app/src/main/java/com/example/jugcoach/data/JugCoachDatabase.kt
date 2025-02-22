@@ -20,7 +20,7 @@ import com.example.jugcoach.data.entity.*
         ChatMessage::class,
         CoachProposal::class
     ],
-    version = 14,
+    version = 15,
     exportSchema = true
 )
 @TypeConverters(
@@ -214,6 +214,56 @@ abstract class JugCoachDatabase : RoomDatabase() {
             }
         }
 
+        private val MIGRATION_14_15 = object : androidx.room.migration.Migration(14, 15) {
+            override fun migrate(db: androidx.sqlite.db.SupportSQLiteDatabase) {
+                // Get all patterns with their run histories
+                val cursor = db.query("SELECT id, history_runs, record_catches, record_date FROM patterns")
+                
+                while (cursor.moveToNext()) {
+                    val id = cursor.getString(cursor.getColumnIndexOrThrow("id"))
+                    val runsJson = cursor.getString(cursor.getColumnIndexOrThrow("history_runs"))
+                    
+                    // Parse run history JSON to find highest catch count
+                    try {
+                        val runs = com.google.gson.JsonParser.parseString(runsJson).asJsonArray
+                        var maxCatches: Int? = null
+                        var maxCatchDate: Long? = null
+                        
+                        for (run in runs) {
+                            val runObj = run.asJsonObject
+                            if (runObj.has("catches") && !runObj.get("catches").isJsonNull) {
+                                val catches = runObj.get("catches").asInt
+                                val date = runObj.get("date").asLong
+                                
+                                if (maxCatches == null || catches > maxCatches) {
+                                    maxCatches = catches
+                                    maxCatchDate = date
+                                }
+                            }
+                        }
+                        
+                        // Update record if needed
+                        if (maxCatches != null) {
+                            val currentRecord = if (!cursor.isNull(cursor.getColumnIndexOrThrow("record_catches"))) {
+                                cursor.getInt(cursor.getColumnIndexOrThrow("record_catches"))
+                            } else null
+                            
+                            if (currentRecord == null || maxCatches > currentRecord) {
+                                db.execSQL("""
+                                    UPDATE patterns
+                                    SET record_catches = ?, record_date = ?
+                                    WHERE id = ?
+                                """, arrayOf(maxCatches, maxCatchDate, id))
+                            }
+                        }
+                    } catch (e: Exception) {
+                        android.util.Log.e("Migration14_15", "Error processing pattern $id: ${e.message}")
+                    }
+                }
+                cursor.close()
+            }
+        }
+
         fun getDatabase(context: Context): JugCoachDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -234,7 +284,8 @@ abstract class JugCoachDatabase : RoomDatabase() {
                         MIGRATION_10_11,
                         MIGRATION_11_12,
                         MIGRATION_12_13,
-                        MIGRATION_13_14
+                        MIGRATION_13_14,
+                        MIGRATION_14_15
                     )
                     .build()
                 INSTANCE = instance

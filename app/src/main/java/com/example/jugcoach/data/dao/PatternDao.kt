@@ -213,13 +213,63 @@ interface PatternDao {
         val updatedPattern = pattern.copy(
             runHistory = pattern.runHistory.copy(
                 runs = pattern.runHistory.runs + newRun
-            ),
-            // Update record if this run has more catches than current record
-            record = if (catches != null && (pattern.record == null || catches > pattern.record.catches)) {
-                Record(catches = catches, date = date)
-            } else pattern.record
+            )
         )
         
-        updatePattern(updatedPattern)
+        // Update record if needed
+        updatePattern(updateRecordIfNeeded(updatedPattern))
+    }
+
+    @Transaction
+    suspend fun updateRun(patternId: String, oldRun: Run, newRun: Run) {
+        val pattern = getPatternById(patternId) ?: return
+        
+        // Update the run in history
+        val updatedRuns = pattern.runHistory.runs.map {
+            if (it.date == oldRun.date) newRun else it
+        }
+        
+        // Update pattern with new history
+        val updatedPattern = pattern.copy(
+            runHistory = pattern.runHistory.copy(runs = updatedRuns)
+        )
+        
+        // Update record if needed
+        updatePattern(updateRecordIfNeeded(updatedPattern))
+    }
+
+    @Transaction
+    suspend fun deleteRun(patternId: String, runToDelete: Run) {
+        val pattern = getPatternById(patternId) ?: return
+        
+        // Remove run from history
+        val updatedRuns = pattern.runHistory.runs.filter { it.date != runToDelete.date }
+        
+        // Update pattern with new history
+        val updatedPattern = pattern.copy(
+            runHistory = pattern.runHistory.copy(runs = updatedRuns)
+        )
+        
+        // Update record if needed
+        updatePattern(updateRecordIfNeeded(updatedPattern))
+    }
+
+    /**
+     * Helper function to update a pattern's record based on its runs
+     * @param pattern The pattern to check
+     * @return Updated pattern with correct record
+     */
+    private fun updateRecordIfNeeded(pattern: Pattern): Pattern {
+        // Find highest catch count among all runs
+        val maxCatchRun = pattern.runHistory.runs
+            .filter { it.catches != null }
+            .maxByOrNull { it.catches!! }
+
+        // Update record if needed
+        return pattern.copy(
+            record = maxCatchRun?.let { run ->
+                Record(catches = run.catches!!, date = run.date)
+            }
+        )
     }
 }
