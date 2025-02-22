@@ -450,19 +450,27 @@ class EditPatternFragment : Fragment() {
             gifUrl = binding.gifUrlEdit.text.toString().trim(),
             video = binding.videoUrlEdit.text.toString().trim(),
             videoStartTime = binding.videoStartTimeEdit.text?.toString()?.trim()?.let { startTime ->
-                try {
-                    startTime.toInt()
-                } catch (e: NumberFormatException) {
-                    binding.videoStartTimeEdit.error = getString(R.string.invalid_number)
-                    return null
+                if (startTime.isEmpty()) {
+                    null
+                } else {
+                    try {
+                        startTime.toInt()
+                    } catch (e: NumberFormatException) {
+                        binding.videoStartTimeEdit.error = getString(R.string.invalid_number)
+                        return null
+                    }
                 }
             },
             videoEndTime = binding.videoEndTimeEdit.text?.toString()?.trim()?.let { endTime ->
-                try {
-                    endTime.toInt()
-                } catch (e: NumberFormatException) {
-                    binding.videoEndTimeEdit.error = getString(R.string.invalid_number)
-                    return null
+                if (endTime.isEmpty()) {
+                    null
+                } else {
+                    try {
+                        endTime.toInt()
+                    } catch (e: NumberFormatException) {
+                        binding.videoEndTimeEdit.error = getString(R.string.invalid_number)
+                        return null
+                    }
                 }
             },
             url = binding.externalUrlEdit.text.toString().trim(),
