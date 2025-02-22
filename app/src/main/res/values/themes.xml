@@ -22,4 +22,11 @@
     <style name="Theme.JugCoach.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" />
 
     <style name="Theme.JugCoach.PopupOverlay" parent="ThemeOverlay.AppCompat.Light" />
+
+    <style name="VideoControlButton">
+        <item name="android:layout_width">48dp</item>
+        <item name="android:layout_height">48dp</item>
+        <item name="android:background">?attr/selectableItemBackgroundBorderless</item>
+        <item name="android:padding">12dp</item>
+    </style>
 </resources>

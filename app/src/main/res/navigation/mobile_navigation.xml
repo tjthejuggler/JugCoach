@@ -23,7 +23,7 @@
 
     <fragment
         android:id="@+id/patternDetailsFragment"
-        android:name="com.example.jugcoach.ui.details.PatternDetailsFragment"
+        android:name="com.example.jugcoach.ui.pattern.PatternDetailsFragment"
         android:label="Pattern Details"
         tools:layout="@layout/fragment_pattern_details">
         <argument
@@ -39,7 +39,7 @@
 
     <fragment
         android:id="@+id/editPatternFragment"
-        android:name="com.example.jugcoach.ui.details.EditPatternFragment"
+        android:name="com.example.jugcoach.ui.pattern.EditPatternFragment"
         android:label="Edit Pattern"
         tools:layout="@layout/fragment_edit_pattern">
         <argument

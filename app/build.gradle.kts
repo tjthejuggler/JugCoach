@@ -50,6 +50,15 @@ kapt {
 }
 
 dependencies {
+    // ExoPlayer
+    implementation(libs.exoplayer.core)
+    implementation(libs.exoplayer.ui)
+
+    // WorkManager
+    implementation(libs.androidx.work.runtime.ktx)
+    implementation(libs.hilt.work)
+    kapt(libs.hilt.work)
+
     // Hilt
     implementation(libs.hilt.android)
     kapt(libs.hilt.compiler)

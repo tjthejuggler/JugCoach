@@ -1,6 +1,8 @@
 package com.example.jugcoach
 
 import android.app.Application
+import androidx.hilt.work.HiltWorkerFactory
+import androidx.work.Configuration
 import com.example.jugcoach.data.JugCoachDatabase
 import com.example.jugcoach.data.entity.SettingType
 import com.example.jugcoach.data.entity.SettingCategory
@@ -10,9 +12,18 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 @HiltAndroidApp
-class JugCoachApplication : Application() {
+class JugCoachApplication : Application(), Configuration.Provider {
+    @Inject
+    lateinit var workerFactory: HiltWorkerFactory
+
+    override val workManagerConfiguration: Configuration
+        get() = Configuration.Builder()
+            .setWorkerFactory(workerFactory)
+            .build()
+
     private val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
     override fun onCreate() {

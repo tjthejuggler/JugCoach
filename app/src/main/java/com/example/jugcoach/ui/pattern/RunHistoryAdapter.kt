@@ -1,4 +1,4 @@
-package com.example.jugcoach.ui.details
+package com.example.jugcoach.ui.pattern
 
 import android.view.LayoutInflater
 import android.view.View

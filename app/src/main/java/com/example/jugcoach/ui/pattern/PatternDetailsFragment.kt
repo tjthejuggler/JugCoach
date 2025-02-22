@@ -1,4 +1,4 @@
-package com.example.jugcoach.ui.details
+package com.example.jugcoach.ui.pattern
 
 import android.content.Intent
 import com.example.jugcoach.glide.GlideApp
@@ -13,6 +13,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.animation.RotateAnimation
 import android.view.animation.Animation
+import android.widget.TextView
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
@@ -21,6 +22,8 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
+import androidx.work.WorkInfo
+import androidx.work.WorkManager
 import com.example.jugcoach.R
 import com.example.jugcoach.data.entity.Pattern
 import com.example.jugcoach.data.entity.Run
@@ -31,14 +34,21 @@ import com.example.jugcoach.ui.adapters.PatternAdapter
 import com.google.android.material.chip.Chip
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
+import com.example.jugcoach.data.service.VideoManager
+import com.example.jugcoach.ui.video.VideoPlayerView
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class PatternDetailsFragment : Fragment() {
 
     private var _binding: FragmentPatternDetailsBinding? = null
     private val binding get() = _binding!!
+    private lateinit var videoPlayer: VideoPlayerView
+
+    @Inject
+    lateinit var videoManager: VideoManager
 
     private val args: PatternDetailsFragmentArgs by navArgs()
     private val viewModel: PatternDetailsViewModel by viewModels()
@@ -84,6 +94,12 @@ class PatternDetailsFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         
+        // Initialize video player immediately after binding
+        videoPlayer = binding.videoPlayer.apply {
+            isVisible = false // Hide initially
+            preparePlayer() // Initialize player
+        }
+        
         setupToolbar()
         setupRecyclerViews()
         setupCollapsibleSections()
@@ -97,6 +113,26 @@ class PatternDetailsFragment : Fragment() {
                 viewModel.loadPattern()
             }
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // Prepare player when fragment becomes visible
+        if (videoPlayer.isVisible) {
+            videoPlayer.preparePlayer()
+        }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        // Release player when fragment is not visible
+        videoPlayer.releasePlayer()
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        videoPlayer.releasePlayer()
+        _binding = null
     }
 
     private fun setupToolbar() {
@@ -332,15 +368,21 @@ class PatternDetailsFragment : Fragment() {
                 isVisible = true
             }
 
-            // Set video button
-            pattern.video?.let { videoUrl ->
-                videoButton.isVisible = true
-                videoButton.setOnClickListener {
-                    // Open video URL in browser
-                    startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(videoUrl)))
+            // Set up video player
+            if (pattern.video != null) {
+                binding.patternAnimation.isVisible = false
+                videoPlayer.isVisible = true
+                
+                if (videoManager.isVideoDownloaded(pattern)) {
+                    videoPlayer.setPattern(pattern)
+                } else {
+                    // Start download and observe progress
+                    videoManager.downloadVideo(pattern)
+                    observeVideoDownload(pattern)
                 }
-            } ?: run {
-                videoButton.isVisible = false
+            } else {
+                videoPlayer.isVisible = false
+                binding.patternAnimation.isVisible = pattern.gifUrl != null
             }
 
             // Set URL button
@@ -364,8 +406,8 @@ class PatternDetailsFragment : Fragment() {
                 recordCard.isVisible = false
             }
 
-            // Show buttons container only if video or url exists
-            buttonsContainer.isVisible = pattern.video != null || pattern.url != null
+            // Show buttons container only if url exists
+            buttonsContainer.isVisible = pattern.url != null
 
             // Calculate and show overall catches per minute
             val runsWithCatchesAndTime = runHistory.filter { it.catches != null && it.duration != null }
@@ -407,8 +449,38 @@ class PatternDetailsFragment : Fragment() {
         findNavController().navigate(action)
     }
 
-    override fun onDestroyView() {
-        super.onDestroyView()
-        _binding = null
+    private fun observeVideoDownload(pattern: Pattern) {
+        WorkManager.getInstance(requireContext())
+            .getWorkInfosForUniqueWorkLiveData("video_download_${pattern.id}")
+            .observe(viewLifecycleOwner) { workInfoList ->
+                workInfoList?.firstOrNull()?.let { workInfo ->
+                    when (workInfo.state) {
+                        WorkInfo.State.SUCCEEDED -> {
+                            // Video downloaded successfully, set up player
+                            videoPlayer.isVisible = true
+                            videoPlayer.setPattern(pattern)
+                        }
+                        WorkInfo.State.FAILED -> {
+                            // Show error message
+                            videoPlayer.isVisible = false
+                            binding.patternAnimation.isVisible = true
+                            showError(workInfo.outputData.getString("error_message") ?: "Failed to download video")
+                        }
+                        WorkInfo.State.RUNNING -> {
+                            // Update progress
+                            videoPlayer.isVisible = true
+                            val progress = workInfo.progress.getInt("progress", 0)
+                            videoPlayer.findViewById<TextView>(R.id.loading_text)?.text =
+                                getString(R.string.downloading_video_progress, progress)
+                        }
+                        else -> {
+                            // Other states (BLOCKED, CANCELLED, ENQUEUED)
+                            videoPlayer.isVisible = false
+                            binding.patternAnimation.isVisible = true
+                        }
+                    }
+                }
+            }
     }
+
 }
