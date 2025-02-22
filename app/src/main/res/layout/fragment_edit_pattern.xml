@@ -97,8 +97,7 @@
                         android:id="@+id/difficulty_edit"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:inputType="number"
-                        android:maxLength="2" />
+                        android:inputType="numberDecimal" />
 
                 </com.google.android.material.textfield.TextInputLayout>
 

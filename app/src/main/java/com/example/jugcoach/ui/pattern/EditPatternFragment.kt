@@ -151,6 +151,31 @@ class EditPatternFragment : Fragment() {
     }
 
     private fun observePattern() {
+        // Add text watcher for record catches input
+        binding.recordCatchesEdit.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+            override fun afterTextChanged(s: Editable?) {
+                // Get cursor position
+                val cursorPosition = binding.recordCatchesEdit.selectionStart
+                
+                // Only process if there's text and it's different from current
+                s?.toString()?.let { text ->
+                    if (text.isNotEmpty()) {
+                        try {
+                            text.toInt() // Validate it's a number but don't update anything
+                            binding.recordCatchesEdit.error = null
+                        } catch (e: NumberFormatException) {
+                            binding.recordCatchesEdit.error = getString(R.string.invalid_number)
+                        }
+                    }
+                }
+                
+                // Restore cursor position
+                binding.recordCatchesEdit.setSelection(cursorPosition)
+            }
+        })
+
         viewModel.pattern.observe(viewLifecycleOwner) { pattern ->
             pattern?.let { updateUI(it) }
         }
@@ -384,8 +409,8 @@ class EditPatternFragment : Fragment() {
         val difficultyStr = binding.difficultyEdit.text.toString().trim()
         if (difficultyStr.isNotEmpty()) {
             try {
-                val diff = difficultyStr.toInt()
-                if (diff !in 1..10) {
+                val diff = difficultyStr.toDouble()
+                if (diff !in 1.0..10.0) {
                     binding.difficultyEdit.error = getString(R.string.difficulty_range_error)
                     return false
                 }

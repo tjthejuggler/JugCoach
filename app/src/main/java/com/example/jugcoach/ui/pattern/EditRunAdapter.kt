@@ -19,7 +19,7 @@ class EditRunAdapter(
 ) : ListAdapter<Run, EditRunAdapter.ViewHolder>(RunDiffCallback()) {
 
     private val dateFormat = SimpleDateFormat("MMM d, yyyy", Locale.getDefault())
-    private val runs = mutableListOf<Run>()
+    private val pendingChanges = mutableMapOf<Int, Run>()
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val binding = ItemEditRunBinding.inflate(
@@ -58,12 +58,12 @@ class EditRunAdapter(
             override fun afterTextChanged(s: Editable?) {
                 val position = adapterPosition
                 if (position != RecyclerView.NO_POSITION) {
-                    val currentList = currentList.toMutableList()
-                    val run = currentList[position]
-                    currentList[position] = run.copy(
-                        catches = s.toString().toIntOrNull()
-                    )
-                    submitList(currentList)
+                    val run = getItem(position)
+                    val newCatches = s?.toString()?.toIntOrNull()
+                    if (run.catches != newCatches) {
+                        val updatedRun = run.copy(catches = newCatches)
+                        pendingChanges[position] = updatedRun
+                    }
                 }
             }
         }
@@ -74,37 +74,66 @@ class EditRunAdapter(
             override fun afterTextChanged(s: Editable?) {
                 val position = adapterPosition
                 if (position != RecyclerView.NO_POSITION) {
-                    val currentList = currentList.toMutableList()
-                    val run = currentList[position]
-                    currentList[position] = run.copy(
-                        duration = s.toString().toLongOrNull()
-                    )
-                    submitList(currentList)
+                    val run = pendingChanges[position] ?: getItem(position)
+                    val newDuration = s?.toString()?.toLongOrNull()
+                    if (run.duration != newDuration) {
+                        val updatedRun = run.copy(duration = newDuration)
+                        pendingChanges[position] = updatedRun
+                    }
                 }
             }
         }
 
+        private fun submitPendingChanges() {
+            val position = adapterPosition
+            if (position != RecyclerView.NO_POSITION && pendingChanges.containsKey(position)) {
+                val currentList = currentList.toMutableList()
+                currentList[position] = pendingChanges[position]!!
+                pendingChanges.remove(position)
+                submitList(currentList)
+            }
+        }
+
         init {
-            binding.catchesEdit.addTextChangedListener(catchesWatcher)
-            binding.durationEdit.addTextChangedListener(durationWatcher)
+            binding.catchesEdit.apply {
+                addTextChangedListener(catchesWatcher)
+                setOnFocusChangeListener { _, hasFocus ->
+                    if (!hasFocus) {
+                        submitPendingChanges()
+                    }
+                }
+            }
+            
+            binding.durationEdit.apply {
+                addTextChangedListener(durationWatcher)
+                setOnFocusChangeListener { _, hasFocus ->
+                    if (!hasFocus) {
+                        submitPendingChanges()
+                    }
+                }
+            }
+            
             binding.dateEdit.setOnClickListener {
                 val position = adapterPosition
                 if (position != RecyclerView.NO_POSITION) {
+                    submitPendingChanges() // Submit any pending changes before date selection
                     onDateClick(position, getItem(position))
                 }
             }
+            
             binding.cleanEndCheckbox.setOnCheckedChangeListener { _, isChecked ->
                 val position = adapterPosition
                 if (position != RecyclerView.NO_POSITION) {
-                    val currentList = currentList.toMutableList()
-                    val run = currentList[position]
-                    currentList[position] = run.copy(isCleanEnd = isChecked)
-                    submitList(currentList)
+                    val run = pendingChanges[position] ?: getItem(position)
+                    pendingChanges[position] = run.copy(isCleanEnd = isChecked)
+                    submitPendingChanges()
                 }
             }
+            
             binding.deleteButton.setOnClickListener {
                 val position = adapterPosition
                 if (position != RecyclerView.NO_POSITION) {
+                    pendingChanges.remove(position)
                     onDelete(position)
                 }
             }
