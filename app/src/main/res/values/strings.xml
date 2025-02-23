@@ -57,10 +57,9 @@
     <string name="watch_video">Watch video</string>
     <string name="learn_more">Learn more</string>
     <string name="personal_record">Personal Record</string>
-    <string name="downloading_video_progress">Downloading video... %d%%</string>
     <string name="loading_video">Loading video...</string>
     <string name="error_no_video_url">No video URL available</string>
-    <string name="error_loading_video">Failed to load video: %s</string>
+    <string name="error_loading_video">Error playing video: %s</string>
     <string name="run_history">Run History</string>
     <string name="prerequisites">Prerequisites</string>
     <string name="dependent_patterns">Dependent Patterns</string>

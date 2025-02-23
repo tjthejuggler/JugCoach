@@ -4,103 +4,22 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <!-- Video surface -->
+    <!-- Video surface with default controls -->
     <androidx.media3.ui.PlayerView
         android:id="@+id/player_view"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         app:resize_mode="fit"
-        app:use_controller="false"/>
+        app:show_buffering="always"
+        app:use_controller="true"/>
 
-    <!-- Custom controls -->
-    <LinearLayout
-        android:id="@+id/controls_container"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_gravity="bottom"
-        android:background="@drawable/video_controls_background"
-        android:orientation="vertical"
-        android:padding="8dp">
-
-        <!-- Timeline -->
-        <androidx.media3.ui.DefaultTimeBar
-            android:id="@+id/time_bar"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="8dp"
-            app:played_color="?attr/colorPrimary"
-            app:scrubber_color="?attr/colorPrimary"
-            app:buffered_color="?attr/colorPrimaryVariant"/>
-
-        <!-- Control buttons -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:gravity="center_vertical"
-            android:orientation="horizontal">
-
-            <ImageButton
-                android:id="@+id/play_pause"
-                style="@style/VideoControlButton"
-                android:src="@drawable/ic_play"
-                android:contentDescription="Play/Pause"/>
-
-            <com.google.android.material.slider.Slider
-                android:id="@+id/speed_control"
-                android:layout_width="0dp"
-                android:layout_weight="1"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:layout_marginEnd="8dp"
-                android:valueFrom="0.25"
-                android:valueTo="2.0"
-                android:stepSize="0.25"
-                android:value="1.0"/>
-
-            <TextView
-                android:id="@+id/speed_label"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:textSize="12sp"
-                android:text="1.0x"
-                android:textColor="@android:color/white"/>
-
-        </LinearLayout>
-    </LinearLayout>
-
-    <!-- Loading container -->
-    <FrameLayout
-        android:id="@+id/loading_container"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:background="#88000000"
-        android:visibility="gone">
-
-        <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:orientation="vertical"
-            android:gravity="center"
-            android:padding="16dp">
-
-            <ProgressBar
-                android:id="@+id/loading_indicator"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:indeterminateTintMode="src_in"
-                android:indeterminateTint="@android:color/white"/>
-
-            <TextView
-                android:id="@+id/loading_text"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:textColor="@android:color/white"
-                android:text="Loading video..."/>
-
-        </LinearLayout>
-    </FrameLayout>
+    <!-- Loading indicator -->
+    <ProgressBar
+        android:id="@+id/loading_indicator"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_gravity="center"
+        android:visibility="gone"/>
 
     <!-- Error message -->
     <TextView
@@ -108,12 +27,9 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
-        android:textColor="@android:color/white"
         android:background="#88000000"
         android:padding="16dp"
-        android:drawablePadding="8dp"
-        android:drawableTop="@android:drawable/ic_dialog_alert"
-        android:gravity="center"
+        android:textColor="@android:color/white"
         android:visibility="gone"/>
 
 </merge>

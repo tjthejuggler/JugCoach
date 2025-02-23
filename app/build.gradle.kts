@@ -50,18 +50,19 @@ kapt {
 }
 
 dependencies {
-    // ExoPlayer
-    implementation(libs.exoplayer.core)
-    implementation(libs.exoplayer.ui)
-
-    // WorkManager
-    implementation(libs.androidx.work.runtime.ktx)
-    implementation(libs.hilt.work)
-    kapt(libs.hilt.work)
+    // Media3 dependencies
+    implementation(libs.media3.common)
+    implementation(libs.media3.exoplayer)
+    implementation(libs.media3.ui)
 
     // Hilt
     implementation(libs.hilt.android)
     kapt(libs.hilt.compiler)
+
+    // WorkManager
+    implementation(libs.androidx.work.runtime.ktx)
+    implementation(libs.hilt.work)
+    kapt(libs.hilt.compiler)  // For Hilt Worker support
 
     // Room dependencies
     implementation(libs.androidx.room.runtime)

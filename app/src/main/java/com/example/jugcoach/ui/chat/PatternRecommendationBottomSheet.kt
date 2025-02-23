@@ -62,7 +62,7 @@ class PatternRecommendationBottomSheet : BottomSheetDialogFragment() {
                 nameFilterJob = viewLifecycleOwner.lifecycleScope.launch {
                     kotlinx.coroutines.delay(300) // Add 300ms delay
                     val currentFilters = viewModel.uiState.value.patternRecommendation.filters
-                    viewModel.updatePatternFilters(currentFilters.copy(nameFilter = s?.toString() ?: ""))
+                    viewModel.  updatePatternFilters(currentFilters.copy(nameFilter = s?.toString() ?: ""))
                 }
             }
         })

@@ -22,8 +22,6 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
-import androidx.work.WorkInfo
-import androidx.work.WorkManager
 import com.example.jugcoach.R
 import com.example.jugcoach.data.entity.Pattern
 import com.example.jugcoach.data.entity.Run
@@ -34,7 +32,6 @@ import com.example.jugcoach.ui.adapters.PatternAdapter
 import com.google.android.material.chip.Chip
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
-import com.example.jugcoach.data.service.VideoManager
 import com.example.jugcoach.ui.video.VideoPlayerView
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
@@ -46,9 +43,6 @@ class PatternDetailsFragment : Fragment() {
     private var _binding: FragmentPatternDetailsBinding? = null
     private val binding get() = _binding!!
     private lateinit var videoPlayer: VideoPlayerView
-
-    @Inject
-    lateinit var videoManager: VideoManager
 
     private val args: PatternDetailsFragmentArgs by navArgs()
     private val viewModel: PatternDetailsViewModel by viewModels()
@@ -384,17 +378,12 @@ class PatternDetailsFragment : Fragment() {
 
             // Set up video player
             if (pattern.video != null) {
+                binding.videoContainer.isVisible = true
                 binding.patternAnimation.isVisible = false
                 videoPlayer.isVisible = true
-                
-                if (videoManager.isVideoDownloaded(pattern)) {
-                    videoPlayer.setPattern(pattern)
-                } else {
-                    // Start download and observe progress
-                    videoManager.downloadVideo(pattern)
-                    observeVideoDownload(pattern)
-                }
+                videoPlayer.setPattern(pattern)
             } else {
+                binding.videoContainer.isVisible = false
                 videoPlayer.isVisible = false
                 binding.patternAnimation.isVisible = pattern.gifUrl != null
             }
@@ -477,38 +466,5 @@ class PatternDetailsFragment : Fragment() {
         findNavController().navigate(action)
     }
 
-    private fun observeVideoDownload(pattern: Pattern) {
-        WorkManager.getInstance(requireContext())
-            .getWorkInfosForUniqueWorkLiveData("video_download_${pattern.id}")
-            .observe(viewLifecycleOwner) { workInfoList ->
-                workInfoList?.firstOrNull()?.let { workInfo ->
-                    when (workInfo.state) {
-                        WorkInfo.State.SUCCEEDED -> {
-                            // Video downloaded successfully, set up player
-                            videoPlayer.isVisible = true
-                            videoPlayer.setPattern(pattern)
-                        }
-                        WorkInfo.State.FAILED -> {
-                            // Show error message
-                            videoPlayer.isVisible = false
-                            binding.patternAnimation.isVisible = true
-                            showError(workInfo.outputData.getString("error_message") ?: "Failed to download video")
-                        }
-                        WorkInfo.State.RUNNING -> {
-                            // Update progress
-                            videoPlayer.isVisible = true
-                            val progress = workInfo.progress.getInt("progress", 0)
-                            videoPlayer.findViewById<TextView>(R.id.loading_text)?.text =
-                                getString(R.string.downloading_video_progress, progress)
-                        }
-                        else -> {
-                            // Other states (BLOCKED, CANCELLED, ENQUEUED)
-                            videoPlayer.isVisible = false
-                            binding.patternAnimation.isVisible = true
-                        }
-                    }
-                }
-            }
-    }
 
 }
