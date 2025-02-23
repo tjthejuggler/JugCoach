@@ -15,6 +15,14 @@ object PatternConverter {
     private val gson = Gson()
     private val nameToIdMap = mutableMapOf<String, String>()
 
+    fun clearNameIdMappings() {
+        nameToIdMap.clear()
+    }
+
+    fun addNameIdMapping(name: String, id: String) {
+        nameToIdMap[name] = id
+    }
+
     fun toEntity(dto: PatternDTO, key: String? = null): Pattern {
         // Use the provided key or name as ID
         val id = key ?: dto.name

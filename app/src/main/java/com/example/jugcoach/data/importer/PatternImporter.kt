@@ -40,6 +40,9 @@ class PatternImporter(
         var patternsImported = 0
 
         try {
+            // Clear any existing name-ID mappings
+            PatternConverter.clearNameIdMappings()
+            
             context.contentResolver.openInputStream(uri)?.use { inputStream ->
                 val reader = BufferedReader(InputStreamReader(inputStream))
                 val content = reader.readText()
@@ -47,6 +50,12 @@ class PatternImporter(
                     // Try to parse as tricks wrapper first
                     val wrapper = gson.fromJson(content, TricksWrapper::class.java)
                     val patterns = wrapper.tricks.map { (key, dto) -> key to dto }
+                    
+                    // First, populate the name to ID map for all patterns
+                    patterns.forEach { (key, dto) ->
+                        PatternConverter.addNameIdMapping(dto.name, key)
+                    }
+                    
                     patterns.take(1).forEach { (key, dto) ->
                         android.util.Log.d("VideoTimeDebug", "Import - Key: $key, Name: ${dto.name}, Start: ${dto.videoStartTime}, End: ${dto.videoEndTime}")
                     }
@@ -81,6 +90,12 @@ class PatternImporter(
                     // If tricks wrapper format fails, try array format
                     try {
                         val patterns = gson.fromJson(content, Array<PatternDTO>::class.java).toList()
+                        
+                        // First, populate the name to ID map for all patterns
+                        patterns.forEach { dto ->
+                            PatternConverter.addNameIdMapping(dto.name, dto.name) // In array format, name is used as ID
+                        }
+                        
                         patterns.take(1).forEach { dto ->
                             android.util.Log.d("VideoTimeDebug", "Import (Array) - Name: ${dto.name}, Start: ${dto.videoStartTime}, End: ${dto.videoEndTime}")
                         }
