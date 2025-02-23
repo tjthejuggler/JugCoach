@@ -91,7 +91,7 @@ class PatternDetailsFragment : Fragment() {
         // Initialize video player immediately after binding
         videoPlayer = binding.videoPlayer.apply {
             isVisible = false // Hide initially
-            preparePlayer() // Initialize player
+            bindToLifecycle(viewLifecycleOwner)
         }
         
         setupToolbar()
@@ -109,23 +109,8 @@ class PatternDetailsFragment : Fragment() {
         }
     }
 
-    override fun onResume() {
-        super.onResume()
-        // Prepare player when fragment becomes visible
-        if (videoPlayer.isVisible) {
-            videoPlayer.preparePlayer()
-        }
-    }
-
-    override fun onPause() {
-        super.onPause()
-        // Release player when fragment is not visible
-        videoPlayer.releasePlayer()
-    }
-
     override fun onDestroyView() {
         super.onDestroyView()
-        videoPlayer.releasePlayer()
         _binding = null
     }
 

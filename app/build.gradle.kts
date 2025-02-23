@@ -54,6 +54,9 @@ dependencies {
     implementation(libs.media3.common)
     implementation(libs.media3.exoplayer)
     implementation(libs.media3.ui)
+    
+    // YouTube Player
+    implementation(libs.youtube.player)
 
     // Hilt
     implementation(libs.hilt.android)
