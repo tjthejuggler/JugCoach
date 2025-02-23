@@ -75,7 +75,6 @@ class ChatViewModel @Inject constructor(
         viewModelScope.launch {
             val currentCoach = stateManager.uiState.value.currentCoach ?: return@launch
 
-            // Get or create conversation
             val conversation = try {
                 messageRepository.getOrCreateConversation(
                     existingConversation = stateManager.uiState.value.currentConversation,
@@ -87,7 +86,6 @@ class ChatViewModel @Inject constructor(
                 return@launch
             }
 
-            // Save user message
             try {
                 messageRepository.saveMessage(
                     conversationId = conversation.id,
@@ -100,8 +98,6 @@ class ChatViewModel @Inject constructor(
             }
 
             stateManager.setLoading(true)
-
-            // Get API key
             val apiKey = apiService.getApiKey(currentCoach.apiKeyName)
             if (apiKey.isNullOrEmpty()) {
                 messageRepository.saveMessage(
@@ -114,10 +110,7 @@ class ChatViewModel @Inject constructor(
                 return@launch
             }
 
-            var response: com.example.jugcoach.data.api.AnthropicResponse? = null
-            
             try {
-                // Get message history
                 val recentMessages = stateManager.uiState.value.messages.takeLast(10)
                 val messageHistory = recentMessages.mapNotNull { msg ->
                     if (msg.text.isNotEmpty()) {
@@ -128,35 +121,12 @@ class ChatViewModel @Inject constructor(
                     } else null
                 }
 
-                Log.d("TOOL_DEBUG", """
-                    === [ChatViewModel] Starting Message Processing ===
-                    Message: $text
-                    Coach: ${currentCoach.name}
-                    Message History Size: ${messageHistory.size}
-                """.trimIndent())
-
-                // Load system prompt and determine route
                 val systemPrompt = apiService.loadSystemPrompt(currentCoach.systemPrompt ?: "system_prompt.txt")
-                Log.d("TOOL_DEBUG", """
-                    === [ChatViewModel] Loaded System Prompt ===
-                    Prompt Source: ${currentCoach.systemPrompt ?: "system_prompt.txt"}
-                    Prompt Preview: ${systemPrompt.take(100)}...
-                """.trimIndent())
-
                 val route = apiService.determineRoute(text)
-                Log.d("TOOL_DEBUG", """
-                    === [ChatViewModel] Route Determination ===
-                    Message: $text
-                    Determined Route: $route
-                    Will Use Tools: ${route != "no_tool"}
-                """.trimIndent())
 
-                // Handle response based on route
                 if (route == "no_tool") {
-                    Log.d("TOOL_DEBUG", "=== [ChatViewModel] Using Main LLM (No Tool) ===")
-                    // For non-tool routes, use Claude
                     val request = apiService.createAnthropicRequest(systemPrompt, messageHistory, text)
-                    response = apiService.sendMessage(apiKey, request)
+                    val response = apiService.sendMessage(apiKey, request)
                     val responseText = response.content.firstOrNull()?.text ?: "No response from the coach"
                     if (responseText.isNotEmpty()) {
                         messageRepository.saveMessage(
@@ -168,25 +138,7 @@ class ChatViewModel @Inject constructor(
                         )
                     }
                 } else {
-                    Log.d("TOOL_DEBUG", """
-                        === [ChatViewModel] Starting Tool Use Flow ===
-                        Route: $route
-                        Tool to Use: $route
-                        Message: $text
-                        Coach ID: ${currentCoach.id}
-                    """.trimIndent())
-                    
-                    // Get tool-use model name and settings
                     val toolUseModelName = settingsDao.getSettingValue(SettingsConstants.TOOL_USE_MODEL_NAME_KEY)
-                    val toolUseModelKey = settingsDao.getSettingValue(SettingsConstants.TOOL_USE_MODEL_KEY_KEY)
-                    
-                    Log.d("TOOL_DEBUG", """
-                        === [ChatViewModel] Tool Use Configuration ===
-                        Model Name: $toolUseModelName
-                        Has Model Key: ${!toolUseModelKey.isNullOrEmpty()}
-                    """.trimIndent())
-                    
-                    // Process with tool-use LLM
                     val toolResponse = apiService.processWithTool(
                         query = text,
                         toolName = route,
@@ -195,20 +147,6 @@ class ChatViewModel @Inject constructor(
                         coachId = currentCoach.id
                     )
 
-                    Log.d("TOOL_DEBUG", """
-                        === [ChatViewModel] Tool Response Received ===
-                        Response Length: ${toolResponse.length}
-                        Response Preview: ${toolResponse.take(100)}...
-                    """.trimIndent())
-                    
-                    Log.d("TOOL_DEBUG", """
-                        === [ChatViewModel] Saving Tool Response ===
-                        Conversation ID: ${conversation.id}
-                        Response Length: ${toolResponse.length}
-                        Model: ${toolUseModelName ?: "Tool-use LLM"}
-                        Is Error Response: ${toolResponse.startsWith("Error")}
-                    """.trimIndent())
-
                     messageRepository.saveMessage(
                         conversationId = conversation.id,
                         text = toolResponse,
@@ -216,8 +154,6 @@ class ChatViewModel @Inject constructor(
                         model = toolUseModelName ?: "Tool-use LLM",
                         apiKeyName = currentCoach.apiKeyName
                     )
-
-                    Log.d("TOOL_DEBUG", "=== [ChatViewModel] Tool Response Saved Successfully ===")
                 }
             } catch (e: retrofit2.HttpException) {
                 val errorMessage = when (e.code()) {
@@ -229,9 +165,7 @@ class ChatViewModel @Inject constructor(
                     conversationId = conversation.id,
                     text = errorMessage,
                     isFromUser = false,
-                    isError = true,
-                    model = response?.model,
-                    apiKeyName = currentCoach.apiKeyName
+                    isError = true
                 )
             } catch (e: Exception) {
                 val errorMessage = when {
@@ -243,9 +177,7 @@ class ChatViewModel @Inject constructor(
                     conversationId = conversation.id,
                     text = errorMessage,
                     isFromUser = false,
-                    isError = true,
-                    model = response?.model,
-                    apiKeyName = currentCoach.apiKeyName
+                    isError = true
                 )
             } finally {
                 stateManager.setLoading(false)
@@ -267,12 +199,8 @@ class ChatViewModel @Inject constructor(
 
     fun updatePatternFilters(filters: PatternFilters) {
         viewModelScope.launch {
-            val currentFilters = uiState.value.patternRecommendation.filters
-            // Only update and get new recommendation if filters actually changed
-            if (currentFilters != filters) {
-                stateManager.updatePatternFilters(filters)
-                getNewPatternRecommendation()
-            }
+            stateManager.updatePatternFilters(filters)
+            getNewPatternRecommendation()
         }
     }
 
@@ -318,7 +246,6 @@ class ChatViewModel @Inject constructor(
                     }
                 }
 
-                // Exclude current pattern if one exists
                 currentPattern?.let { current ->
                     add { pattern: Pattern ->
                         pattern.id != current.id
@@ -326,56 +253,22 @@ class ChatViewModel @Inject constructor(
                 }
             }
 
-            // Get all patterns matching filters
             val currentCoach = uiState.value.currentCoach
-            val matchingPatterns = patternDao.getAllPatternsSync(currentCoach?.id ?: -1)
-                .filter { pattern ->
-                    query.all { it(pattern) }
-                }
+            val recommendedPattern = patternDao.getAllPatternsSync(currentCoach?.id ?: -1)
+                .filter { pattern -> query.all { it(pattern) } }
+                .randomOrNull()
 
-            // Get random pattern from matches, falling back to including current pattern if no other matches
-            val recommendedPattern = if (matchingPatterns.isNotEmpty()) {
-                matchingPatterns.random()
-            } else {
-                // If no patterns match without current pattern, try including it
-                patternDao.getAllPatternsSync(currentCoach?.id ?: -1)
-                    .filter { pattern ->
-                        query.dropLast(1).all { it(pattern) } // Drop the "exclude current" predicate
-                    }
-                    .randomOrNull()
-            }
-            
             stateManager.updateRecommendedPattern(recommendedPattern)
-        }
-    }
-
-    fun selectPattern(pattern: Pattern?) {
-        viewModelScope.launch {
-            stateManager.selectPattern(pattern)
-        }
-    }
-
-    fun startRunFromMessage(message: ChatMessage) {
-        if (message.messageType == ChatMessage.MessageType.RUN_SUMMARY) {
-            // Extract pattern name from first line of message
-            val patternName = message.text.lines().first()
-            viewModelScope.launch {
-                // Find pattern by name
-                val pattern = patternDao.getAllPatternsSync(uiState.value.currentCoach?.id ?: -1)
-                    .find { it.name == patternName }
-                
-                pattern?.let {
-                    // Start new run with this pattern
-                    stateManager.startPatternRun(it)
-                    showPatternRecommendation()
-                }
-            }
         }
     }
 
     suspend fun findPatternByName(patternName: String): Pattern? {
         return patternDao.getAllPatternsSync(uiState.value.currentCoach?.id ?: -1)
             .find { it.name == patternName }
+    }
+
+    suspend fun findPatternById(patternId: String): Pattern? {
+        return patternDao.getPattern(patternId)
     }
 
     suspend fun getRandomPatternFromRelationship(patternId: String, relationshipType: String): Pattern? {
@@ -395,12 +288,15 @@ class ChatViewModel @Inject constructor(
         }
     }
 
-    suspend fun hasPatternRelationship(patternId: String, relationshipType: String): Boolean {
-        return when (relationshipType) {
-            CreatePatternViewModel.RELATIONSHIP_PREREQUISITE -> patternDao.hasPrerequisites(patternId)
-            CreatePatternViewModel.RELATIONSHIP_RELATED -> patternDao.hasRelated(patternId)
-            CreatePatternViewModel.RELATIONSHIP_DEPENDENT -> patternDao.hasDependents(patternId)
-            else -> false
+    fun startRunFromMessage(message: ChatMessage) {
+        if (message.messageType == ChatMessage.MessageType.RUN_SUMMARY) {
+            val patternName = message.text.lines().first()
+            viewModelScope.launch {
+                findPatternByName(patternName)?.let { pattern ->
+                    startPatternRun(pattern)
+                    showPatternRecommendation()
+                }
+            }
         }
     }
 
@@ -437,41 +333,16 @@ class ChatViewModel @Inject constructor(
         return (uiState.value.patternRun?.elapsedTime ?: 0L) / 1000L
     }
 
-    private suspend fun calculatePatternCatchesPerMinute(patternId: String) {
-        val pattern = patternDao.getPattern(patternId) ?: return
-        var totalCatches = 0
-        var totalSeconds = 0L
-        
-        // Sum up catches and duration from all runs that have both values
-        pattern.runHistory.runs.forEach { run ->
-            if (run.catches != null && run.duration != null) {
-                totalCatches += run.catches
-                totalSeconds += run.duration
-            }
-        }
-        
-        // Only update if we have valid data
-        if (totalCatches > 0 && totalSeconds > 0) {
-            val catchesPerMinute = (totalCatches.toDouble() / totalSeconds.toDouble()) * 60
-            patternDao.updateCatchesPerMinute(patternId, catchesPerMinute)
-        } else {
-            // Clear catches per minute if we don't have valid data
-            patternDao.updateCatchesPerMinute(patternId, null)
-        }
-    }
-
     fun endPatternRun(wasCatch: Boolean, catches: Int?, duration: Int? = null) {
         timerJob?.cancel()
         viewModelScope.launch {
             val currentRun = uiState.value.patternRun
             if (currentRun != null) {
                 val pattern = currentRun.pattern
-                // Use provided duration if available, otherwise use timer duration
                 val finalDuration = duration?.toLong() ?: if (currentRun.elapsedTime > 0) {
                     currentRun.elapsedTime / 1000L
                 } else null
 
-                // Save run to pattern history
                 patternDao.addRun(
                     patternId = pattern.id,
                     catches = catches,
@@ -480,34 +351,22 @@ class ChatViewModel @Inject constructor(
                     date = System.currentTimeMillis()
                 )
 
-                // Create summary message
                 val context = stateManager.getContext()
                 val summaryParts = mutableListOf<String>()
                 
-                // Add pattern name
                 summaryParts.add(pattern.name)
-
-                // Add duration if timer was used
                 duration?.let {
                     val minutes = it / 60
                     val seconds = it % 60
                     summaryParts.add(context.getString(R.string.run_time_format, minutes, seconds))
                 }
-
-                // Add catches if provided
                 catches?.let {
                     summaryParts.add(context.getString(R.string.run_summary_catches, it))
                 }
-
-                // Add shorter completion status
                 summaryParts.add(context.getString(
                     if (wasCatch) R.string.run_summary_end_clean else R.string.run_summary_end_drop
                 ))
 
-                // Calculate and update pattern's overall catches per minute
-                calculatePatternCatchesPerMinute(pattern.id)
-
-                // Save summary message
                 messageRepository.saveMessage(
                     conversationId = uiState.value.currentConversation?.id ?: return@launch,
                     text = summaryParts.joinToString("\n"),

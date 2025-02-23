@@ -16,6 +16,7 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
+import androidx.navigation.fragment.navArgs
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.jugcoach.R
@@ -41,6 +42,7 @@ class ChatFragment : Fragment() {
     private lateinit var chatAdapter: ChatAdapter
     private lateinit var layoutManager: LinearLayoutManager
     private var patternRunAdapter: PatternRunAdapter? = null
+    private val args: ChatFragmentArgs by navArgs()
     
     // Flags to prevent spinner selection callbacks during UI updates
     private var isUpdatingCoachSpinner = false
@@ -65,6 +67,18 @@ class ChatFragment : Fragment() {
         setupConversationControls()
         observeUiState()
         observeApiKeys()
+
+        // Handle navigation arguments
+        if (args.startTimer) {
+            args.patternId?.let { patternId ->
+                viewLifecycleOwner.lifecycleScope.launch {
+                    viewModel.findPatternById(patternId)?.let { pattern ->
+                        viewModel.startPatternRun(pattern)
+                        // Don't auto-start timer, let user click start button
+                    }
+                }
+            }
+        }
     }
 
     private fun setupConversationControls() {

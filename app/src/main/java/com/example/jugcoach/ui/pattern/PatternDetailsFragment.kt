@@ -159,11 +159,25 @@ class PatternDetailsFragment : Fragment() {
 
     private fun showAddRunDialog() {
         val dialogBinding = DialogAddRunBinding.inflate(LayoutInflater.from(context))
+        var dialog: androidx.appcompat.app.AlertDialog? = null
 
-        MaterialAlertDialogBuilder(requireContext())
+        // Set up chat timer button click
+        dialogBinding.chatTimerButton.setOnClickListener {
+            dialog?.dismiss() // Dismiss dialog first
+            // Then navigate to chat
+            val action = PatternDetailsFragmentDirections
+                .actionPatternDetailsFragmentToChatFragment(
+                    startTimer = true,
+                    patternId = viewModel.getCurrentPatternId()
+                )
+            findNavController().navigate(action)
+        }
+
+        dialog = MaterialAlertDialogBuilder(requireContext())
             .setTitle(R.string.add_new_run)
             .setView(dialogBinding.root)
             .setPositiveButton(R.string.add_run) { _, _ ->
+                // Manual input mode
                 val catches = dialogBinding.catchesInput.text?.toString()?.toIntOrNull()
                 val duration = dialogBinding.timeInput.text?.toString()?.toLongOrNull()
                 val isCleanEnd = dialogBinding.cleanEndCheckbox.isChecked

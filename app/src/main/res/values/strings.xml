@@ -24,6 +24,7 @@
     <string name="clean_end">Clean end</string>
     <string name="number_of_catches">Number of catches</string>
     <string name="record_catches">Record catches: %d</string>
+    <string name="chat_timer">Use Chat Timer</string>
 
     <!-- Pattern recommendation -->
     <string name="get_pattern_recommendation">Get pattern recommendation</string>

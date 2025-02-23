@@ -35,6 +35,12 @@
         <action
             android:id="@+id/action_patternDetailsFragment_to_editPatternFragment"
             app:destination="@id/editPatternFragment" />
+        <action
+            android:id="@+id/action_patternDetailsFragment_to_chatFragment"
+            app:destination="@id/nav_chat"
+            app:popUpTo="@id/nav_gallery"
+            app:popUpToInclusive="true"
+            app:popUpToSaveState="true" />
     </fragment>
 
     <fragment
@@ -52,12 +58,24 @@
         android:name="com.example.jugcoach.ui.chat.ChatFragment"
         android:label="@string/menu_chat"
         tools:layout="@layout/fragment_chat">
+        <argument
+            android:name="startTimer"
+            app:argType="boolean"
+            android:defaultValue="false" />
+        <argument
+            android:name="patternId"
+            app:argType="string"
+            app:nullable="true"
+            android:defaultValue="@null" />
         <action
             android:id="@+id/action_nav_chat_to_createCoachFragment"
             app:destination="@id/createCoachFragment" />
         <action
             android:id="@+id/action_nav_chat_to_patternDetailsFragment"
             app:destination="@id/patternDetailsFragment" />
+        <action
+            android:id="@+id/action_nav_chat_to_gallery"
+            app:destination="@id/nav_gallery" />
     </fragment>
 
     <fragment
