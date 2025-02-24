@@ -230,7 +230,7 @@ class PatternRecommendationBottomSheet : BottomSheetDialogFragment() {
     }
 
     private fun setupPatternButtons() {
-        binding.recommendedPatternName.setOnClickListener {
+        binding.patternInfoButton.setOnClickListener {
             viewModel.uiState.value.patternRecommendation.recommendedPattern?.let { pattern ->
                 findNavController().navigate(
                     R.id.action_nav_chat_to_patternDetailsFragment,
