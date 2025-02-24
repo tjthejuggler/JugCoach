@@ -426,6 +426,7 @@ class ChatViewModel @Inject constructor(
                     currentRun.elapsedTime / 1000L
                 } else null
 
+                android.util.Log.d("RunDebug", "Adding run - pattern: ${pattern.name}, duration: $finalDuration, clean: $wasCatch")
                 patternDao.addRun(
                     patternId = pattern.id,
                     catches = catches,
@@ -434,6 +435,10 @@ class ChatViewModel @Inject constructor(
                     date = System.currentTimeMillis()
                 )
 
+                // Get the updated pattern with new records after adding the run
+                val updatedPattern = patternDao.getPattern(pattern.id)
+                android.util.Log.d("RunDebug", "Got updated pattern - run history size: ${updatedPattern?.runHistory?.runs?.size}")
+                android.util.Log.d("RunDebug", "Run history: ${updatedPattern?.runHistory?.runs?.joinToString { "duration=${it.duration}, clean=${it.isCleanEnd}" }}")
                 val context = stateManager.getContext()
                 val summaryParts = mutableListOf<String>()
                 
@@ -446,9 +451,42 @@ class ChatViewModel @Inject constructor(
                 catches?.let {
                     summaryParts.add(context.getString(R.string.run_summary_catches, it))
                 }
-                summaryParts.add(context.getString(
+
+                // Check if this run broke any catch records
+                val isNewRecord = if (catches != null && updatedPattern != null) {
+                    android.util.Log.d("RunDebug", "Checking for record - Current catches: $catches")
+                    
+                    // Get all previous runs with the same ending type (clean/drop)
+                    val previousRuns = updatedPattern.runHistory.runs
+                        .filter { it.isCleanEnd == wasCatch && it.catches != null }
+                    
+                    android.util.Log.d("RunDebug", "Found ${previousRuns.size} previous ${if (wasCatch) "clean" else "drop"} runs")
+                    previousRuns.forEach { run ->
+                        android.util.Log.d("RunDebug", "Previous run: catches=${run.catches}, clean=${run.isCleanEnd}")
+                    }
+                    
+                    if (previousRuns.isEmpty()) {
+                        android.util.Log.d("RunDebug", "No previous runs of this type - this is a new record!")
+                        true
+                    } else {
+                        // Otherwise compare with the best previous catches
+                        val previousBest = previousRuns
+                            .mapNotNull { it.catches }
+                            .maxOrNull() ?: 0
+                        android.util.Log.d("RunDebug", "Previous best catches: $previousBest")
+                        val isRecord = catches >= previousBest
+                        android.util.Log.d("RunDebug", "Is new record? $isRecord")
+                        isRecord
+                    }
+                } else {
+                    android.util.Log.d("RunDebug", "No catches ($catches) or pattern ($updatedPattern) - not a record")
+                    false
+                }
+
+                val endText = context.getString(
                     if (wasCatch) R.string.run_summary_end_clean else R.string.run_summary_end_drop
-                ))
+                )
+                summaryParts.add(if (isNewRecord) "$endText (New Record!)" else endText)
 
                 messageRepository.saveMessage(
                     conversationId = uiState.value.currentConversation?.id ?: return@launch,
