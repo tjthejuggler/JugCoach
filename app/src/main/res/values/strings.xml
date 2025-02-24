@@ -94,6 +94,7 @@
     <string name="run_summary_end_clean">Clean</string>
     <string name="run_summary_end_drop">Drop</string>
     <string name="pattern_catches_per_minute">Average: %.1f catches/min</string>
+    <string name="pattern_stats_format">%.1f catches/min (based on %.1f minutes)</string>
 
     <!-- Pattern editing -->
     <string name="submit_for_approval">Submit for approval</string>

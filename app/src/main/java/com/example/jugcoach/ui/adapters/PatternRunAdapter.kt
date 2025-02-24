@@ -45,6 +45,27 @@ class PatternRunAdapter(
                     text = state.pattern.name
                     setOnClickListener { onPatternClick(state.pattern) }
                 }
+
+                patternStats.apply {
+                    val runsWithCatchesAndTime = state.pattern.runHistory.runs
+                        .filter { it.catches != null && it.duration != null }
+                    
+                    if (runsWithCatchesAndTime.isNotEmpty()) {
+                        val totalCatches = runsWithCatchesAndTime.sumOf { it.catches!! }
+                        val totalSeconds = runsWithCatchesAndTime.sumOf { it.duration!! }
+                        val overallCpm = (totalCatches.toDouble() / totalSeconds.toDouble()) * 60
+                        val timeInMinutes = totalSeconds / 60.0
+                        
+                        text = context.getString(
+                            R.string.pattern_stats_format,
+                            overallCpm,
+                            timeInMinutes
+                        )
+                        visibility = View.VISIBLE
+                    } else {
+                        visibility = View.GONE
+                    }
+                }
                 
                 // Timer display
                 timerDisplay.text = if (state.isCountingDown) {
