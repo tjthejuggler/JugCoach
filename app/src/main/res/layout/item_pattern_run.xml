@@ -39,16 +39,31 @@
                     android:layout_height="wrap_content"
                     android:orientation="vertical">
                     
-                    <TextView
-                        android:id="@+id/pattern_name"
+                    <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:textAppearance="?attr/textAppearanceSubtitle1"
-                        android:gravity="center_vertical"
-                        android:padding="8dp"
-                        android:background="?attr/selectableItemBackground"
-                        android:clickable="true"
-                        android:focusable="true"/>
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+
+                        <ImageButton
+                            android:id="@+id/pattern_info_button"
+                            android:layout_width="48dp"
+                            android:layout_height="48dp"
+                            android:background="?attr/selectableItemBackgroundBorderless"
+                            android:contentDescription="@string/pattern_details"
+                            android:padding="12dp"
+                            android:src="@drawable/ic_info"/>
+
+                        <TextView
+                            android:id="@+id/pattern_name"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:textAppearance="?attr/textAppearanceSubtitle1"
+                            android:gravity="center_vertical"
+                            android:padding="8dp"/>
+
+                    </LinearLayout>
 
                     <TextView
                         android:id="@+id/pattern_stats"

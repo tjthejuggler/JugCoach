@@ -55,6 +55,7 @@
     <string name="coach_edit_notice">Editing a pattern that belongs to a coach</string>
 
     <!-- Pattern details -->
+    <string name="pattern_details">Pattern details</string>
     <string name="watch_video">Watch video</string>
     <string name="learn_more">Learn more</string>
     <string name="personal_record">Personal Record</string>

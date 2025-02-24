@@ -41,10 +41,8 @@ class PatternRunAdapter(
         currentState?.let { state ->
             
             with(holder.binding) {
-                patternName.apply {
-                    text = state.pattern.name
-                    setOnClickListener { onPatternClick(state.pattern) }
-                }
+                patternName.text = state.pattern.name
+                patternInfoButton.setOnClickListener { onPatternClick(state.pattern) }
 
                 // Show pattern stats
                 patternStats.apply {
