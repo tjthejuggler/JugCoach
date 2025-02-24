@@ -409,6 +409,13 @@ class ChatViewModel @Inject constructor(
         return (uiState.value.patternRun?.elapsedTime ?: 0L) / 1000L
     }
 
+    fun resetTimer() {
+        timerJob?.cancel()
+        viewModelScope.launch {
+            stateManager.startPatternRun(uiState.value.patternRun?.pattern ?: return@launch)
+        }
+    }
+
     fun endPatternRun(wasCatch: Boolean, catches: Int?, duration: Int? = null) {
         timerJob?.cancel()
         viewModelScope.launch {

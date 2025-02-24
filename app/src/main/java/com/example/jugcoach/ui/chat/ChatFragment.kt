@@ -456,7 +456,9 @@ class ChatFragment : Fragment() {
                 val totalCatches = baseCatches?.let { it * multiplier }
                 viewModel.endPatternRun(wasCatch, totalCatches, duration)
             }
-            .setNegativeButton(R.string.cancel_run, null)
+            .setNegativeButton(R.string.cancel_run) { _, _ ->
+                viewModel.resetTimer()
+            }
             .show()
     }
 
