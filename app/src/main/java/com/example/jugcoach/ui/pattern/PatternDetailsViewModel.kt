@@ -191,9 +191,13 @@ class PatternDetailsViewModel @Inject constructor(
                         "difficulty=${pattern.difficulty}, " +
                         "explanation=${pattern.explanation?.take(50)}...")
                     
-                    _pattern.value = pattern
+                    // Create Skilldex URL from pattern name with proper URL encoding
+                    val skilldexUrl = "https://skilldex.org/detail/${android.net.Uri.encode(pattern.name)}"
+                    val updatedPattern = pattern.copy(url = skilldexUrl)
+                    
+                    _pattern.value = updatedPattern
                     _uiState.value = PatternDetailsUiState.Success(
-                        pattern = pattern,
+                        pattern = updatedPattern,
                         runHistory = pattern.runHistory.runs
                     )
                     loadRelatedPatterns(pattern)
