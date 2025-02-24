@@ -447,9 +447,14 @@ class ChatFragment : Fragment() {
             .setView(dialogView)
             .setPositiveButton(R.string.save_run) { _, _ ->
                 val catchesInput = dialogView.findViewById<TextInputEditText>(R.id.catches_input)
-                val catches = catchesInput.text?.toString()?.toIntOrNull()
+                val multiplierInput = dialogView.findViewById<TextInputEditText>(R.id.multiplier_input)
+                
+                val baseCatches = catchesInput.text?.toString()?.toIntOrNull()
+                val multiplier = multiplierInput.text?.toString()?.toIntOrNull() ?: 1
                 val duration = durationInput.text?.toString()?.toIntOrNull()
-                viewModel.endPatternRun(wasCatch, catches, duration)
+                
+                val totalCatches = baseCatches?.let { it * multiplier }
+                viewModel.endPatternRun(wasCatch, totalCatches, duration)
             }
             .setNegativeButton(R.string.cancel_run, null)
             .show()

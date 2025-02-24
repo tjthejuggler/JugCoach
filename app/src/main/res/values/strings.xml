@@ -13,7 +13,9 @@
     <string name="menu_chat">Chat</string>
 
     <!-- Run tracking -->
-    <string name="enter_catches">Number of catches</string>
+    <string name="enter_catches">Base catches</string>
+    <string name="enter_multiplier">Multiplier</string>
+    <string name="multiplication_symbol">×</string>
     <string name="enter_duration_seconds">Duration (seconds)</string>
     <string name="catches_per_minute_format">Catches/min: %.2f</string>
     <string name="enter_catches_or_time">Enter number of catches or duration</string>
