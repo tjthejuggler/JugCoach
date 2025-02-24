@@ -69,8 +69,13 @@ class PatternRunAdapter(
                 }
 
                 // Setup show records functionality
+                // Setup show/hide records functionality
                 showRecordsText.setOnClickListener {
-                    recordsSection.visibility = if (recordsSection.visibility == View.VISIBLE) View.GONE else View.VISIBLE
+                    val isVisible = recordsSection.visibility == View.VISIBLE
+                    recordsSection.visibility = if (isVisible) View.GONE else View.VISIBLE
+                    showRecordsText.text = root.context.getString(
+                        if (isVisible) R.string.show_records else R.string.hide_records
+                    )
                 }
 
                 // Find and display records
@@ -84,7 +89,7 @@ class PatternRunAdapter(
                     val bestDuration = cleanEndRuns.maxByOrNull { it.duration!! }
                     buildString {
                         bestCatches?.let { run ->
-                            appendLine(root.context.getString(
+                            append(root.context.getString(
                                 R.string.record_format,
                                 run.catches!!,
                                 run.duration!! / 60,
@@ -113,7 +118,7 @@ class PatternRunAdapter(
                     val bestDuration = dropRuns.maxByOrNull { it.duration!! }
                     buildString {
                         bestCatches?.let { run ->
-                            appendLine(root.context.getString(
+                            append(root.context.getString(
                                 R.string.record_format,
                                 run.catches!!,
                                 run.duration!! / 60,
@@ -122,6 +127,7 @@ class PatternRunAdapter(
                         }
                         if (bestDuration != bestCatches) {
                             bestDuration?.let { run ->
+                                append(" ")
                                 append(root.context.getString(
                                     R.string.record_format,
                                     run.catches!!,

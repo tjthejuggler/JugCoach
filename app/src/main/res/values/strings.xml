@@ -97,6 +97,7 @@
     <string name="pattern_catches_per_minute">Average: %.1f catches/min</string>
     <string name="pattern_stats_format">%.1f catches/min (based on %.1f minutes)</string>
     <string name="show_records">Show records</string>
+    <string name="hide_records">Hide records</string>
     <string name="clean_end_records">Clean End Records</string>
     <string name="drop_records">Drop Records</string>
     <string name="record_format">%d catches (%d:%02d)</string>
