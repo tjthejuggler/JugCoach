@@ -46,6 +46,7 @@ class PatternRunAdapter(
                     setOnClickListener { onPatternClick(state.pattern) }
                 }
 
+                // Show pattern stats
                 patternStats.apply {
                     val runsWithCatchesAndTime = state.pattern.runHistory.runs
                         .filter { it.catches != null && it.duration != null }
@@ -56,7 +57,7 @@ class PatternRunAdapter(
                         val overallCpm = (totalCatches.toDouble() / totalSeconds.toDouble()) * 60
                         val timeInMinutes = totalSeconds / 60.0
                         
-                        text = context.getString(
+                        text = root.context.getString(
                             R.string.pattern_stats_format,
                             overallCpm,
                             timeInMinutes
@@ -65,6 +66,73 @@ class PatternRunAdapter(
                     } else {
                         visibility = View.GONE
                     }
+                }
+
+                // Setup show records functionality
+                showRecordsText.setOnClickListener {
+                    recordsSection.visibility = if (recordsSection.visibility == View.VISIBLE) View.GONE else View.VISIBLE
+                }
+
+                // Find and display records
+                val runs = state.pattern.runHistory.runs
+                    .filter { it.catches != null && it.duration != null }
+
+                // Clean end records
+                val cleanEndRuns = runs.filter { it.isCleanEnd }
+                cleanEndRecords.text = if (cleanEndRuns.isNotEmpty()) {
+                    val bestCatches = cleanEndRuns.maxByOrNull { it.catches!! }
+                    val bestDuration = cleanEndRuns.maxByOrNull { it.duration!! }
+                    buildString {
+                        bestCatches?.let { run ->
+                            appendLine(root.context.getString(
+                                R.string.record_format,
+                                run.catches!!,
+                                run.duration!! / 60,
+                                run.duration!! % 60
+                            ))
+                        }
+                        if (bestDuration != bestCatches) {
+                            bestDuration?.let { run ->
+                                append(root.context.getString(
+                                    R.string.record_format,
+                                    run.catches!!,
+                                    run.duration!! / 60,
+                                    run.duration!! % 60
+                                ))
+                            }
+                        }
+                    }
+                } else {
+                    root.context.getString(R.string.no_records)
+                }
+
+                // Drop records
+                val dropRuns = runs.filter { !it.isCleanEnd }
+                dropRecords.text = if (dropRuns.isNotEmpty()) {
+                    val bestCatches = dropRuns.maxByOrNull { it.catches!! }
+                    val bestDuration = dropRuns.maxByOrNull { it.duration!! }
+                    buildString {
+                        bestCatches?.let { run ->
+                            appendLine(root.context.getString(
+                                R.string.record_format,
+                                run.catches!!,
+                                run.duration!! / 60,
+                                run.duration!! % 60
+                            ))
+                        }
+                        if (bestDuration != bestCatches) {
+                            bestDuration?.let { run ->
+                                append(root.context.getString(
+                                    R.string.record_format,
+                                    run.catches!!,
+                                    run.duration!! / 60,
+                                    run.duration!! % 60
+                                ))
+                            }
+                        }
+                    }
+                } else {
+                    root.context.getString(R.string.no_records)
                 }
                 
                 // Timer display

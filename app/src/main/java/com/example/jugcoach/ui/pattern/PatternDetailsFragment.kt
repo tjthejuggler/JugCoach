@@ -398,22 +398,10 @@ class PatternDetailsFragment : Fragment() {
             // Show buttons container if either URL or video exists
             buttonsContainer.isVisible = pattern.url != null || pattern.video != null
 
-            // Show personal record
-            pattern.record?.let { record ->
-                recordCard.isVisible = true
-                recordCatches.text = getString(R.string.catches_format, record.catches)
-                recordDate.text = DateFormat.getDateFormat(requireContext())
-                    .format(record.date)
-            } ?: run {
-                recordCard.isVisible = false
-            }
-
-            // Show buttons container only if url exists
-            buttonsContainer.isVisible = pattern.url != null
-
-            // Calculate and show overall catches per minute
+            // Calculate overall catches per minute and show records
             val runsWithCatchesAndTime = runHistory.filter { it.catches != null && it.duration != null }
             if (runsWithCatchesAndTime.isNotEmpty()) {
+                // Show overall catches per minute
                 val totalCatches = runsWithCatchesAndTime.sumOf { it.catches!! }
                 val totalSeconds = runsWithCatchesAndTime.sumOf { it.duration!! }
                 val overallCpm = (totalCatches.toDouble() / totalSeconds.toDouble()) * 60
@@ -421,9 +409,73 @@ class PatternDetailsFragment : Fragment() {
                     text = getString(R.string.pattern_catches_per_minute, overallCpm)
                     isVisible = true
                 }
+
+                // Show records card
+                recordCard.isVisible = true
+
+                // Clean end records
+                val cleanEndRuns = runsWithCatchesAndTime.filter { it.isCleanEnd }
+                cleanEndRecords.text = if (cleanEndRuns.isNotEmpty()) {
+                    val bestCatches = cleanEndRuns.maxByOrNull { it.catches!! }
+                    val bestDuration = cleanEndRuns.maxByOrNull { it.duration!! }
+                    buildString {
+                        bestCatches?.let { run ->
+                            appendLine(getString(
+                                R.string.record_format,
+                                run.catches!!,
+                                run.duration!! / 60,
+                                run.duration!! % 60
+                            ))
+                        }
+                        if (bestDuration != bestCatches) {
+                            bestDuration?.let { run ->
+                                append(getString(
+                                    R.string.record_format,
+                                    run.catches!!,
+                                    run.duration!! / 60,
+                                    run.duration!! % 60
+                                ))
+                            }
+                        }
+                    }
+                } else {
+                    getString(R.string.no_records)
+                }
+
+                // Drop records
+                val dropRuns = runsWithCatchesAndTime.filter { !it.isCleanEnd }
+                dropRecords.text = if (dropRuns.isNotEmpty()) {
+                    val bestCatches = dropRuns.maxByOrNull { it.catches!! }
+                    val bestDuration = dropRuns.maxByOrNull { it.duration!! }
+                    buildString {
+                        bestCatches?.let { run ->
+                            appendLine(getString(
+                                R.string.record_format,
+                                run.catches!!,
+                                run.duration!! / 60,
+                                run.duration!! % 60
+                            ))
+                        }
+                        if (bestDuration != bestCatches) {
+                            bestDuration?.let { run ->
+                                append(getString(
+                                    R.string.record_format,
+                                    run.catches!!,
+                                    run.duration!! / 60,
+                                    run.duration!! % 60
+                                ))
+                            }
+                        }
+                    }
+                } else {
+                    getString(R.string.no_records)
+                }
             } else {
-                binding.patternCatchesPerMinute.isVisible = false
+                recordCard.isVisible = false
             }
+
+            // Show buttons container only if url exists
+            buttonsContainer.isVisible = pattern.url != null
 
             // Update run history
             runHistoryAdapter.submitList(runHistory)

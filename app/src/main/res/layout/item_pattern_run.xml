@@ -59,6 +59,57 @@
                         android:paddingStart="8dp"
                         android:paddingEnd="8dp"
                         android:paddingBottom="4dp"/>
+
+                    <TextView
+                        android:id="@+id/show_records_text"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/show_records"
+                        android:textColor="@color/user_message_background"
+                        android:gravity="center_vertical"
+                        android:paddingStart="8dp"
+                        android:paddingEnd="8dp"
+                        android:paddingBottom="4dp"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:background="?attr/selectableItemBackground"/>
+
+                    <LinearLayout
+                        android:id="@+id/records_section"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:visibility="gone"
+                        android:paddingStart="8dp"
+                        android:paddingEnd="8dp">
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/clean_end_records"
+                            android:textStyle="bold"
+                            android:paddingTop="4dp"/>
+
+                        <TextView
+                            android:id="@+id/clean_end_records"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:paddingBottom="8dp"/>
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/drop_records"
+                            android:textStyle="bold"
+                            android:paddingTop="4dp"/>
+
+                        <TextView
+                            android:id="@+id/drop_records"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:paddingBottom="8dp"/>
+
+                    </LinearLayout>
                 </LinearLayout>
 
                 <!-- Timer Section -->
