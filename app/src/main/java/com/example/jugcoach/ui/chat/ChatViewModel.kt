@@ -416,6 +416,44 @@ class ChatViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Calculates suggested catches based on pattern's catches per minute rate and run duration
+     */
+    fun calculateSuggestedCatches(duration: Long?): Int? {
+        val currentRun = uiState.value.patternRun ?: run {
+            android.util.Log.d("CatchesDebug", "No current run")
+            return null
+        }
+        val pattern = currentRun.pattern
+
+        // Calculate rate from run history
+        val runsWithCatchesAndTime = pattern.runHistory.runs
+            .filter { it.catches != null && it.duration != null }
+        
+        if (runsWithCatchesAndTime.isEmpty()) {
+            android.util.Log.d("CatchesDebug", "No previous runs with catches and time")
+            return null
+        }
+
+        val totalCatches = runsWithCatchesAndTime.sumOf { it.catches!! }
+        val totalSeconds = runsWithCatchesAndTime.sumOf { it.duration!! }
+        val overallCpm = (totalCatches.toDouble() / totalSeconds.toDouble()) * 60
+
+        android.util.Log.d("CatchesDebug", "Calculated rate from history: $overallCpm catches/min")
+        android.util.Log.d("CatchesDebug", "Duration: $duration seconds")
+
+        return if (duration != null) {
+            val durationMinutes = duration.toDouble() / 60.0
+            android.util.Log.d("CatchesDebug", "Duration in minutes: $durationMinutes")
+            val suggestedCatches = (overallCpm * durationMinutes).toInt()
+            android.util.Log.d("CatchesDebug", "Calculated suggested catches: $suggestedCatches")
+            suggestedCatches
+        } else {
+            android.util.Log.d("CatchesDebug", "No duration provided")
+            null
+        }
+    }
+
     fun endPatternRun(wasCatch: Boolean, catches: Int?, duration: Int? = null) {
         timerJob?.cancel()
         viewModelScope.launch {
@@ -426,7 +464,7 @@ class ChatViewModel @Inject constructor(
                     currentRun.elapsedTime / 1000L
                 } else null
 
-                android.util.Log.d("RunDebug", "Adding run - pattern: ${pattern.name}, duration: $finalDuration, clean: $wasCatch")
+                android.util.Log.d("RunDebug", "Adding run - pattern: ${pattern.name}, duration: $finalDuration, clean: $wasCatch, catches: $catches")
                 patternDao.addRun(
                     patternId = pattern.id,
                     catches = catches,

@@ -440,7 +440,21 @@ class ChatFragment : Fragment() {
         
         // Pre-fill duration field with timer value
         val durationInput = dialogView.findViewById<TextInputEditText>(R.id.duration_input)
-        durationInput.setText(viewModel.getElapsedSeconds().toString())
+        val duration = viewModel.getElapsedSeconds()
+        durationInput.setText(duration.toString())
+        android.util.Log.d("CatchesDebug", "Set duration input to: $duration")
+
+        // Pre-fill catches field if pattern has a catches per minute rate
+        val catchesInput = dialogView.findViewById<TextInputEditText>(R.id.catches_input)
+        android.util.Log.d("CatchesDebug", "Found catches input view: ${catchesInput != null}")
+        
+        val suggestedCatches = viewModel.calculateSuggestedCatches(duration)
+        android.util.Log.d("CatchesDebug", "Got suggested catches from ViewModel: $suggestedCatches")
+        
+        suggestedCatches?.let {
+            android.util.Log.d("CatchesDebug", "Setting catches input text to: $it")
+            catchesInput.setText(it.toString())
+        } ?: android.util.Log.d("CatchesDebug", "No suggested catches to set")
         
         MaterialAlertDialogBuilder(requireContext())
             .setTitle(if (wasCatch) R.string.end_run_catch else R.string.end_run_drop)
