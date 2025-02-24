@@ -17,15 +17,23 @@
             android:padding="16dp"
             android:layout_marginBottom="8dp">
 
-            <com.example.jugcoach.ui.views.TextOnlyClickableTextView
+            <TextView
                 android:id="@+id/recommended_pattern_name"
-                android:layout_width="wrap_content"
+                android:layout_width="0dp"
+                android:layout_weight="1"
                 android:layout_height="wrap_content"
                 android:textAppearance="?attr/textAppearanceHeadline6"
-                android:text="@string/no_pattern_found"
-                android:clickable="true"
-                android:focusable="true"
-                android:background="?attr/selectableItemBackgroundBorderless"/>
+                android:text="@string/no_pattern_found"/>
+
+            <ImageButton
+                android:id="@+id/pattern_info_button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@drawable/ic_info"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:padding="8dp"
+                android:layout_marginStart="8dp"
+                android:contentDescription="@string/pattern_info"/>
 
         </LinearLayout>
 

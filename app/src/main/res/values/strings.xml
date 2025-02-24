@@ -23,7 +23,7 @@
     <string name="cancel">Cancel</string>
     <string name="clean_end">Clean end</string>
     <string name="number_of_catches">Number of catches</string>
-    <string name="record_catches">Record catches</string>
+    <string name="record_catches">Record catches: %d</string>
     <string name="chat_timer">Use Chat Timer</string>
 
     <!-- Pattern recommendation -->
@@ -34,6 +34,7 @@
     <string name="number_of_balls">Number of balls</string>
     <string name="pattern_difficulty">Pattern difficulty</string>
     <string name="pattern_tags">Pattern tags</string>
+    <string name="pattern_info">Pattern Information</string>
 
     <!-- Sort options -->
     <string name="sort_by_relevance">Sort by relevance</string>
