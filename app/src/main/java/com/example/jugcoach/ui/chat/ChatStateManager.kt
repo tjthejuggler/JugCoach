@@ -195,12 +195,24 @@ class ChatStateManager @Inject constructor(
     }
 
     fun updatePatternFilters(filters: PatternFilters) {
+        val currentFilters = _uiState.value.patternRecommendation.filters
+        if (filters == currentFilters) {
+            android.util.Log.d("PatternDebug", "Skipping filter update in state manager - filters unchanged")
+            return
+        }
+        android.util.Log.d("PatternDebug", "Updating filters in state manager")
         _uiState.update {
             it.copy(patternRecommendation = it.patternRecommendation.copy(filters = filters))
         }
     }
 
     fun updateRecommendedPattern(pattern: Pattern?) {
+        val currentPattern = _uiState.value.patternRecommendation.recommendedPattern
+        if (pattern?.id == currentPattern?.id) {
+            android.util.Log.d("PatternDebug", "Skipping pattern update in state manager - same pattern")
+            return
+        }
+        android.util.Log.d("PatternDebug", "Updating recommended pattern in state manager from ${currentPattern?.name} to ${pattern?.name}")
         _uiState.update {
             it.copy(patternRecommendation = it.patternRecommendation.copy(recommendedPattern = pattern))
         }

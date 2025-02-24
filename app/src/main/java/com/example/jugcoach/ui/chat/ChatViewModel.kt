@@ -185,11 +185,27 @@ class ChatViewModel @Inject constructor(
         }
     }
 
+    private var lastRecommendationTime = 0L
+    private val MIN_RECOMMENDATION_INTERVAL = 500L // Minimum time between recommendations
+
     fun showPatternRecommendation() {
+        Log.d("PatternDebug", "showPatternRecommendation() called")
+        
+        // Check if we already have a visible recommendation
+        if (uiState.value.patternRecommendation.isVisible &&
+            uiState.value.patternRecommendation.recommendedPattern != null) {
+            Log.d("PatternDebug", "Pattern recommendation already visible with pattern: ${uiState.value.patternRecommendation.recommendedPattern?.name}")
+            return
+        }
+        
         stateManager.showPatternRecommendation()
-        // Only get a new recommendation if we don't already have one
+        
+        // Only get a new recommendation if we don't have one
         if (uiState.value.patternRecommendation.recommendedPattern == null) {
+            Log.d("PatternDebug", "No current pattern, getting new recommendation")
             getNewPatternRecommendation()
+        } else {
+            Log.d("PatternDebug", "Using existing pattern: ${uiState.value.patternRecommendation.recommendedPattern?.name}")
         }
     }
 
@@ -197,17 +213,69 @@ class ChatViewModel @Inject constructor(
         stateManager.hidePatternRecommendation()
     }
 
+    private var lastFilterUpdate = 0L
+    private val MIN_FILTER_UPDATE_INTERVAL = 300L // Minimum time between filter updates
+
     fun updatePatternFilters(filters: PatternFilters) {
+        val currentTime = System.currentTimeMillis()
+        Log.d("PatternDebug", """
+            Filter update requested:
+            - Name filter: ${filters.nameFilter}
+            - Num balls: ${filters.numBalls}
+            - Difficulty: ${filters.difficultyRange}
+            - Tags: ${filters.tags}
+            - Min catches: ${filters.minCatches}
+            - Max catches: ${filters.maxCatches}
+            - Time since last filter update: ${currentTime - lastFilterUpdate}ms
+            - Time since last recommendation: ${currentTime - lastRecommendationTime}ms
+        """.trimIndent())
+        
+        // Prevent rapid filter updates
+        if (currentTime - lastFilterUpdate < MIN_FILTER_UPDATE_INTERVAL) {
+            Log.d("PatternDebug", "Skipping filter update - too soon since last filter update")
+            return
+        }
+        
         viewModelScope.launch {
+            val currentFilters = uiState.value.patternRecommendation.filters
+            if (filters == currentFilters) {
+                Log.d("PatternDebug", "Skipping filter update - filters unchanged")
+                return@launch
+            }
+            
+            lastFilterUpdate = currentTime
             stateManager.updatePatternFilters(filters)
-            getNewPatternRecommendation()
+            
+            // Only get a new recommendation if enough time has passed since last recommendation
+            if (currentTime - lastRecommendationTime >= MIN_RECOMMENDATION_INTERVAL) {
+                Log.d("PatternDebug", "Getting new recommendation after filter update")
+                lastRecommendationTime = currentTime
+                getNewPatternRecommendation()
+            } else {
+                Log.d("PatternDebug", "Queuing recommendation update for later - too soon")
+                viewModelScope.launch {
+                    kotlinx.coroutines.delay(MIN_RECOMMENDATION_INTERVAL)
+                    if (filters == uiState.value.patternRecommendation.filters) {
+                        Log.d("PatternDebug", "Processing queued recommendation update")
+                        getNewPatternRecommendation()
+                    } else {
+                        Log.d("PatternDebug", "Skipping queued update - filters have changed")
+                    }
+                }
+            }
         }
     }
 
     fun getNewPatternRecommendation() {
+        Log.d("PatternDebug", "getNewPatternRecommendation() called")
         viewModelScope.launch {
             val filters = uiState.value.patternRecommendation.filters
             val currentPattern = uiState.value.patternRecommendation.recommendedPattern
+            Log.d("PatternDebug", "Current pattern: ${currentPattern?.name}")
+            
+            val currentCoach = uiState.value.currentCoach
+            val allPatterns = patternDao.getAllPatternsSync(currentCoach?.id ?: -1)
+            Log.d("PatternDebug", "Retrieved ${allPatterns.size} patterns total")
             
             // Build query based on filters
             val query = buildList {
@@ -246,19 +314,27 @@ class ChatViewModel @Inject constructor(
                     }
                 }
 
-                currentPattern?.let { current ->
-                    add { pattern: Pattern ->
-                        pattern.id != current.id
-                    }
-                }
+                // No need to filter current pattern here since we do it in the final filtering step
             }
 
-            val currentCoach = uiState.value.currentCoach
-            val recommendedPattern = patternDao.getAllPatternsSync(currentCoach?.id ?: -1)
-                .filter { pattern -> query.all { it(pattern) } }
-                .randomOrNull()
-
-            stateManager.updateRecommendedPattern(recommendedPattern)
+            // Filter and select a new pattern
+            val filteredPatterns = allPatterns
+                .filter { it.id != currentPattern?.id } // Exclude current pattern
+                .filter { pattern -> query.all { it(pattern) } } // Apply all other filters
+            
+            Log.d("PatternDebug", "Found ${filteredPatterns.size} patterns matching filters")
+            
+            if (filteredPatterns.isNotEmpty()) {
+                val recommendedPattern = filteredPatterns.random()
+                Log.d("PatternDebug", "Selected new pattern: ${recommendedPattern.name}")
+                stateManager.updateRecommendedPattern(recommendedPattern)
+            } else {
+                Log.d("PatternDebug", "No patterns available matching filters")
+                // Keep current pattern if no other patterns match filters
+                if (currentPattern == null) {
+                    stateManager.updateRecommendedPattern(null)
+                }
+            }
         }
     }
 

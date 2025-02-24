@@ -3,6 +3,7 @@ package com.example.jugcoach.ui.chat
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -72,23 +73,27 @@ class PatternRecommendationBottomSheet : BottomSheetDialogFragment() {
         val numBalls = (1..11).map { it.toString() }
         numBalls.forEach { num ->
             val chip = Chip(requireContext()).apply {
-                text = "$num balls"
+                text = num
                 isCheckable = true
             }
             binding.numBallsGroup.addView(chip)
             
             chip.setOnCheckedChangeListener { _, isChecked ->
-                val currentFilters = viewModel.uiState.value.patternRecommendation.filters
-                val newNumBalls = if (isChecked) {
-                    currentFilters.numBalls + num
-                } else {
-                    currentFilters.numBalls - num
+                if (!isUpdatingUI) {
+                    val currentFilters = viewModel.uiState.value.patternRecommendation.filters
+                    val newNumBalls = if (isChecked) {
+                        currentFilters.numBalls + num
+                    } else {
+                        currentFilters.numBalls - num
+                    }
+                    viewModel.updatePatternFilters(currentFilters.copy(numBalls = newNumBalls))
                 }
-                viewModel.updatePatternFilters(currentFilters.copy(numBalls = newNumBalls))
             }
         }
     }
 
+    private var isUpdatingUI = false
+    
     private fun setupDifficultySlider() {
         binding.difficultySlider.apply {
             addOnSliderTouchListener(object : RangeSlider.OnSliderTouchListener {
@@ -97,11 +102,13 @@ class PatternRecommendationBottomSheet : BottomSheetDialogFragment() {
                 }
 
                 override fun onStopTrackingTouch(slider: RangeSlider) {
-                    // Update only when user finishes sliding
-                    val currentFilters = viewModel.uiState.value.patternRecommendation.filters
-                    viewModel.updatePatternFilters(currentFilters.copy(
-                        difficultyRange = slider.values[0]..slider.values[1]
-                    ))
+                    // Only update if not currently updating UI
+                    if (!isUpdatingUI) {
+                        val currentFilters = viewModel.uiState.value.patternRecommendation.filters
+                        viewModel.updatePatternFilters(currentFilters.copy(
+                            difficultyRange = slider.values[0]..slider.values[1]
+                        ))
+                    }
                 }
             })
         }
@@ -109,7 +116,7 @@ class PatternRecommendationBottomSheet : BottomSheetDialogFragment() {
 
     private fun setupRecordCatches() {
         binding.minCatches.setOnFocusChangeListener { _, hasFocus ->
-            if (!hasFocus) {
+            if (!hasFocus && !isUpdatingUI) {
                 val currentFilters = viewModel.uiState.value.patternRecommendation.filters
                 viewModel.updatePatternFilters(currentFilters.copy(
                     minCatches = binding.minCatches.text?.toString()?.toIntOrNull()
@@ -118,7 +125,7 @@ class PatternRecommendationBottomSheet : BottomSheetDialogFragment() {
         }
 
         binding.maxCatches.setOnFocusChangeListener { _, hasFocus ->
-            if (!hasFocus) {
+            if (!hasFocus && !isUpdatingUI) {
                 val currentFilters = viewModel.uiState.value.patternRecommendation.filters
                 viewModel.updatePatternFilters(currentFilters.copy(
                     maxCatches = binding.maxCatches.text?.toString()?.toIntOrNull()
@@ -141,13 +148,15 @@ class PatternRecommendationBottomSheet : BottomSheetDialogFragment() {
                 binding.tagsGroup.addView(chip)
                 
                 chip.setOnCheckedChangeListener { _, isChecked ->
-                    val currentFilters = viewModel.uiState.value.patternRecommendation.filters
-                    val newTags = if (isChecked) {
-                        currentFilters.tags + tag
-                    } else {
-                        currentFilters.tags - tag
+                    if (!isUpdatingUI) {
+                        val currentFilters = viewModel.uiState.value.patternRecommendation.filters
+                        val newTags = if (isChecked) {
+                            currentFilters.tags + tag
+                        } else {
+                            currentFilters.tags - tag
+                        }
+                        viewModel.updatePatternFilters(currentFilters.copy(tags = newTags))
                     }
-                    viewModel.updatePatternFilters(currentFilters.copy(tags = newTags))
                 }
             }
         }
@@ -162,6 +171,7 @@ class PatternRecommendationBottomSheet : BottomSheetDialogFragment() {
     private fun observeState() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewModel.uiState.collect { state ->
+                Log.d("PatternDebug", "State update received in bottom sheet")
                 val recommendationState = state.patternRecommendation
                 
                 // Update recommended pattern display
@@ -177,15 +187,17 @@ class PatternRecommendationBottomSheet : BottomSheetDialogFragment() {
                 recommendationState.filters.let { filters ->
                     // Update num balls chips
                     binding.numBallsGroup.children.filterIsInstance<Chip>().forEach { chip ->
-                        val num = chip.text.toString().split(" ")[0]
+                        val num = chip.text.toString()
                         chip.isChecked = filters.numBalls.contains(num)
                     }
 
-                    // Update difficulty slider
+                    // Update difficulty slider without triggering listener
+                    isUpdatingUI = true
                     binding.difficultySlider.values = listOf(
                         filters.difficultyRange.start,
                         filters.difficultyRange.endInclusive
                     )
+                    isUpdatingUI = false
 
                     // Update record catches inputs
                     if (!binding.minCatches.hasFocus()) {
