@@ -21,6 +21,9 @@
         <variable
             name="onPatternClick"
             type="kotlin.jvm.functions.Function1&lt;String, kotlin.Unit&gt;" />
+        <variable
+            name="onDeleteClick"
+            type="kotlin.jvm.functions.Function2&lt;com.example.jugcoach.ui.chat.ChatMessage, android.view.View, kotlin.Unit&gt;" />
     </data>
 
     <androidx.constraintlayout.widget.ConstraintLayout 
@@ -31,23 +34,38 @@
         android:clipToPadding="false"
         android:clipChildren="false"
         android:layerType="none">
+<com.google.android.material.card.MaterialCardView
+    android:id="@+id/messageCard"
+    android:layout_width="0dp"
+    android:layout_height="wrap_content"
+    app:cardElevation="1dp"
+    app:cardCornerRadius="12dp"
+    app:layout_constraintWidth_percent="0.8"
+    app:layout_constraintStart_toStartOf="parent"
+    app:layout_constraintEnd_toEndOf="parent"
+    app:layout_constraintTop_toTopOf="parent"
+    android:clipToPadding="false"
+    android:clipChildren="false"
+    android:layerType="hardware"
+    app:messageBackground="@{message}">
+    
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+        
+        <ImageButton
+            android:id="@+id/messageMenuButton"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:layout_gravity="end|top"
+            android:layout_margin="8dp"
+            android:src="@drawable/ic_more_vert"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/message_options"
+            android:onClick="@{(view) -> onDeleteClick.invoke(message, view)}"
+            android:alpha="0.7"/>
 
-        <com.google.android.material.card.MaterialCardView
-            android:id="@+id/messageCard"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            app:cardElevation="1dp"
-            app:cardCornerRadius="12dp"
-            app:layout_constraintWidth_percent="0.8"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            android:clipToPadding="false"
-            android:clipChildren="false"
-            android:layerType="hardware"
-            app:messageBackground="@{message}">
-
-            <androidx.constraintlayout.widget.ConstraintLayout
+        <androidx.constraintlayout.widget.ConstraintLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:paddingTop="12dp"
@@ -194,8 +212,8 @@
                 </LinearLayout>
 
             </androidx.constraintlayout.widget.ConstraintLayout>
-
-        </com.google.android.material.card.MaterialCardView>
+        </FrameLayout>
+    </com.google.android.material.card.MaterialCardView>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 </layout>

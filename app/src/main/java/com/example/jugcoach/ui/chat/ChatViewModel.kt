@@ -457,6 +457,146 @@ class ChatViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Deletes a chat message
+     *
+     * @param messageId The ID of the message to delete
+     */
+    fun deleteMessage(messageId: String) {
+        viewModelScope.launch {
+            messageRepository.deleteMessage(messageId)
+        }
+    }
+    
+    /**
+     * Deletes a run summary message and its associated run
+     *
+     * @param message The run summary message to delete
+     */
+    fun deleteRunAndMessage(message: ChatMessage) {
+        if (message.messageType != ChatMessage.MessageType.RUN_SUMMARY) {
+            Log.d("DeleteRunDebug", "Message is not a run summary - ignoring delete run request")
+            return
+        }
+        
+        viewModelScope.launch {
+            // Extract pattern name from the first line of the message
+            val patternName = message.text.lines().first()
+            Log.d("DeleteRunDebug", "Deleting run for pattern: $patternName")
+            
+            // Get the pattern
+            val pattern = findPatternByName(patternName)
+            if (pattern == null) {
+                Log.e("DeleteRunDebug", "Pattern not found: $patternName")
+                return@launch
+            }
+            
+            Log.d("DeleteRunDebug", "Found pattern: ${pattern.id} with ${pattern.runHistory.runs.size} runs")
+            
+            // Extract additional run information from the message if available
+            val messageLines = message.text.lines()
+            var catches: Int? = null
+            var runTimeMinutes: Int? = null
+            var runTimeSeconds: Int? = null
+            var isCleanEnd: Boolean? = null
+            
+            // Parse message content to extract run details
+            messageLines.forEach { line ->
+                when {
+                    line.startsWith("Run time:") -> {
+                        // Extract minutes and seconds from "Run time: MM:SS" format
+                        val timeMatch = """Run time: (\d+):(\d+)""".toRegex().find(line)
+                        if (timeMatch != null) {
+                            runTimeMinutes = timeMatch.groupValues[1].toIntOrNull()
+                            runTimeSeconds = timeMatch.groupValues[2].toIntOrNull()
+                            Log.d("DeleteRunDebug", "Extracted run time: $runTimeMinutes:$runTimeSeconds")
+                        }
+                    }
+                    line.startsWith("Number of catches:") -> {
+                        // Extract catch count from "Number of catches: XX" format
+                        val catchesMatch = """Number of catches: (\d+)""".toRegex().find(line)
+                        catches = catchesMatch?.groupValues?.getOrNull(1)?.toIntOrNull()
+                        Log.d("DeleteRunDebug", "Extracted catches: $catches")
+                    }
+                    line.contains("Clean") -> {
+                        isCleanEnd = true
+                        Log.d("DeleteRunDebug", "Detected clean end")
+                    }
+                    line.contains("Drop") -> {
+                        isCleanEnd = false
+                        Log.d("DeleteRunDebug", "Detected drop end")
+                    }
+                }
+            }
+            
+            // Calculate approximate run duration in seconds
+            val runDurationSeconds = if (runTimeMinutes != null && runTimeSeconds != null) {
+                (runTimeMinutes!! * 60 + runTimeSeconds!!).toLong()
+            } else null
+            
+            // Find runs that match the extracted attributes
+            val matchingRuns = pattern.runHistory.runs.filter { run ->
+                var isMatch = true
+                
+                // Match catches if available
+                if (catches != null && run.catches != null) {
+                    isMatch = isMatch && (run.catches == catches)
+                }
+                
+                // Match duration if available with 1-second tolerance
+                if (runDurationSeconds != null && run.duration != null) {
+                    isMatch = isMatch && (Math.abs(run.duration - runDurationSeconds) <= 1)
+                }
+                
+                // Match clean/drop status if available
+                if (isCleanEnd != null) {
+                    isMatch = isMatch && (run.isCleanEnd == isCleanEnd)
+                }
+                
+                isMatch
+            }
+            
+            Log.d("DeleteRunDebug", "Found ${matchingRuns.size} matching runs")
+            
+            // If multiple matching runs, try to find one with timestamp close to message
+            val messageTimestamp = message.timestamp.toEpochMilli()
+            val runToDelete = if (matchingRuns.size > 1) {
+                // Sort by timestamp proximity to message
+                matchingRuns.minByOrNull { Math.abs(it.date - messageTimestamp) }
+            } else if (matchingRuns.isNotEmpty()) {
+                matchingRuns.first()
+            } else {
+                // Fallback: Find a run with close timestamp (within 30 seconds)
+                pattern.runHistory.runs.find { run ->
+                    Math.abs(run.date - messageTimestamp) < 30_000L
+                }
+            }
+            
+            if (runToDelete != null) {
+                Log.d("DeleteRunDebug", "Found run to delete with timestamp: ${runToDelete.date}")
+                Log.d("DeleteRunDebug", "Run details - catches: ${runToDelete.catches}, duration: ${runToDelete.duration}, clean end: ${runToDelete.isCleanEnd}")
+                
+                // Delete the run
+                patternDao.deleteRun(pattern.id, runToDelete)
+                Log.d("DeleteRunDebug", "Run deleted successfully")
+                
+                // Also delete from history timeline if possible
+                try {
+                    historyRepository.deleteRunHistoryEntry(pattern.id, runToDelete.date)
+                    Log.d("DeleteRunDebug", "Deleted history entry for run")
+                } catch (e: Exception) {
+                    Log.e("DeleteRunDebug", "Failed to delete history entry: ${e.message}")
+                }
+            } else {
+                Log.e("DeleteRunDebug", "No matching run found to delete")
+            }
+            
+            // Delete the message
+            Log.d("DeleteRunDebug", "Deleting message with ID: ${message.id}")
+            messageRepository.deleteMessage(message.id)
+        }
+    }
+
     fun endPatternRun(wasCatch: Boolean, catches: Int?, duration: Int? = null) {
         timerJob?.cancel()
         viewModelScope.launch {

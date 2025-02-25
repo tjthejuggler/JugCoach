@@ -20,7 +20,8 @@ class ChatAdapter(
     private val onAgainClick: (ChatMessage) -> Unit,
     private val onDifferentClick: (ChatMessage) -> Unit,
     private val onCreateClick: (ChatMessage, View) -> Unit,
-    private val onPatternClick: (String) -> Unit
+    private val onPatternClick: (String) -> Unit,
+    private val onDeleteClick: (ChatMessage, View) -> Unit
 ) : ListAdapter<ChatMessage, ChatAdapter.MessageViewHolder>(MessageDiffCallback()) {
 
     fun updateCoach(coach: Coach?) {
@@ -66,6 +67,7 @@ class ChatAdapter(
                 onDifferentClick = this@ChatAdapter.onDifferentClick
                 onCreateClick = this@ChatAdapter.onCreateClick
                 onPatternClick = this@ChatAdapter.onPatternClick
+                onDeleteClick = this@ChatAdapter.onDeleteClick
             }
         }
 

@@ -67,4 +67,7 @@ abstract class ChatMessageDao {
         LIMIT 100
     """)
     abstract suspend fun getAllMessagesForCoach(coachId: Long): List<ChatMessage>
+    
+    @Query("SELECT * FROM chat_messages WHERE id = :id")
+    abstract suspend fun getMessageById(id: Long): ChatMessage?
 }

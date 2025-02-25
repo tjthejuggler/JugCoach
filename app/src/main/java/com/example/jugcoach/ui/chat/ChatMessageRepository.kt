@@ -98,6 +98,12 @@ class ChatMessageRepository @Inject constructor(
     suspend fun toggleConversationFavorite(conversationId: Long, currentFavorite: Boolean) {
         conversationDao.updateFavorite(conversationId, !currentFavorite)
     }
+    
+    suspend fun deleteMessage(messageId: String) {
+        val id = messageId.toLongOrNull() ?: return
+        val message = chatMessageDao.getMessageById(id) ?: return
+        chatMessageDao.delete(message)
+    }
 
     suspend fun deleteEmptyConversations(coachId: Long) {
         val conversations = conversationDao.getConversationsForCoach(coachId).distinctUntilChanged().first()

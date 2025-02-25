@@ -40,6 +40,12 @@ interface HistoryEntryDao {
     @Query("SELECT COUNT(*) FROM history_entries")
     suspend fun getHistoryEntryCount(): Int
     
+    @Query("SELECT * FROM history_entries WHERE relatedPatternId = :patternId")
+    suspend fun getEntriesByPatternId(patternId: String): List<HistoryEntry>
+    
+    @androidx.room.Delete
+    suspend fun delete(entry: HistoryEntry)
+    
     // This method will be used to create entries for existing runs
     @Transaction
     suspend fun generateEntriesForExistingRuns(entries: List<HistoryEntry>) {

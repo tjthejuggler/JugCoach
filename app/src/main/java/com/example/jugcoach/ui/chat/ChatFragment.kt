@@ -166,6 +166,9 @@ class ChatFragment : Fragment() {
                         )
                     }
                 }
+            },
+            onDeleteClick = { message, view ->
+                showMessageDeleteMenu(message, view)
             }
         ).apply {
             setHasStableIds(true)  // Enable stable IDs for better performance
@@ -528,6 +531,70 @@ class ChatFragment : Fragment() {
             true
         }
         popupMenu.show()
+    }
+
+    /**
+     * Shows a popup menu with options to delete a message
+     */
+    private fun showMessageDeleteMenu(message: ChatMessage, anchorView: View) {
+        val popupMenu = PopupMenu(requireContext(), anchorView)
+        popupMenu.menuInflater.inflate(R.menu.message_options_menu, popupMenu.menu)
+        
+        // Show delete run option only for run summary messages
+        val isRunSummary = message.messageType == ChatMessage.MessageType.RUN_SUMMARY
+        popupMenu.menu.findItem(R.id.action_delete_run_and_message).isVisible = isRunSummary
+        
+        popupMenu.setOnMenuItemClickListener { menuItem ->
+            when (menuItem.itemId) {
+                R.id.action_delete_message -> {
+                    showDeleteMessageConfirmation(message, false)
+                    true
+                }
+                R.id.action_delete_run_and_message -> {
+                    showDeleteMessageConfirmation(message, true)
+                    true
+                }
+                else -> false
+            }
+        }
+        popupMenu.show()
+    }
+    
+    /**
+     * Shows a confirmation dialog for deleting a message
+     */
+    private fun showDeleteMessageConfirmation(message: ChatMessage, deleteRun: Boolean) {
+        val dialog = MaterialAlertDialogBuilder(requireContext())
+            .setTitle(R.string.delete_message)
+            .setMessage(
+                if (message.messageType == ChatMessage.MessageType.RUN_SUMMARY && !deleteRun)
+                    R.string.confirm_delete_run_message
+                else
+                    R.string.confirm_delete_message
+            )
+        
+        if (message.messageType == ChatMessage.MessageType.RUN_SUMMARY && !deleteRun) {
+            // For run messages, offer both options if not already selected "Delete run and message"
+            dialog.setPositiveButton(R.string.delete_message) { _, _ ->
+                viewModel.deleteMessage(message.id)
+            }
+            dialog.setNeutralButton(R.string.delete_run_and_message) { _, _ ->
+                viewModel.deleteRunAndMessage(message)
+            }
+            dialog.setNegativeButton(R.string.cancel, null)
+        } else {
+            // Standard confirmation with yes/no for regular messages or when "Delete run and message" was selected
+            dialog.setPositiveButton(android.R.string.ok) { _, _ ->
+                if (deleteRun) {
+                    viewModel.deleteRunAndMessage(message)
+                } else {
+                    viewModel.deleteMessage(message.id)
+                }
+            }
+            dialog.setNegativeButton(R.string.cancel, null)
+        }
+        
+        dialog.show()
     }
 
     override fun onDestroyView() {

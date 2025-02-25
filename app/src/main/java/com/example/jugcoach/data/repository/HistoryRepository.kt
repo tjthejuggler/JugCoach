@@ -86,6 +86,40 @@ class HistoryRepository @Inject constructor(
     }
 
     /**
+     * Deletes history entries related to a specific run
+     *
+     * @param patternId The ID of the pattern the run belongs to
+     * @param runTimestamp The timestamp of the run to delete
+     */
+    suspend fun deleteRunHistoryEntry(patternId: String, runTimestamp: Long) {
+        withContext(Dispatchers.IO) {
+            try {
+                // Find entries that match the pattern ID and are close to the run timestamp
+                // Using a 5-second window to account for slight timestamp differences
+                val timeWindow = 5000L
+                val entries = historyEntryDao.getEntriesByPatternId(patternId)
+                    .filter {
+                        it.type == HistoryEntry.TYPE_RUN_ADDED &&
+                        Math.abs(it.timestamp - runTimestamp) < timeWindow
+                    }
+                
+                if (entries.isNotEmpty()) {
+                    // Delete all matching entries
+                    entries.forEach { entry ->
+                        android.util.Log.d("DeleteRunDebug", "Deleting history entry: ${entry.id} for pattern $patternId")
+                        historyEntryDao.delete(entry)
+                    }
+                    android.util.Log.d("DeleteRunDebug", "Deleted ${entries.size} history entries")
+                } else {
+                    android.util.Log.d("DeleteRunDebug", "No matching history entries found to delete")
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("DeleteRunDebug", "Error deleting history entry: ${e.message}")
+            }
+        }
+    }
+
+    /**
      * Direct implementation to extract runs from the database
      * This bypasses the entity model and directly works with the database raw data
      */
