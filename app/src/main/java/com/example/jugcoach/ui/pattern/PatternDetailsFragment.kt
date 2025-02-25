@@ -363,10 +363,21 @@ class PatternDetailsFragment : Fragment() {
 
             // Set up video player
             if (pattern.video != null) {
+                // Initially show the video container
                 binding.videoContainer.isVisible = true
                 binding.patternAnimation.isVisible = false
                 videoPlayer.isVisible = true
                 videoPlayer.setPattern(pattern)
+                
+                // Wait a moment for the video to load and check for errors
+                videoPlayer.postDelayed({
+                    if (videoPlayer.hasError()) {
+                        // If there's an error loading the video, hide the video container completely
+                        binding.videoContainer.isVisible = false
+                        // Show the GIF animation if available, otherwise nothing
+                        binding.patternAnimation.isVisible = pattern.gifUrl != null
+                    }
+                }, 500) // Short delay to allow video loading to attempt
             } else {
                 binding.videoContainer.isVisible = false
                 videoPlayer.isVisible = false

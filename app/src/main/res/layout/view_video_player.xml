@@ -12,7 +12,7 @@
         android:visibility="gone"
         app:resize_mode="fit"
         app:show_buffering="always"
-        app:use_controller="true"/>
+        app:use_controller="false"/>
 
     <!-- YouTube player view -->
     <com.pierfrancescosoffritti.androidyoutubeplayer.core.player.views.YouTubePlayerView
@@ -22,6 +22,50 @@
         android:visibility="gone"
         app:enableAutomaticInitialization="false"
         app:handleNetworkEvents="true" />
+
+    <!-- Custom controls container -->
+    <LinearLayout
+        android:id="@+id/player_controls"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:background="@drawable/video_controls_background"
+        android:orientation="vertical"
+        android:padding="8dp">
+
+        <!-- Control buttons row -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <ImageButton
+                android:id="@+id/play_pause_button"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/play_pause"
+                android:padding="12dp"
+                android:src="@drawable/ic_play"/>
+
+            <com.google.android.material.slider.Slider
+                android:id="@+id/speed_slider"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="8dp"
+                android:layout_marginEnd="8dp"/>
+
+            <TextView
+                android:id="@+id/speed_label"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="1.00x"
+                android:textColor="@android:color/white"
+                android:textSize="14sp"/>
+        </LinearLayout>
+    </LinearLayout>
 
     <!-- Loading indicator -->
     <ProgressBar

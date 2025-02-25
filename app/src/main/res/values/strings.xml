@@ -170,4 +170,7 @@
     <string name="history_populated_count_direct">Added %d history entries (using direct database access)</string>
     <string name="history_populated_no_runs">No runs found to generate history entries</string>
     <string name="history_populated_error">Error populating history: %s</string>
+    
+    <!-- Video player -->
+    <string name="play_pause">Play/Pause</string>
 </resources>
