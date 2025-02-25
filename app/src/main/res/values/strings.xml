@@ -66,8 +66,8 @@
     <string name="error_loading_video">Error playing video: %s</string>
     <string name="run_history">Run History</string>
     <string name="prerequisites">Prerequisites</string>
-    <string name="dependent_patterns">Dependent Patterns</string>
-    <string name="related_patterns">Related Patterns</string>
+    <string name="dependent_patterns">Dependents</string>
+    <string name="related_patterns">Related</string>
 
     <!-- Settings -->
     <string name="routing_model_name">Routing model name</string>

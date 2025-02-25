@@ -357,7 +357,7 @@ class PatternDetailsFragment : Fragment() {
 
             // Set siteswap chip
             siteswapChip.apply {
-                text = pattern.siteswap?.takeIf { it.isNotEmpty() } ?: getString(R.string.no_siteswap)
+                text = pattern.siteswap?.takeIf { it.isNotEmpty() }?.let { "ss: $it" } ?: getString(R.string.no_siteswap)
                 isVisible = true
             }
 
