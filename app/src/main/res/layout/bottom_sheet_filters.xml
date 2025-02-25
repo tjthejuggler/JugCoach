@@ -273,14 +273,26 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="@string/sort_by_catches_asc"/>
+<RadioButton
+    android:id="@+id/sort_catches_desc"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:text="@string/sort_by_catches_desc"/>
+    
+<RadioButton
+    android:id="@+id/sort_last_practiced_asc"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:text="@string/sort_by_last_practiced_asc"/>
+    
+<RadioButton
+    android:id="@+id/sort_last_practiced_desc"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:text="@string/sort_by_last_practiced_desc"/>
 
-            <RadioButton
-                android:id="@+id/sort_catches_desc"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="@string/sort_by_catches_desc"/>
+</RadioGroup>
 
-        </RadioGroup>
 
 
     </LinearLayout>

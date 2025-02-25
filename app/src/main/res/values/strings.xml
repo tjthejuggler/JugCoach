@@ -46,6 +46,8 @@
     <string name="sort_by_difficulty_desc">Sort by difficulty (Hard-Easy)</string>
     <string name="sort_by_catches_asc">Sort by catches (Low-High)</string>
     <string name="sort_by_catches_desc">Sort by catches (High-Low)</string>
+    <string name="sort_by_last_practiced_asc">Sort by last practiced (Oldest first)</string>
+    <string name="sort_by_last_practiced_desc">Sort by last practiced (Newest first)</string>
 
     <!-- Coach -->
     <string name="coach_name">Coach name</string>

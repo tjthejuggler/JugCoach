@@ -120,14 +120,22 @@ class GalleryViewModel @Inject constructor(
             { it.difficulty?.toIntOrNull() ?: Int.MAX_VALUE },
             { it.name }
         ))
-        SortOrder.DIFFICULTY_DESC -> patterns.sortedWith(compareByDescending<Pattern> { 
-            it.difficulty?.toIntOrNull() ?: Int.MIN_VALUE 
+        SortOrder.DIFFICULTY_DESC -> patterns.sortedWith(compareByDescending<Pattern> {
+            it.difficulty?.toIntOrNull() ?: Int.MIN_VALUE
         }.thenBy { it.name })
-        SortOrder.CATCHES_ASC -> patterns.sortedWith(compareBy<Pattern> { 
-            it.record?.catches ?: 0 
+        SortOrder.CATCHES_ASC -> patterns.sortedWith(compareBy<Pattern> {
+            it.record?.catches ?: 0
         }.thenBy { it.name })
-        SortOrder.CATCHES_DESC -> patterns.sortedWith(compareByDescending<Pattern> { 
-            it.record?.catches ?: 0 
+        SortOrder.CATCHES_DESC -> patterns.sortedWith(compareByDescending<Pattern> {
+            it.record?.catches ?: 0
+        }.thenBy { it.name })
+        SortOrder.LAST_PRACTICED_ASC -> patterns.sortedWith(compareBy<Pattern> { pattern ->
+            // Get most recent run date, or Long.MAX_VALUE if no runs (to sort to the end)
+            pattern.runHistory.runs.maxOfOrNull { it.date } ?: Long.MAX_VALUE
+        }.thenBy { it.name })
+        SortOrder.LAST_PRACTICED_DESC -> patterns.sortedWith(compareByDescending<Pattern> { pattern ->
+            // Get most recent run date, or Long.MIN_VALUE if no runs (to sort to the end)
+            pattern.runHistory.runs.maxOfOrNull { it.date } ?: Long.MIN_VALUE
         }.thenBy { it.name })
     }
 

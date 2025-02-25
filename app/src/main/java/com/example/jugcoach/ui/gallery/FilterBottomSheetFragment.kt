@@ -91,6 +91,8 @@ interface FilterListener {
                     SortOrder.DIFFICULTY_DESC -> R.id.sort_difficulty_desc
                     SortOrder.CATCHES_ASC -> R.id.sort_catches_asc
                     SortOrder.CATCHES_DESC -> R.id.sort_catches_desc
+                    SortOrder.LAST_PRACTICED_ASC -> R.id.sort_last_practiced_asc
+                    SortOrder.LAST_PRACTICED_DESC -> R.id.sort_last_practiced_desc
                 }
                 binding.sortOrderGroup.check(buttonId)
             } catch (e: IllegalArgumentException) { }
@@ -107,6 +109,8 @@ interface FilterListener {
                     R.id.sort_difficulty_desc -> SortOrder.DIFFICULTY_DESC
                     R.id.sort_catches_asc -> SortOrder.CATCHES_ASC
                     R.id.sort_catches_desc -> SortOrder.CATCHES_DESC
+                    R.id.sort_last_practiced_asc -> SortOrder.LAST_PRACTICED_ASC
+                    R.id.sort_last_practiced_desc -> SortOrder.LAST_PRACTICED_DESC
                     else -> return@setOnCheckedChangeListener
                 }
                 currentSortOrder = sortOrder
@@ -250,6 +254,8 @@ interface FilterListener {
             R.id.sort_difficulty_desc -> SortOrder.DIFFICULTY_DESC
             R.id.sort_catches_asc -> SortOrder.CATCHES_ASC
             R.id.sort_catches_desc -> SortOrder.CATCHES_DESC
+            R.id.sort_last_practiced_asc -> SortOrder.LAST_PRACTICED_ASC
+            R.id.sort_last_practiced_desc -> SortOrder.LAST_PRACTICED_DESC
             else -> SortOrder.NAME_ASC
         }
         Log.d(DEBUG_TAG, "New sort order: $newSortOrder")
