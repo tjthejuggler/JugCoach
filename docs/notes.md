@@ -5,9 +5,12 @@ immediate todo
 
 organize, consolidate the notes
 
+-test timer input with skilldex record integration
+-instead of 0:00 in records there should just be a no time input message
+- even if i delete all the runs for a pattern it still has the old one as the record. this should be fixed
+- show it the python file that made the json we imported and get it to import for a user directly through the app
+
 JugCoach
--look into a way to update skilldex records from app
--i think it might just be best to go directly into the firebase db
 -settings to make various sounds as i pass drop record and catch record. These should be optional and based on the coach maybe so that coaches can decide if they are going to tell me or not. Maybe it should even be remembered with the record if I knew that I knew there would be a sound or not or what the percent chances were and such since some coaches may have a certain chance of telling me.. also, maybe a sound at 10% over, 50% over, 100% over... these should be options. Maybe a certain number of catches.
 -look into ai that doesn't need training data to distinguish between different patterns from watching sensor data
 -we should have a button on patterns that is "this pattern is a duplicate". It should suggest duplicates from the most recently practice(viewed?) Patterns, maybe also limit it to patterns with same number of balls
