@@ -398,9 +398,29 @@ class PatternDetailsFragment : Fragment() {
             // Show buttons container if either URL or video exists
             buttonsContainer.isVisible = pattern.url != null || pattern.video != null
 
+            // DEBUG: Log pattern data to diagnose Personal Record display issues
+            android.util.Log.d("PatternRecordDebug", "Pattern: ${pattern.name}, ID: ${pattern.id}")
+            android.util.Log.d("PatternRecordDebug", "Has record object: ${pattern.record != null}")
+            pattern.record?.let {
+                android.util.Log.d("PatternRecordDebug", "Record catches: ${it.catches}, date: ${it.date}")
+            }
+            android.util.Log.d("PatternRecordDebug", "Run history size: ${runHistory.size}")
+            android.util.Log.d("PatternRecordDebug", "Run types: " + runHistory.map {
+                "catches=${it.catches}, duration=${it.duration}, isClean=${it.isCleanEnd}"
+            })
+            
             // Calculate overall catches per minute and show records
             val runsWithCatchesAndTime = runHistory.filter { it.catches != null && it.duration != null }
-            if (runsWithCatchesAndTime.isNotEmpty()) {
+            android.util.Log.d("PatternRecordDebug", "Runs with both catches and time: ${runsWithCatchesAndTime.size}")
+            
+            // BUG: The condition below is too strict - if there are any runs or a record exists, we should show the card
+            val hasAnyRun = runHistory.isNotEmpty()
+            val hasRecord = pattern.record != null
+            val hasRunsWithCatchesAndTime = runsWithCatchesAndTime.isNotEmpty()
+            
+            android.util.Log.d("PatternRecordDebug", "hasAnyRun: $hasAnyRun, hasRecord: $hasRecord, hasRunsWithCatchesAndTime: $hasRunsWithCatchesAndTime")
+            
+            if (hasRunsWithCatchesAndTime) {
                 // Show overall catches per minute
                 val totalCatches = runsWithCatchesAndTime.sumOf { it.catches!! }
                 val totalSeconds = runsWithCatchesAndTime.sumOf { it.duration!! }
@@ -412,6 +432,7 @@ class PatternDetailsFragment : Fragment() {
 
                 // Show records card
                 recordCard.isVisible = true
+                android.util.Log.d("PatternRecordDebug", "Record card shown because there are runs with both catches and time")
 
                 // Clean end records
                 val cleanEndRuns = runsWithCatchesAndTime.filter { it.isCleanEnd }
@@ -470,8 +491,52 @@ class PatternDetailsFragment : Fragment() {
                 } else {
                     getString(R.string.no_records)
                 }
+            } else if (hasRecord || hasAnyRun) {
+                // Show records card even if we don't have runs with both catches and time,
+                // as long as there's either a record or any runs
+                recordCard.isVisible = true
+                
+                // Make the calculation section invisible since we don't have the data for it
+                binding.patternCatchesPerMinute.isVisible = false
+                
+                // Set text for records sections
+                if (hasRecord) {
+                    cleanEndRecords.text = getString(
+                        R.string.record_format,
+                        pattern.record!!.catches,
+                        0, // We don't have duration for stand-alone records
+                        0
+                    )
+                } else {
+                    cleanEndRecords.text = getString(R.string.no_records)
+                }
+                
+                // Set text for drop records based on any available runs
+                val dropRuns = runHistory.filter { !it.isCleanEnd }
+                dropRecords.text = if (dropRuns.isNotEmpty()) {
+                    // Show whatever data we have, even if incomplete
+                    val bestCatches = dropRuns.filter { it.catches != null }.maxByOrNull { it.catches!! }
+                    val bestDuration = dropRuns.filter { it.duration != null }.maxByOrNull { it.duration!! }
+                    
+                    buildString {
+                        bestCatches?.let { run ->
+                            appendLine(getString(
+                                R.string.record_format,
+                                run.catches!!,
+                                run.duration?.div(60) ?: 0,
+                                run.duration?.rem(60) ?: 0
+                            ))
+                        }
+                    }
+                } else {
+                    getString(R.string.no_records)
+                }
+                
+                android.util.Log.d("PatternRecordDebug", "Record card shown because pattern has record or has any runs")
             } else {
+                // No records and no runs - hide the record card
                 recordCard.isVisible = false
+                android.util.Log.d("PatternRecordDebug", "Record card hidden - no record and no runs")
             }
 
             // Show buttons container only if url exists
