@@ -43,6 +43,7 @@ class SettingsFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         setupViews()
+        setupSkilldexAuth()
         observeUiState()
     }
 
@@ -160,8 +161,33 @@ class SettingsFragment : Fragment() {
         }
     }
 
+    private fun setupSkilldexAuth() {
+        binding.apply {
+            // Login button click listener
+            loginButton.setOnClickListener {
+                val username = usernameInput.text.toString().trim()
+                val password = passwordInput.text.toString()
+                android.util.Log.d("RecordSync", "Login button clicked with username: $username")
+                viewModel.login(username, password)
+            }
+            
+            // Logout button click listener
+            logoutButton.setOnClickListener {
+                android.util.Log.d("RecordSync", "Logout button clicked")
+                viewModel.logout()
+            }
+            
+            // Add test connection button
+            testConnectionButton.setOnClickListener {
+                android.util.Log.d("RecordSync", "Test connection button clicked")
+                viewModel.testDatabaseConnection()
+            }
+        }
+    }
+
     private fun updateUi(state: SettingsUiState) {
         binding.apply {
+            // API key and pattern UI updates
             apiKeyAdapter.submitList(state.apiKeys)
             patternsCountText.text = "Patterns: ${state.patternCount}"
             addApiKeyButton.isEnabled = !state.isSaving
@@ -177,6 +203,17 @@ class SettingsFragment : Fragment() {
 
             // Show loading indicators
             importButton.text = if (state.isImporting) "Importing..." else "Import Patterns"
+            loginButton.text = if (state.isLoggingIn) "Logging in..." else "Login"
+            loginButton.isEnabled = !state.isLoggingIn
+            
+            // Update Skilldex login UI
+            skilldexLoginStatusLayout.visibility = if (state.isLoggedIn) View.VISIBLE else View.GONE
+            skilldexLoginFormLayout.visibility = if (state.isLoggedIn) View.GONE else View.VISIBLE
+            
+            // Show username if logged in
+            state.username?.let {
+                usernameTextView.text = it
+            }
 
             state.message?.let { message ->
                 Snackbar.make(root, message, Snackbar.LENGTH_SHORT).show()

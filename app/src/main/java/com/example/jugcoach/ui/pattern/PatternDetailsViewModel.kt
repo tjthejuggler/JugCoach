@@ -16,6 +16,8 @@ import com.example.jugcoach.data.entity.CoachProposal
 import com.example.jugcoach.data.entity.ProposalWithCoach
 import com.example.jugcoach.data.entity.ProposalStatus
 import com.example.jugcoach.data.repository.HistoryRepository
+import com.example.jugcoach.data.firebase.RecordSyncRepository
+import com.example.jugcoach.data.firebase.FirebaseManager
 import com.google.gson.Gson
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -31,6 +33,8 @@ class PatternDetailsViewModel @Inject constructor(
     private val coachDao: CoachDao,
     private val coachProposalDao: CoachProposalDao,
     private val historyRepository: HistoryRepository,
+    private val recordSyncRepository: RecordSyncRepository,
+    private val firebaseManager: FirebaseManager,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
@@ -284,10 +288,12 @@ class PatternDetailsViewModel @Inject constructor(
                     runHistory = RunHistory(updatedHistory)
                 )
 
-                // Update record if this run has more catches than current record
+                // Check if we should update record
+                var isNewRecord = false
                 val finalPattern = if (catches != null) {
                     val shouldUpdateRecord = currentPattern.record == null || catches > currentPattern.record.catches
                     if (shouldUpdateRecord) {
+                        isNewRecord = true
                         updatedPattern.copy(
                             record = Record(
                                 catches = catches,
@@ -311,6 +317,41 @@ class PatternDetailsViewModel @Inject constructor(
                     run = newRun,
                     isFromUser = true // Runs added through this UI are from the user
                 )
+                
+                // Sync with Skilldex Firebase if run has a clean end and catches
+                if (isCleanEnd && catches != null) {
+                    // Sync all clean end runs with catches, regardless of whether it's a PR
+                    android.util.Log.d("RecordSync", "======= STARTING RECORD SYNC =======")
+                    android.util.Log.d("RecordSync", "Attempting to sync record to Skilldex: ${finalPattern.name}, catches: $catches, isCleanEnd: $isCleanEnd, isNewRecord: $isNewRecord")
+                    android.util.Log.d("RecordSync", "Current auth state: isUserLoggedIn=${firebaseManager.isUserLoggedIn()}")
+                    android.util.Log.d("RecordSync", "Current user email: ${firebaseManager.getCurrentUserEmail()}")
+                    
+                    // Use a separate launch to make sure sync completes even if there's an error
+                    viewModelScope.launch {
+                        try {
+                            android.util.Log.d("RecordSync", "Calling recordSyncRepository.syncRecord()")
+                            val result = recordSyncRepository.syncRecord(finalPattern, catches, true)
+                            result.onSuccess { successful ->
+                                android.util.Log.d("RecordSync", "Record sync result: success=$successful")
+                                if (!successful) {
+                                    android.util.Log.d("RecordSync", "Sync returned false - possibly not logged in or no clean end")
+                                }
+                            }.onFailure { error ->
+                                android.util.Log.e("RecordSync", "Record sync failed with error", error)
+                                android.util.Log.e("RecordSync", "Error message: ${error.message}")
+                                android.util.Log.e("RecordSync", "Error cause: ${error.cause}")
+                                android.util.Log.e("RecordSync", "Stack trace: ${error.stackTraceToString()}")
+                            }
+                        } catch (e: Exception) {
+                            android.util.Log.e("RecordSync", "Exception during sync coroutine", e)
+                            android.util.Log.e("RecordSync", "Exception message: ${e.message}")
+                            android.util.Log.e("RecordSync", "Exception cause: ${e.cause}")
+                            android.util.Log.e("RecordSync", "Stack trace: ${e.stackTraceToString()}")
+                        }
+                    }
+                } else {
+                    android.util.Log.d("RecordSync", "Not syncing record: isCleanEnd=$isCleanEnd, catches=$catches")
+                }
                 
                 loadPattern() // Reload to refresh the UI
             } catch (e: Exception) {

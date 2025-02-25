@@ -8,6 +8,8 @@ import com.bumptech.glide.load.DecodeFormat
 import com.bumptech.glide.request.RequestOptions
 import com.bumptech.glide.load.engine.DiskCacheStrategy
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -161,19 +163,37 @@ class PatternDetailsFragment : Fragment() {
                 val duration = dialogBinding.timeInput.text?.toString()?.toLongOrNull()
                 val isCleanEnd = dialogBinding.cleanEndCheckbox.isChecked
 
+                android.util.Log.d("RecordSync", "Run dialog completed: catches=$catches, duration=$duration, isCleanEnd=$isCleanEnd")
+                
                 when {
                     catches == null && duration == null -> {
                         Snackbar.make(binding.root, getString(R.string.enter_catches_or_time), Snackbar.LENGTH_SHORT).show()
+                        android.util.Log.d("SkilldexSync", "Validation failed: No catches or duration")
                         return@setPositiveButton
                     }
                     catches != null && duration != null -> {
                         // Both provided - calculate catches per minute
+                        android.util.Log.d("SkilldexSync", "Adding run with BOTH catches and duration")
                         viewModel.addRun(catches, duration, isCleanEnd)
                     }
                     else -> {
                         // Only one provided - that's okay too
+                        android.util.Log.d("SkilldexSync", "Adding run with partial data: catches=$catches, duration=$duration")
                         viewModel.addRun(catches, duration, isCleanEnd)
                     }
+                }
+                
+                // Show a message to the user about sync
+                if (isCleanEnd && catches != null) {
+                    Handler(Looper.getMainLooper()).postDelayed({
+                        if (isAdded) { // Check if fragment is still attached
+                            Snackbar.make(
+                                binding.root,
+                                "Syncing record to skilldex.org",
+                                Snackbar.LENGTH_LONG
+                            ).show()
+                        }
+                    }, 1000) // Slight delay for better UX
                 }
             }
             .setNegativeButton(R.string.cancel, null)

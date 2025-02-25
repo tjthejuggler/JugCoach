@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "965128070479",
+    "firebase_url": "https://skilldex-4ebb4.firebaseio.com",
+    "project_id": "skilldex-4ebb4",
+    "storage_bucket": "skilldex-4ebb4.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:965128070479:android:64af3cb91c057166",
+        "android_client_info": {
+          "package_name": "com.example.jugcoach"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCmnOtb4Wk5MObmo1UPhgEV2Cv3b_6nMuY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

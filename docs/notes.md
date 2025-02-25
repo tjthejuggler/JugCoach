@@ -6,6 +6,15 @@ immediate todo
 organize, consolidate the notes
 
 JugCoach
+-look into a way to update skilldex records from app
+-i think it might just be best to go directly into the firebase db
+-settings to make various sounds as i pass drop record and catch record. These should be optional and based on the coach maybe so that coaches can decide if they are going to tell me or not. Maybe it should even be remembered with the record if I knew that I knew there would be a sound or not or what the percent chances were and such since some coaches may have a certain chance of telling me.. also, maybe a sound at 10% over, 50% over, 100% over... these should be options. Maybe a certain number of catches.
+-look into ai that doesn't need training data to distinguish between different patterns from watching sensor data
+-we should have a button on patterns that is "this pattern is a duplicate". It should suggest duplicates from the most recently practice(viewed?) Patterns, maybe also limit it to patterns with same number of balls
+-maybe a way to train an ai using supervised because patterns are labeled with tags
+-distant idea: i just came up with a pattern, it is just a cascade where one ball is caught as a neck catch on one side. It would be so nice to quickly find out if that pattern exists and do a run of it. What's a better way to do this soon, and what the ultimate dream of it? Probably watches is better than video for comfort, but not sure watches may be annoying
+
+JugCoach
 It will be great to have a camera set up and I can easily just have a button to make it record and take a note of what i say and store it with whatever tags or whatever for later review
 For jahvorsky's videos I have to go through and get the new url for them all - can this be automated?
 -get it to update the skilldex record of a pattern if broken.
