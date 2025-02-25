@@ -377,8 +377,28 @@ class PatternDetailsFragment : Fragment() {
             pattern.url?.let { url ->
                 urlButton.isVisible = true
                 urlButton.setOnClickListener {
-                    // Open URL in browser
-                    startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+                    // Log original URL for debugging
+                    android.util.Log.d("SkilldexDebug", "URL from pattern: $url")
+                    
+                    try {
+                        // Use the exact URL string - don't further encode it
+                        // The URL is properly formed in the ViewModel already
+                        val intent = Intent(Intent.ACTION_VIEW)
+                        intent.data = Uri.parse(url)
+                        android.util.Log.d("SkilldexDebug", "Opening intent with URL: ${intent.data}")
+                        startActivity(intent)
+                    } catch (e: Exception) {
+                        android.util.Log.e("SkilldexDebug", "Error opening URL", e)
+                        // As a fallback, try constructing the URL directly with + preserved
+                        try {
+                            val encodedName = Uri.encode(pattern.name).replace("%2B", "+")
+                            val fallbackUrl = "https://www.skilldex.org/detail/$encodedName"
+                            android.util.Log.d("SkilldexDebug", "Fallback URL: $fallbackUrl")
+                            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(fallbackUrl)))
+                        } catch (e2: Exception) {
+                            android.util.Log.e("SkilldexDebug", "Fallback also failed", e2)
+                        }
+                    }
                 }
             } ?: run {
                 urlButton.isVisible = false

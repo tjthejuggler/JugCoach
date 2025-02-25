@@ -193,8 +193,13 @@ class PatternDetailsViewModel @Inject constructor(
                         "difficulty=${pattern.difficulty}, " +
                         "explanation=${pattern.explanation?.take(50)}...")
                     
-                    // Create Skilldex URL from pattern name with proper URL encoding
-                    val skilldexUrl = "https://skilldex.org/detail/${android.net.Uri.encode(pattern.name)}"
+                    // Create Skilldex URL from pattern name with custom URL encoding that preserves '+'
+                    val encodedName = android.net.Uri.encode(pattern.name)
+                        .replace("%2B", "+") // Keep '+' character as is, don't encode it as %2B
+                    
+                    val skilldexUrl = "https://www.skilldex.org/detail/$encodedName"
+                    android.util.Log.d("SkilldexDebug", "Generated URL in ViewModel: $skilldexUrl")
+                    android.util.Log.d("SkilldexDebug", "Pattern name: ${pattern.name}")
                     val updatedPattern = pattern.copy(url = skilldexUrl)
                     
                     _pattern.value = updatedPattern
