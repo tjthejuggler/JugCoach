@@ -14,7 +14,7 @@
             type="kotlin.jvm.functions.Function1&lt;com.example.jugcoach.ui.chat.ChatMessage, kotlin.Unit&gt;" />
         <variable
             name="onDifferentClick"
-            type="kotlin.jvm.functions.Function1&lt;com.example.jugcoach.ui.chat.ChatMessage, kotlin.Unit&gt;" />
+            type="kotlin.jvm.functions.Function2&lt;com.example.jugcoach.ui.chat.ChatMessage, android.view.View, kotlin.Unit&gt;" />
         <variable
             name="onCreateClick"
             type="kotlin.jvm.functions.Function2&lt;com.example.jugcoach.ui.chat.ChatMessage, android.view.View, kotlin.Unit&gt;" />
@@ -192,7 +192,8 @@
                         app:strokeColor="@color/white"
                         app:strokeWidth="1dp"
                         android:layout_marginEnd="8dp"
-                        android:onClick="@{() -> onDifferentClick.invoke(message)}"/>
+                        android:tag="@{`differentButton_` + (message.text.contains(`\n`) ? message.text.substring(0, message.text.indexOf(`\n`)) : message.text).trim()}"
+                        android:onClick="@{(view) -> onDifferentClick.invoke(message, view)}"/>
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/createButton"
@@ -207,6 +208,7 @@
                         style="@style/Widget.MaterialComponents.Button.OutlinedButton"
                         app:strokeColor="@color/white"
                         app:strokeWidth="1dp"
+                        android:tag="@{`createButton_` + (message.text.contains(`\n`) ? message.text.substring(0, message.text.indexOf(`\n`)) : message.text).trim()}"
                         android:onClick="@{(view) -> onCreateClick.invoke(message, view)}"/>
 
                 </LinearLayout>

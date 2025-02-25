@@ -141,10 +141,10 @@ class ChatFragment : Fragment() {
         chatAdapter = ChatAdapter(
             currentCoach = viewModel.uiState.value.currentCoach,
             onAgainClick = { message -> viewModel.startRunFromMessage(message) },
-            onDifferentClick = { message ->
+            onDifferentClick = { message, view ->
                 viewLifecycleOwner.lifecycleScope.launch {
                     val pattern = viewModel.findPatternByName(message.text.lines().first())?.let { pattern ->
-                        showDifferentPatternMenu(pattern)
+                        showDifferentPatternMenu(pattern, view)
                     }
                 }
             },
@@ -479,9 +479,17 @@ class ChatFragment : Fragment() {
             .show()
     }
 
-    private fun showDifferentPatternMenu(pattern: Pattern) {
-        val popupMenu = PopupMenu(requireContext(), binding.patternRunView)
+    private fun showDifferentPatternMenu(pattern: Pattern, view: View? = null) {
+        // Use the view from onDifferentClick callback or find the differentButton
+        val anchorView = view ?: binding.messagesList.findViewWithTag<View>("differentButton_${pattern.name}")
+        
+        val popupMenu = PopupMenu(requireContext(), anchorView ?: binding.root)
         popupMenu.menuInflater.inflate(R.menu.pattern_relationship_menu, popupMenu.menu)
+        
+        // Update menu titles to use "choose" instead of "create"
+        popupMenu.menu.findItem(R.id.menu_prerequisites)?.title = "Choose Prerequisite Pattern"
+        popupMenu.menu.findItem(R.id.menu_related)?.title = "Choose Related Pattern"
+        popupMenu.menu.findItem(R.id.menu_dependent)?.title = "Choose Dependent Pattern"
 
         popupMenu.setOnMenuItemClickListener { menuItem ->
             viewLifecycleOwner.lifecycleScope.launch {
@@ -510,7 +518,10 @@ class ChatFragment : Fragment() {
     }
 
     private fun showCreatePatternMenu(pattern: Pattern, anchor: View) {
-        val popupMenu = PopupMenu(requireContext(), anchor)
+        // Use the provided anchor view or find the createButton
+        val anchorView = anchor ?: binding.messagesList.findViewWithTag<View>("createButton_${pattern.name}")
+        
+        val popupMenu = PopupMenu(requireContext(), anchorView ?: binding.root)
         popupMenu.menuInflater.inflate(R.menu.pattern_relationship_menu, popupMenu.menu)
 
         popupMenu.setOnMenuItemClickListener { menuItem ->

@@ -18,7 +18,7 @@ import java.time.format.FormatStyle
 class ChatAdapter(
     private var currentCoach: Coach? = null,
     private val onAgainClick: (ChatMessage) -> Unit,
-    private val onDifferentClick: (ChatMessage) -> Unit,
+    private val onDifferentClick: (ChatMessage, View) -> Unit,
     private val onCreateClick: (ChatMessage, View) -> Unit,
     private val onPatternClick: (String) -> Unit,
     private val onDeleteClick: (ChatMessage, View) -> Unit

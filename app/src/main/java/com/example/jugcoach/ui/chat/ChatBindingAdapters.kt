@@ -77,6 +77,9 @@ object ChatBindingAdapters {
             val firstLine = text.lines().firstOrNull() ?: return
             val patternName = firstLine.trim()
             
+            // Find the exact position of the pattern name in the full text
+            val patternNameEndIndex = text.indexOf('\n').takeIf { it != -1 } ?: patternName.length
+            
             val clickableSpan = object : ClickableSpan() {
                 override fun onClick(widget: View) {
                     onPatternClick.invoke(patternName)
@@ -91,10 +94,11 @@ object ChatBindingAdapters {
                 }
             }
 
+            // Only make the pattern name clickable, not the entire message
             spannableString.setSpan(
                 clickableSpan,
                 0,
-                patternName.length,
+                patternNameEndIndex,
                 Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
             )
         }
