@@ -291,7 +291,8 @@ class PatternDetailsViewModel @Inject constructor(
                 // Check if we should update record
                 var isNewRecord = false
                 val finalPattern = if (catches != null) {
-                    val shouldUpdateRecord = currentPattern.record == null || catches > currentPattern.record.catches
+                    // Only update record if it's a clean end run
+                    val shouldUpdateRecord = isCleanEnd && (currentPattern.record == null || catches > currentPattern.record.catches)
                     if (shouldUpdateRecord) {
                         isNewRecord = true
                         updatedPattern.copy(
