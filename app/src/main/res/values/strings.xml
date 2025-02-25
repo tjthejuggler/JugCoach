@@ -142,4 +142,25 @@
     <!-- Proposals -->
     <string name="reject">Reject</string>
     <string name="approve">Approve</string>
+    
+    <!-- History Timeline -->
+    <string name="history_title">Activity History</string>
+    <string name="run_added">Run added</string>
+    <string name="pattern_created">Pattern created</string>
+    <string name="coach_created">Coach created</string>
+    <string name="by_user">by You</string>
+    <string name="by_coach">by %s</string>
+    <string name="today">Today</string>
+    <string name="yesterday">Yesterday</string>
+    
+    <!-- Developer Options -->
+    <string name="developer_options">Developer Options</string>
+    <string name="populate_history_log">Populate History Log</string>
+    <string name="populate_history_log_desc">Generate history entries for all existing runs</string>
+    <string name="history_populated">History log populated with existing runs</string>
+    <string name="history_entry_count">Current history entries: %d</string>
+    <string name="history_populated_count">Added %d history entries successfully</string>
+    <string name="history_populated_count_direct">Added %d history entries (using direct database access)</string>
+    <string name="history_populated_no_runs">No runs found to generate history entries</string>
+    <string name="history_populated_error">Error populating history: %s</string>
 </resources>

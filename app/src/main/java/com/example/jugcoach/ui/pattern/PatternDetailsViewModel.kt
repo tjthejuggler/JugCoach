@@ -15,6 +15,7 @@ import com.example.jugcoach.data.entity.Record
 import com.example.jugcoach.data.entity.CoachProposal
 import com.example.jugcoach.data.entity.ProposalWithCoach
 import com.example.jugcoach.data.entity.ProposalStatus
+import com.example.jugcoach.data.repository.HistoryRepository
 import com.google.gson.Gson
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -29,6 +30,7 @@ class PatternDetailsViewModel @Inject constructor(
     private val patternDao: PatternDao,
     private val coachDao: CoachDao,
     private val coachProposalDao: CoachProposalDao,
+    private val historyRepository: HistoryRepository,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
@@ -294,7 +296,17 @@ class PatternDetailsViewModel @Inject constructor(
                     updatedPattern
                 }
 
+                // Save the pattern update to the database
                 patternDao.updatePattern(finalPattern)
+                
+                // Log this run to the history timeline
+                historyRepository.logRunAdded(
+                    patternId = currentPattern.id,
+                    patternName = currentPattern.name,
+                    run = newRun,
+                    isFromUser = true // Runs added through this UI are from the user
+                )
+                
                 loadPattern() // Reload to refresh the UI
             } catch (e: Exception) {
                 _uiState.value = PatternDetailsUiState.Error(e.message ?: "Failed to add run")

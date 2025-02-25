@@ -18,9 +18,10 @@ import com.example.jugcoach.data.entity.*
         Coach::class,
         Conversation::class,
         ChatMessage::class,
-        CoachProposal::class
+        CoachProposal::class,
+        HistoryEntry::class
     ],
-    version = 15,
+    version = 16,
     exportSchema = true
 )
 @TypeConverters(
@@ -39,6 +40,7 @@ abstract class JugCoachDatabase : RoomDatabase() {
     abstract fun conversationDao(): ConversationDao
     abstract fun chatMessageDao(): ChatMessageDao
     abstract fun coachProposalDao(): CoachProposalDao
+    abstract fun historyEntryDao(): HistoryEntryDao
 
     companion object {
         @Volatile
@@ -264,6 +266,30 @@ abstract class JugCoachDatabase : RoomDatabase() {
             }
         }
 
+        private val MIGRATION_15_16 = object : androidx.room.migration.Migration(15, 16) {
+            override fun migrate(db: androidx.sqlite.db.SupportSQLiteDatabase) {
+                // Create the history_entries table
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS `history_entries` (
+                        `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        `type` TEXT NOT NULL,
+                        `timestamp` INTEGER NOT NULL,
+                        `description` TEXT NOT NULL,
+                        `relatedPatternId` TEXT,
+                        `relatedCoachId` INTEGER,
+                        `isFromUser` INTEGER NOT NULL DEFAULT 1,
+                        FOREIGN KEY(`relatedPatternId`) REFERENCES `patterns`(`id`) ON UPDATE NO ACTION ON DELETE SET NULL,
+                        FOREIGN KEY(`relatedCoachId`) REFERENCES `coaches`(`id`) ON UPDATE NO ACTION ON DELETE SET NULL
+                    )
+                """)
+                
+                // Create indices for faster lookups
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_history_entries_relatedPatternId` ON `history_entries` (`relatedPatternId`)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_history_entries_relatedCoachId` ON `history_entries` (`relatedCoachId`)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_history_entries_timestamp` ON `history_entries` (`timestamp`)")
+            }
+        }
+
         fun getDatabase(context: Context): JugCoachDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -285,7 +311,8 @@ abstract class JugCoachDatabase : RoomDatabase() {
                         MIGRATION_11_12,
                         MIGRATION_12_13,
                         MIGRATION_13_14,
-                        MIGRATION_14_15
+                        MIGRATION_14_15,
+                        MIGRATION_15_16
                     )
                     .build()
                 INSTANCE = instance

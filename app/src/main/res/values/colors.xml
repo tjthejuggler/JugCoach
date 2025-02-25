@@ -19,4 +19,11 @@
     <color name="thinking_message_background">#757575</color>  <!-- Gray for thoughts -->
     <color name="talking_message_background">#424242</color>  <!-- Default coach message color -->
     <color name="run_summary_background">#8E24AA</color>  <!-- Purple for run summaries -->
+    
+    <!-- Timeline Colors -->
+    <color name="colorPrimary">#FF6200EE</color>  <!-- Using existing purple_500 color -->
+    <color name="colorTimeline">#DDA0DD</color>  <!-- Light purple for timeline line -->
+    <color name="run_added_color">#4CAF50</color>  <!-- Green for run added entries -->
+    <color name="pattern_created_color">#2196F3</color>  <!-- Blue for pattern created entries -->
+    <color name="coach_created_color">#FF9800</color>  <!-- Orange for coach created entries -->
 </resources>

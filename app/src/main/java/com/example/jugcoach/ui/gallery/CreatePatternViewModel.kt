@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.jugcoach.data.dao.PatternDao
 import com.example.jugcoach.data.entity.Pattern
+import com.example.jugcoach.data.repository.HistoryRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -14,7 +15,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class CreatePatternViewModel @Inject constructor(
-    private val patternDao: PatternDao
+    private val patternDao: PatternDao,
+    private val historyRepository: HistoryRepository
 ) : ViewModel() {
 
     companion object {
@@ -358,9 +360,12 @@ class CreatePatternViewModel @Inject constructor(
         if (!isFormValid()) return
 
         viewModelScope.launch {
+            val patternId = UUID.randomUUID().toString()
+            val patternName = _uiState.value.name
+            
             val pattern = Pattern(
-                id = UUID.randomUUID().toString(),
-                name = _uiState.value.name,
+                id = patternId,
+                name = patternName,
                 num = _uiState.value.numBalls,
                 difficulty = _uiState.value.difficulty,
                 siteswap = _uiState.value.siteswap.takeIf { it.isNotBlank() },
@@ -375,7 +380,17 @@ class CreatePatternViewModel @Inject constructor(
                 dependents = _uiState.value.dependentPatterns.toList(),
                 related = _uiState.value.relatedPatterns.toList()
             )
+            
+            // Save pattern to database
             patternDao.insertPattern(pattern)
+            
+            // Log pattern creation to history
+            historyRepository.logPatternCreated(
+                patternId = patternId,
+                patternName = patternName,
+                isFromUser = true // Patterns created through UI are from the user
+            )
+            
             _uiState.update { it.copy(isSaved = true) }
         }
     }

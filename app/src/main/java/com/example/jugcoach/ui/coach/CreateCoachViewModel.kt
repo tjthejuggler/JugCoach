@@ -6,6 +6,7 @@ import com.example.jugcoach.data.dao.CoachDao
 import com.example.jugcoach.data.dao.SettingsDao
 import com.example.jugcoach.data.entity.Coach
 import com.example.jugcoach.data.entity.SettingCategory
+import com.example.jugcoach.data.repository.HistoryRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -14,7 +15,8 @@ import javax.inject.Inject
 @HiltViewModel
 class CreateCoachViewModel @Inject constructor(
     private val coachDao: CoachDao,
-    private val settingsDao: SettingsDao
+    private val settingsDao: SettingsDao,
+    private val historyRepository: HistoryRepository
 ) : ViewModel() {
 
     private val _apiKeys = MutableStateFlow<List<String>>(emptyList())
@@ -47,7 +49,16 @@ class CreateCoachViewModel @Inject constructor(
                 specialties = specialties,
                 systemPrompt = systemPrompt
             )
-            coachDao.insertCoach(coach)
+            
+            // Insert the coach and get the new coach ID
+            val coachId = coachDao.insertCoach(coach)
+            
+            // Log coach creation to history
+            historyRepository.logCoachCreated(
+                coachId = coachId,
+                coachName = name,
+                isFromUser = true // Coaches created through UI are from the user
+            )
         }
     }
 }

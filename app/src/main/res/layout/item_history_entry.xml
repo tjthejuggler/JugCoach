@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginStart="16dp"
+    android:layout_marginTop="8dp"
+    android:layout_marginEnd="16dp"
+    android:layout_marginBottom="4dp"
+    app:cardCornerRadius="8dp"
+    app:cardElevation="2dp">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="12dp">
+
+        <!-- Vertical timeline line -->
+        <View
+            android:id="@+id/timeline_line"
+            android:layout_width="2dp"
+            android:layout_height="0dp"
+            android:layout_marginTop="24dp"
+            android:layout_marginBottom="8dp"
+            android:background="@color/colorTimeline"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="@+id/timeline_dot"
+            app:layout_constraintTop_toTopOf="@+id/timeline_dot" />
+
+        <!-- Timeline dot -->
+        <View
+            android:id="@+id/timeline_dot"
+            android:layout_width="16dp"
+            android:layout_height="16dp"
+            android:layout_marginStart="16dp"
+            android:background="@drawable/timeline_dot"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <!-- History event type -->
+        <TextView
+            android:id="@+id/text_entry_type"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:textColor="@color/colorPrimary"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            app:layout_constraintStart_toEndOf="@+id/timeline_dot"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:text="Run added" />
+
+        <!-- History event author (user or coach) -->
+        <TextView
+            android:id="@+id/text_entry_author"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:textSize="14sp"
+            app:layout_constraintBottom_toBottomOf="@+id/text_entry_type"
+            app:layout_constraintStart_toEndOf="@+id/text_entry_type"
+            app:layout_constraintTop_toTopOf="@+id/text_entry_type"
+            tools:text="by You" />
+
+        <!-- History event description -->
+        <TextView
+            android:id="@+id/text_entry_description"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:layout_marginEnd="8dp"
+            android:textSize="14sp"
+            app:layout_constraintEnd_toStartOf="@+id/text_entry_time"
+            app:layout_constraintStart_toStartOf="@+id/text_entry_type"
+            app:layout_constraintTop_toBottomOf="@+id/text_entry_type"
+            tools:text="Added a run of 25 catches for pattern: Cascade" />
+
+        <!-- History event time -->
+        <TextView
+            android:id="@+id/text_entry_time"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="8dp"
+            android:textSize="12sp"
+            android:textStyle="italic"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:text="10:30 AM" />
+
+        <!-- History event date -->
+        <TextView
+            android:id="@+id/text_entry_date"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:textSize="12sp"
+            app:layout_constraintEnd_toEndOf="@+id/text_entry_time"
+            app:layout_constraintStart_toStartOf="@+id/text_entry_time"
+            app:layout_constraintTop_toBottomOf="@+id/text_entry_time"
+            tools:text="Today" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</androidx.cardview.widget.CardView>

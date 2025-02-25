@@ -19,6 +19,8 @@ import javax.inject.Inject
 import com.example.jugcoach.data.api.AnthropicResponse
 import com.example.jugcoach.data.dao.PatternDao
 import com.example.jugcoach.data.dao.SettingsDao
+import com.example.jugcoach.data.entity.Run
+import com.example.jugcoach.data.repository.HistoryRepository
 import com.example.jugcoach.util.SettingsConstants
 import com.example.jugcoach.ui.gallery.CreatePatternViewModel
 
@@ -29,7 +31,8 @@ class ChatViewModel @Inject constructor(
     private val apiService: ChatApiService,
     private val toolHandler: ChatToolHandler,
     private val settingsDao: SettingsDao,
-    private val patternDao: PatternDao
+    private val patternDao: PatternDao,
+    private val historyRepository: HistoryRepository
 ) : ViewModel() {
 
     val uiState: StateFlow<ChatUiState> = stateManager.uiState
@@ -465,12 +468,29 @@ class ChatViewModel @Inject constructor(
                 } else null
 
                 android.util.Log.d("RunDebug", "Adding run - pattern: ${pattern.name}, duration: $finalDuration, clean: $wasCatch, catches: $catches")
+                val timestamp = System.currentTimeMillis()
+                
+                val newRun = Run(
+                    catches = catches,
+                    duration = finalDuration,
+                    isCleanEnd = wasCatch,
+                    date = timestamp
+                )
+                
                 patternDao.addRun(
                     patternId = pattern.id,
                     catches = catches,
                     duration = finalDuration,
                     cleanEnd = wasCatch,
-                    date = System.currentTimeMillis()
+                    date = timestamp
+                )
+                
+                // Log the run to the history timeline
+                historyRepository.logRunAdded(
+                    patternId = pattern.id,
+                    patternName = pattern.name,
+                    run = newRun,
+                    isFromUser = false // Runs added through chat are from the LLM coach
                 )
 
                 // Get the updated pattern with new records after adding the run

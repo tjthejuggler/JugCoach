@@ -9,7 +9,11 @@
         android:id="@+id/nav_home"
         android:name="com.example.jugcoach.ui.home.HomeFragment"
         android:label="@string/menu_home"
-        tools:layout="@layout/fragment_home" />
+        tools:layout="@layout/fragment_home">
+        <action
+            android:id="@+id/action_navigation_home_to_patternDetailsFragment"
+            app:destination="@id/patternDetailsFragment" />
+    </fragment>
 
     <fragment
         android:id="@+id/nav_gallery"
@@ -110,4 +114,14 @@
     <action
         android:id="@+id/action_global_createPatternFragment"
         app:destination="@id/createPatternFragment" />
+        
+    <fragment
+        android:id="@+id/developerFragment"
+        android:name="com.example.jugcoach.ui.developer.DeveloperFragment"
+        android:label="@string/developer_options"
+        tools:layout="@layout/fragment_developer" />
+        
+    <action
+        android:id="@+id/action_global_developerFragment"
+        app:destination="@id/developerFragment" />
 </navigation>

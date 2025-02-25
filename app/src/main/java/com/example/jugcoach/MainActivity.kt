@@ -64,6 +64,10 @@ class MainActivity : AppCompatActivity() {
                 startActivity(Intent(this, com.example.jugcoach.ui.tooltest.ToolTestActivity::class.java))
                 true
             }
+            R.id.action_developer -> {
+                findNavController(R.id.nav_host_fragment_content_main).navigate(R.id.action_global_developerFragment)
+                true
+            }
             else -> super.onOptionsItemSelected(item)
         }
     }

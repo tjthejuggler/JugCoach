@@ -149,8 +149,28 @@ interface PatternDao {
     @Query("SELECT * FROM patterns")
     suspend fun getAllPatterns(): List<Pattern>
 
-    @Query("SELECT * FROM patterns WHERE coachId = :coachId OR coachId IS NULL")
+    @Query("""
+        SELECT * FROM patterns
+        WHERE coachId = :coachId OR coachId IS NULL
+        ORDER BY name ASC
+    """)
     suspend fun getAllPatternsSync(coachId: Long): List<Pattern>
+    
+    // Query to directly check if any patterns have runs (for debugging)
+    @Query("SELECT COUNT(*) FROM patterns WHERE json_array_length(history_runs) > 0")
+    suspend fun countPatternsWithRuns(): Int
+    
+    // Data class for raw pattern run data
+    data class PatternRunData(
+        val id: String,
+        val name: String,
+        val history_runs: String,
+        val coachId: Long?
+    )
+    
+    // Direct access to patterns with run data for debugging
+    @Query("SELECT id, name, history_runs, coachId FROM patterns WHERE json_array_length(history_runs) > 0")
+    suspend fun getPatternsWithRunsRaw(): List<PatternRunData>
 
     @Query("""
         SELECT * FROM patterns

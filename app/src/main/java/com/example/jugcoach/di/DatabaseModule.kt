@@ -4,6 +4,7 @@ import android.content.Context
 import com.example.jugcoach.data.JugCoachDatabase
 import com.example.jugcoach.data.dao.*
 import com.example.jugcoach.data.importer.PatternImporter
+import com.example.jugcoach.data.repository.HistoryRepository
 import com.example.jugcoach.data.service.PatternDatabaseService
 import dagger.Module
 import dagger.Provides
@@ -75,5 +76,19 @@ object DatabaseModule {
         patternDao: PatternDao
     ): PatternImporter {
         return PatternImporter(context, patternDao)
+    }
+    
+    @Provides
+    fun provideHistoryEntryDao(database: JugCoachDatabase): HistoryEntryDao {
+        return database.historyEntryDao()
+    }
+    
+    @Provides
+    @Singleton
+    fun provideHistoryRepository(
+        historyEntryDao: HistoryEntryDao,
+        patternDao: PatternDao
+    ): HistoryRepository {
+        return HistoryRepository(historyEntryDao, patternDao)
     }
 }

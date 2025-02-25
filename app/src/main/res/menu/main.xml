@@ -11,4 +11,9 @@
         android:orderInCategory="101"
         android:title="@string/action_tool_test"
         app:showAsAction="never" />
+    <item
+        android:id="@+id/action_developer"
+        android:orderInCategory="102"
+        android:title="@string/developer_options"
+        app:showAsAction="never" />
 </menu>
